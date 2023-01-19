@@ -9,5 +9,5 @@
 - https://www.theimagingsource.de/support/software-f%C3%BCr-linux/
 - It is installed with "sudo apt install .​/​tiscamera_0.n.n_amd64_ubuntu_1804.deb". "n" is to be replaced by the corresponding version number.
 - After installation, start the "tcam-capture" program in the terminal to use a camera.
-- Code example in https://github.com/TheImagingSource/tiscamera
+- Code example in https://github.com/TheImagingSource/tiscamera/tree/master/examples
 
