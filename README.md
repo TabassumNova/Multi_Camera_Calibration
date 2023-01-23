@@ -45,3 +45,8 @@
 ## Camera Aravis ROS Package
 - Add this repo (https://github.com/FraunhoferIOSB/camera_aravis) in your catkin workspace 
 - catkin_make
+
+### ROS camera aravis application
+- Run `roscore`
+- To check which camera models are connected `arv-tool-0.4`
+- 
