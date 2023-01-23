@@ -11,7 +11,7 @@
 - After installation, start the "tcam-capture" program in the terminal to use a camera.
 - Code example in https://github.com/TheImagingSource/tiscamera/tree/master/examples
 
-## Camera Aravis
+## Camera Aravis API
 - For installation follow this link: https://aravisproject.github.io/aravis/building.html
 - Steps: 
     - At first, download source code from https://github.com/AravisProject/aravis/releases
@@ -33,3 +33,15 @@
     ninja install
     sudo ldconfig
 ```
+### Alternative way to install API
+- Follow this method (https://github.com/roboticslab-uc3m/installation-guides/blob/master/install-aravis.md)
+- Steps: 
+    - Download a newer version from (https://download.gnome.org/sources/aravis/0.4/)
+    - Uncompress the downloaded Aravis package and open a terminal in that folder.
+    - Run `./configure`
+    - Run `make`
+    - Run `sudo make install`
+    
+## Camera Aravis ROS Package
+- Add this repo (https://github.com/FraunhoferIOSB/camera_aravis) in your catkin workspace 
+- catkin_make
