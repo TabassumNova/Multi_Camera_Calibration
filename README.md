@@ -12,17 +12,24 @@
 - Code example in https://github.com/TheImagingSource/tiscamera/tree/master/examples
 
 ## Camera Aravis
-- For installation: https://aravisproject.github.io/aravis/building.html
-```
+- For installation follow this link: https://aravisproject.github.io/aravis/building.html
+- Steps: 
+    - At first, download source code from https://github.com/AravisProject/aravis/releases
+    - Unzip and from terminal navigate to the folder
+    - Download dependencies for Ubuntu 20.04
+    ```
+    sudo apt install libxml2-dev libglib2.0-dev cmake libusb-1.0-0-dev gobject-introspection \
+                 libgtk-3-dev gtk-doc-tools  xsltproc libgstreamer1.0-dev \
+                 libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev \
+                 libgirepository1.0-dev gettext
+    
     pip3 install --user meson==0.56.0
+    ```
+    - Install
+```
     meson setup build
     cd build
     ninja
     ninja install
     sudo ldconfig
-    sudo apt install libxml2-dev libglib2.0-dev cmake libusb-1.0-0-dev gobject-introspection \
-                 libgtk-3-dev gtk-doc-tools  xsltproc libgstreamer1.0-dev \
-                 libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev \
-                 libgirepository1.0-dev gettext
-
 ```
