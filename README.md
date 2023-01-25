@@ -48,5 +48,13 @@
 
 ### ROS camera aravis application
 - Run `roscore`
-- To check which camera models are connected `arv-tool-0.4`
-- 
+- To check which camera models are connected, run from another terminal `arv-tool-0.4`.
+    Output: 
+    ```
+    The Imaging Source Europe GmbH-11120229
+    The Imaging Source Europe GmbH-42120643
+    ```
+- To run it in a given namespace 
+`ROS_NAMESPACE=cam1 rosrun camera_aravis cam_aravis _guid:=GmbH-11120229`
+- From another terminal, run `ROS_NAMESPACE=cam2 rosrun camera_aravis cam_aravis _guid:=GmbH-42120643`
+
