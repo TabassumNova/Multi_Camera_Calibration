@@ -58,3 +58,9 @@
 `ROS_NAMESPACE=cam1 rosrun camera_aravis cam_aravis _guid:=GmbH-11120229`
 - From another terminal, run `ROS_NAMESPACE=cam2 rosrun camera_aravis cam_aravis _guid:=GmbH-42120643`
 
+# ROS wrapper for image acquisition automation
+- Create ROS package (http://wiki.ros.org/ROS/Tutorials/CreatingPackage)
+- Create python node (http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29)
+- Inside launch file (<node pkg="xsens_driver" name="mtnode" type="mtnode.py" output="screen"> 
+  ..
+</node>)
