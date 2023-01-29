@@ -33,6 +33,7 @@
     ninja install
     sudo ldconfig
 ```
+
 ### Alternative way to install API
 - Follow this method (https://github.com/roboticslab-uc3m/installation-guides/blob/master/install-aravis.md)
 - Steps: 
@@ -42,6 +43,12 @@
     - Run `make`
     - Run `sudo make install`
     
+
+## Camera Aravis python
+- https://github.com/SintefManufacturing/python-aravis/blob/master/aravis.py
+- https://github.com/SintefManufacturing/python-aravis
+- https://github.com/SintefManufacturing/python-aravis/blob/5750250cedb9b96d7a0172c0da9c1811b6b817af/examples/save-image.py
+
 ## Camera Aravis ROS Package
 - Add this repo (https://github.com/FraunhoferIOSB/camera_aravis) in your catkin workspace 
 - catkin_make
