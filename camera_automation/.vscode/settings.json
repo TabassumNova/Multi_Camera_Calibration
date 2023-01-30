@@ -1,0 +1,8 @@
+{
+    "ros.distro": "noetic",
+    "python.autoComplete.extraPaths": [
+        "/home/raptor/tx60_moveit/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages",
+        "/opt/jai/ebus_sdk/Ubuntu-20.04-x86_64/lib"
+    ]
+}
