@@ -83,6 +83,6 @@ catkin_make
 ```
 #### Issues
 - `/usr/bin/env: ‘python3\r’: No such file or directory` : 
-sudo apt install dos2unix
-dos2unix python_file.py
+    - sudo apt install dos2unix
+    - dos2unix python_file.py
 
