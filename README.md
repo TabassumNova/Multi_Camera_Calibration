@@ -45,6 +45,7 @@
     
 
 ## Camera Aravis python
+- pip install pyobs-aravis
 - https://github.com/SintefManufacturing/python-aravis/blob/master/aravis.py
 - https://github.com/SintefManufacturing/python-aravis
 - https://github.com/SintefManufacturing/python-aravis/blob/5750250cedb9b96d7a0172c0da9c1811b6b817af/examples/save-image.py
@@ -67,6 +68,11 @@
 
 # ROS wrapper for image acquisition automation
 - Create ROS package (http://wiki.ros.org/ROS/Tutorials/CreatingPackage)
+```
+cd tx60_moveit/src
+catkin_create_pkg camera_automation std_msgs rospy roscpp
+catkin_make
+```
 - Create python node (http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29)
 - Inside launch file (<node pkg="xsens_driver" name="mtnode" type="mtnode.py" output="screen"> 
   ..
