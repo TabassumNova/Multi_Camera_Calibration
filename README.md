@@ -74,6 +74,11 @@ catkin_create_pkg camera_automation std_msgs rospy roscpp
 catkin_make
 ```
 - Create python node (http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29)
-- Inside launch file (<node pkg="xsens_driver" name="mtnode" type="mtnode.py" output="screen"> 
-  ..
-</node>)
+- catkin_make
+- chmod +x ros_wrapper.py
+- Inside launch file 
+```
+<node pkg="xsens_driver" name="mtnode" type="mtnode.py" output="screen"> 
+</node>
+```
+
