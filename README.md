@@ -81,4 +81,8 @@ catkin_make
 <node pkg="xsens_driver" name="mtnode" type="mtnode.py" output="screen"> 
 </node>
 ```
+#### Issues
+- `/usr/bin/env: ‘python3\r’: No such file or directory` : 
+sudo apt install dos2unix
+dos2unix python_file.py
 
