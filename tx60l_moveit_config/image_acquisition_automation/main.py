@@ -50,7 +50,7 @@ def main():
             rospy.spin()
 
         # box_attacher.write_valid_joint_points(plan_num=1000)
-        box_attacher.plan_xlxs_joint_goal(row=61, library = 'tis')
+        box_attacher.plan_xlxs_joint_goal(row=61, library = 'arv')
 
 
         print('To prevent initialisation errors please press plan and then execute without moving the robot.')

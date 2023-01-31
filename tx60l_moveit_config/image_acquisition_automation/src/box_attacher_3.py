@@ -15,6 +15,7 @@ import tf
 from .camStreamer import CamStreamer
 from .helpers import read_from_xlsx
 from .TIS_image_acquisition import start_tis_image_acquisition
+from .aravis_image_acquisition2 import start_arv_image_acquisition
 
 class Box_Attacher_3(object):
     """MoveGroupPythonIntefaceTutorial"""
@@ -101,6 +102,8 @@ class Box_Attacher_3(object):
                     cam_streamer.start_cvb_image_acquisition(pose)
                 elif library == 'tis':
                     start_tis_image_acquisition(self, pose)
+                elif library == 'arv':
+                    start_arv_image_acquisition(self, pose)
                 print('pose: ', pose)
                 pose += 1
 
@@ -282,7 +285,7 @@ class Box_Attacher_3(object):
         box_name = name
 
         scene.add_box(box_name, box_pose, size)
-        print(name + 'Collision Object added')
+        print(name + ' Collision Object added')
         return self.wait_for_state_update(box_is_known=True, timeout=5, box_name=box_name)
 
 
