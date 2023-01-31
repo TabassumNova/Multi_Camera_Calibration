@@ -29,9 +29,9 @@ if __name__ == '__main__':
         path = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/arv_im.png'
 
     if len(myargv) > 1:
-        node = 'Camera- ' + str(myargv[1])
+        node = 'Camera-' + str(myargv[1])
     else:
-        node = 'Camera- 42120643'
+        node = 'Camera'
 
     
     rospy.init_node(node)
