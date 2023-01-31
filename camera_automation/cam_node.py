@@ -5,7 +5,7 @@ import rospy
 from src.aravis_image_acquisition import arv_image_acquisition
 
 # Command
-# rosrun camera_automation cam_node.py 42120643 2000000 cam_node.py /home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/arv_im.png 
+# rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/arv_im.png 
 
 if __name__ == '__main__':
 
@@ -32,8 +32,11 @@ if __name__ == '__main__':
         node = 'Camera- ' + str(myargv[1])
     else:
         node = 'Camera- 42120643'
+
+    
     rospy.init_node(node)
-    arv_image_acquisition(cam_model, exposure_time, path)
+    # rospy.loginfo(cam_model, exposure_time, path)
+    arv_image_acquisition(str(cam_model), int(exposure_time), str(path))
     rospy.loginfo(node + " is now started")
     rospy.spin()
 
