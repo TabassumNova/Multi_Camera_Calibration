@@ -86,3 +86,11 @@ catkin_make
     - sudo apt install dos2unix
     - dos2unix python_file.py
 
+# Directory description
+## [tx60_moveit_config](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config)
+- Contains robot motion for image acquisition
+- Git clone this repo in your workspace
+- From terminal run `roslaunch tx60l_moveit_config moveit_planning_execution.launch sim:=false robot_ip:=192.168.0.250`
+- From another terminal run `rosrun tx60l_moveit_config main.py`
+
+
