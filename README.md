@@ -94,6 +94,7 @@ catkin_make
     - To enable this, add the path of pvpython.exe 'Program Files/ParaView 5.11.0/bin' in environment variable
     - From cmd, run `pvpython.exe`
     - for loading imagefile `reader = OpenDataFile("D:/path_to_the_folder/group01_img1.png")`
+    - Or write a python script and run from cmd `pvpython.exe D:/path_to_python_script/parav3.py`
 
 # Directory description
 ## [tx60_moveit_config](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config)
