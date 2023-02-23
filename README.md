@@ -86,6 +86,14 @@ catkin_make
     - sudo apt install dos2unix
     - dos2unix python_file.py
 
+# GUI
+## Paraview
+- https://www.youtube.com/watch?v=FTUBpqkC3Ss
+- To add python shell in paraview application: view > Python shell
+- Python program can be run from command prompt: 
+    - To enable this, add the path of pvpython.exe 'Program Files/ParaView 5.11.0/bin' in environment variable
+    - From cmd, run `pvpython.exe`
+
 # Directory description
 ## [tx60_moveit_config](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config)
 - Contains robot motion for image acquisition
