@@ -96,6 +96,10 @@ catkin_make
     - for loading imagefile `reader = OpenDataFile("D:/path_to_the_folder/group01_img1.png")`
     - Or write a python script and run from cmd `pvpython.exe D:/path_to_python_script/parav3.py`
 
+## pyvistaqt
+- https://qtdocs.pyvista.org/usage.html
+- https://www.pythonguis.com/faq/adding-images-to-pyqt5-applications/
+
 # Directory description
 ## [tx60_moveit_config](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config)
 - Contains robot motion for image acquisition
