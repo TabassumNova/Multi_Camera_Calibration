@@ -101,6 +101,9 @@ catkin_make
 - https://www.pythonguis.com/faq/adding-images-to-pyqt5-applications/
 - Convert pyQt UI to python: command on shell: pyuic4 input.ui -o output.py
 
+## Qt Designer
+- For loading image-> label > in Pixmap, load image > scaledContents check
+
 # Directory description
 ## [tx60_moveit_config](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config)
 - Contains robot motion for image acquisition
