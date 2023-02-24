@@ -99,6 +99,7 @@ catkin_make
 ## pyvistaqt
 - https://qtdocs.pyvista.org/usage.html
 - https://www.pythonguis.com/faq/adding-images-to-pyqt5-applications/
+- Convert pyQt UI to python: command on shell: pyuic4 input.ui -o output.py
 
 # Directory description
 ## [tx60_moveit_config](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config)
