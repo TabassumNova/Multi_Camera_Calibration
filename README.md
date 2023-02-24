@@ -99,7 +99,7 @@ catkin_make
 ## pyvistaqt
 - https://qtdocs.pyvista.org/usage.html
 - https://www.pythonguis.com/faq/adding-images-to-pyqt5-applications/
-- Convert pyQt UI to python: command on shell: pyuic4 input.ui -o output.py
+- Convert pyQt UI to python: command on shell: pyuic5.exe input.ui -o output.py
 
 ## Qt Designer
 - For loading image-> label > in Pixmap, load image > scaledContents check
