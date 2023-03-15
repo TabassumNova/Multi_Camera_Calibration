@@ -20,7 +20,7 @@ def start_arv_image_acquisition(self, pose):
         cam.set_feature("Width", 5472)
         cam.set_feature("Height", 3648)
         cam.set_frame_rate(2)
-        cam.set_exposure_time(2000000)
+        # cam.set_exposure_time(2000000)
         arv_camera.append(cam)
         new_path.append(base_path + camera_serial[cam_idx] + '/')
         make_directory(new_path[cam_idx])

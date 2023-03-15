@@ -1,1 +1,1 @@
-__all__ = ["box_attacher_3", "camStreamer", "helpers", "TIS_Cam", "TIS_image_acquisition", "aravis", "aravis_image_acquisition", "aravis_camera_properties"]
+__all__ = ["box_attacher_3", "camStreamer", "helpers", "TIS_Cam", "TIS_image_acquisition", "aravis", "aravis_image_acquisition", "aravis_camera_properties", "aravis_show_image"]

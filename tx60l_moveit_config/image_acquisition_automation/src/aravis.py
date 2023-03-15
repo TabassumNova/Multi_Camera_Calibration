@@ -6,7 +6,10 @@ import time
 import logging
 import numpy as np
 import ctypes
+import gi
+gi.require_version('Aravis', '0.6')
 from gi.repository import Aravis
+
 
 __author__ = "Olivier Roulet-Dubonnet, Morten Lind"
 __copyright__ = "Copyright 2011-2013, Sintef Raufoss Manufacturing"

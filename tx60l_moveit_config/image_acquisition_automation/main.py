@@ -8,7 +8,7 @@ def main():
         # default box size in m
         stl = False
         launch = False
-        size = (0.3, 0.3, 0.3)
+        size = (0.25, 0.25, 0.25)
         myargv = rospy.myargv(argv=sys.argv)
         stl_file_name = ''
         # Inserting Boxsize at start
@@ -50,7 +50,9 @@ def main():
             rospy.spin()
 
         # box_attacher.write_valid_joint_points(plan_num=1000)
-        box_attacher.plan_xlxs_joint_goal(row=61, library = 'arv')
+
+        # row_start (from excel row)
+        box_attacher.plan_xlxs_joint_goal(row_start=3,row_end=17, library = 'arv')
 
 
         print('To prevent initialisation errors please press plan and then execute without moving the robot.')

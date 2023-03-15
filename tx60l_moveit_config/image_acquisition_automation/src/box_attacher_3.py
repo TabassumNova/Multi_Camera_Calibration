@@ -11,11 +11,11 @@ import geometry_msgs.msg
 from math import pi
 
 import tf
-
+# import camStreamer.CamStreamer
 from .camStreamer import CamStreamer
-from .helpers import read_from_xlsx
+from .helpers import read_from_xlsx, write_cartesian_position
 from .TIS_image_acquisition import start_tis_image_acquisition
-from .aravis_image_acquisition2 import start_arv_image_acquisition
+from .aravis_image_acquisition import start_arv_image_acquisition
 
 class Box_Attacher_3(object):
     """MoveGroupPythonIntefaceTutorial"""
@@ -87,15 +87,15 @@ class Box_Attacher_3(object):
             i -= 1
         workbook.close()
 
-    def plan_xlxs_joint_goal(self, row, library = 'tis'):
+    def plan_xlxs_joint_goal(self, row_end, row_start=3, library = 'arv'):
         enter = input("Hit ENTER if you want to start planning: ")
         if library == 'cvb':
             cam_streamer = CamStreamer(-1)
         if enter == '':
-            pose = 1
-            for j in range(2, row):
+            # pose = 1
+            for j in range(row_start-1, row_end):
                 prev_joint_values = self.move_group.get_current_joint_values()
-                joint = read_from_xlsx(j)
+                pose, joint = read_from_xlsx(row=j)
                 plan = self.move_robot_joints(np.array(joint))
                 new_joint_values = self.move_group.get_current_joint_values()
                 if library == 'cvb':
@@ -104,8 +104,10 @@ class Box_Attacher_3(object):
                     start_tis_image_acquisition(self, pose)
                 elif library == 'arv':
                     start_arv_image_acquisition(self, pose)
-                print('pose: ', pose)
-                pose += 1
+                print('Pose: ', pose)
+                xPose, yPose, zPose = self.print_pose()
+                write_cartesian_position(j, (xPose, yPose, zPose))
+                # pose += 1
 
     def move_robot_joints(self, angles, relative=False):
         """
@@ -404,9 +406,13 @@ class Box_Attacher_3(object):
     def print_pose(self):
         move_group = self.move_group
         wpose = move_group.get_current_pose().pose
-        print("X-Pos: " + str(wpose.position.x))
-        print("Y-Pos: " + str(wpose.position.y))
-        print("Z-Pos: " + str(wpose.position.z))
+        xPose = wpose.position.x
+        yPose = wpose.position.y
+        zPose = wpose.position.z
+        print("X-Pos: " + str(xPose))
+        print("Y-Pos: " + str(yPose))
+        print("Z-Pos: " + str(zPose))
+        return xPose, yPose, zPose
 
     def replace_box(self, stl=False, size=(0.2, 0.2, 0.2), stl_file_name='Baugruppe.stl'):
         necessary = True
