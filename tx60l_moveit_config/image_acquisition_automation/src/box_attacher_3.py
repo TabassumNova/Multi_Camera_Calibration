@@ -13,7 +13,7 @@ from math import pi
 import tf
 # import camStreamer.CamStreamer
 from .camStreamer import CamStreamer
-from .helpers import read_from_xlsx, write_cartesian_position
+from .helpers import *
 from .TIS_image_acquisition import start_tis_image_acquisition
 from .aravis_image_acquisition import start_arv_image_acquisition
 
@@ -86,6 +86,59 @@ class Box_Attacher_3(object):
                 p += 1
             i -= 1
         workbook.close()
+
+    def move_ef_position(self, xPose, yPose, zPose):
+        wpose = self.move_group.get_current_pose().pose
+        wpose.position.x = xPose
+        wpose.position.y = yPose
+        wpose.position.z = zPose
+        self.move_group.set_pose_target(wpose)
+        plan = self.move_group.go(wait=True)
+        self.move_group.stop()
+        return plan
+
+    def plan_cluster_point_goal(self, plan_num=10, library = 'arv'):
+        enter = input("Hit ENTER if you want to start planning: ")
+        pointx = np.array((-0.02, 0.11, 0.11, 0, 0.096, -0.12))
+        pointy = np.array((-0.019, - 0.31, -0.17, -0.3, -0.25, -0.25))
+        pointz = np.array((1.09, 0.94, 0.98, 0.95, 0.95, 0.78))
+
+        newX, newY, newZ = create_points(planNum=plan_num)
+        t = np.arange(7, plan_num+7)
+        view3D(new_x=newX, new_y=newY, new_z=newZ, newtext=t)
+        pointx = np.append(pointx, newX)
+        pointy = np.append(pointy, newY)
+        pointz = np.append(pointz, newZ)
+
+        workbook = xlsxwriter.Workbook(
+            '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/EF_pose.xlsx')
+        worksheet = workbook.add_worksheet()
+        worksheet.write(0, 0, 'Pose No.')
+        worksheet.write(0, 1, 'xPose')
+        worksheet.write(0, 2, 'yPose')
+        worksheet.write(0, 3, 'zPose')
+        pose = 1
+        if library == 'cvb':
+            cam_streamer = CamStreamer(-1)
+        if enter == '':
+            for j in range(pointx.shape[0]):
+                print('Pose: ', pose)
+                print ('EF position: ', pointx[j], pointy[j], pointz[j])
+                plan = self.move_ef_position(pointx[j], pointy[j], pointz[j])
+                worksheet.write(j+1, 0, pose)
+                worksheet.write(j + 1, 1, pointx[j])
+                worksheet.write(j + 1, 2, pointy[j])
+                worksheet.write(j + 1, 3, pointz[j])
+                if library == 'cvb':
+                    cam_streamer.start_cvb_image_acquisition(pose)
+                elif library == 'tis':
+                    start_tis_image_acquisition(self, pose)
+                elif library == 'arv':
+                    start_arv_image_acquisition(self, pose)
+                pose += 1
+        workbook.close()
+
+    # pose = 1
 
     def plan_xlxs_joint_goal(self, row_end, row_start=3, library = 'arv'):
         enter = input("Hit ENTER if you want to start planning: ")

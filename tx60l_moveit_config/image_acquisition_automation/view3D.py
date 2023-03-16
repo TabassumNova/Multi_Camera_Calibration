@@ -66,6 +66,8 @@ def view3D():
 
     final_layout.show()
 
+    print("end")
+
 def create_points():
     xBound = np.arange(-0.15, 0.11, 0.02)
     yBound = np.arange(-0.31, 0, 0.02)

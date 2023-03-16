@@ -39,7 +39,7 @@ def main():
         box_attacher.add_obstacle("camera_wall_1")
         box_attacher.add_obstacle("camera_wall_2")
         box_attacher.add_obstacle("glass_wall")
-        box_attacher.add_obstacle("left_wall")
+        # box_attacher.add_obstacle("left_wall")
         box_attacher.add_obstacle("base")
 
 
@@ -52,7 +52,8 @@ def main():
         # box_attacher.write_valid_joint_points(plan_num=1000)
 
         # row_start (from excel row)
-        box_attacher.plan_xlxs_joint_goal(row_start=3,row_end=17, library = 'arv')
+        # box_attacher.plan_xlxs_joint_goal(row_end=8, library = 'arv')
+        box_attacher.plan_cluster_point_goal(plan_num=50)
 
 
         print('To prevent initialisation errors please press plan and then execute without moving the robot.')
