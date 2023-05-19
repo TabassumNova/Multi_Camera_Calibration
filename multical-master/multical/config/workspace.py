@@ -2,7 +2,6 @@ from structs.struct import map_none
 from multical.io.import_calib import load_calibration
 from multical.motion.static_frames import StaticFrames
 from multical.motion.rolling_frames import RollingFrames
-from multical.motion.hand_eye import HandEye
 from multical.workspace import Workspace
 
 from .arguments import *
@@ -13,8 +12,6 @@ def get_motion_model(motion_model):
         return RollingFrames
     elif motion_model == "static":
         return StaticFrames
-    elif motion_model == "hand_eye":
-        return HandEye
     else:
         assert False, f"unknown motion model {motion_model}, (static|rolling)"
 
