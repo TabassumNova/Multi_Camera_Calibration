@@ -1,0 +1,27 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/raptor/tx60_moveit/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/raptor/tx60_moveit/src/industrial_core-melodic-devel/industrial_robot_client/include/**",
+        "/home/raptor/tx60_moveit/src/industrial_core-melodic-devel/industrial_trajectory_filters/include/**",
+        "/home/raptor/tx60_moveit/src/industrial_core-melodic-devel/industrial_utils/include/**",
+        "/home/raptor/tx60_moveit/src/moveit_plugins/moveit_ros_control_interface/include/**",
+        "/home/raptor/tx60_moveit/src/moveit_plugins/moveit_simple_controller_manager/include/**",
+        "/home/raptor/tx60_moveit/src/industrial_core-melodic-devel/simple_message/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

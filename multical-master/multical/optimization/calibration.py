@@ -36,7 +36,6 @@ default_optimize = struct(
 
 def select_threshold(quantile=0.75, factor=5.0):
   def f(reprojection_error):
-    x = np.quantile(reprojection_error, quantile)
     return np.quantile(reprojection_error, quantile) * factor
   return f
 
@@ -162,31 +161,12 @@ class Calibration(parameters.Parameters):
     return all_params._filterWithKey(isEnabled)
 
 
-  def with_params_old(self, params):
+  def with_params(self, params):
     """ Return a new Calibration object with updated parameters 
-    """
-    p = params
+    """ 
+
     updated = {k:self.param_objects[k].with_param_vec(param_vec) 
       for k, param_vec in params.items()}
-
-    return self.copy(**updated)
-
-  def with_params(self, params):
-    """ Return a new Calibration object with updated parameters
-    """
-    motion_class = self.motion.__class__.__name__
-    # print(params)
-    p = params
-    if motion_class != 'HandEye':
-      updated = {k:self.param_objects[k].with_param_vec(param_vec)
-        for k, param_vec in params.items()}
-    else:
-      cam_pose_size = params['camera_poses'].shape[0]
-      board_pose_size = params['board_poses'].shape[0]
-      params['board_poses'] = params['motion'][:board_pose_size]
-      params['camera_poses'] = params['motion'][board_pose_size:board_pose_size+cam_pose_size]
-      updated = {k: self.param_objects[k].with_param_vec(param_vec)
-                 for k, param_vec in params.items()}
 
     return self.copy(**updated)
 
@@ -225,13 +205,8 @@ class Calibration(parameters.Parameters):
       calib = self.with_param_vec(param_vec)
       return (calib.reprojected.points - calib.point_table.points)[self.inliers].ravel()
 
-    # with contextlib.redirect_stdout(LogWriter.info()):
-    #   res = optimize.least_squares(evaluate, self.param_vec, jac_sparsity=self.sparsity_matrix,
-    #     verbose=2, x_scale='jac', f_scale=f_scale, ftol=tolerance, max_nfev=max_iterations, method='trf', loss=loss)
-
-    ## removed jac_sparsity
     with contextlib.redirect_stdout(LogWriter.info()):
-      res = optimize.least_squares(evaluate, self.param_vec,
+      res = optimize.least_squares(evaluate, self.param_vec, jac_sparsity=self.sparsity_matrix, 
         verbose=2, x_scale='jac', f_scale=f_scale, ftol=tolerance, max_nfev=max_iterations, method='trf', loss=loss)
   
     return self.with_param_vec(res.x)
@@ -277,37 +252,10 @@ class Calibration(parameters.Parameters):
 
     return self.copy(inlier_mask = inliers)
 
-  def reject_outliers_new(self, threshold):
-    """ Set outlier threshold """
-
-    errors, valid = tables.reprojection_error(self.reprojected, self.point_table)
-    inliers = (errors < threshold) & valid
-
-    num_outliers = valid.sum() - inliers.sum()
-    inlier_percent = 100.0 * inliers.sum() / valid.sum()
-
-    while inlier_percent<80:
-      threshold = threshold*1.05
-      inliers = (errors < threshold) & valid
-
-      num_outliers = valid.sum() - inliers.sum()
-      inlier_percent = 100.0 * inliers.sum() / valid.sum()
-
-
-    info("Edited by Nova..")
-    info(f"Rejecting {num_outliers} outliers with error > {threshold:.2f} pixels, "
-         f"keeping {inliers.sum()} / {valid.sum()} inliers, ({inlier_percent:.2f}%)")
-
-    return self.copy(inlier_mask=inliers)
-
   def adjust_outliers(self, num_adjustments=5, select_scale=None, select_outliers=None, **kwargs):
     info(f"Beginning adjustments ({num_adjustments}) enabled: {self.optimize}, options: {kwargs}")
 
     for i in range(num_adjustments):
-      print('camera_pose: ', self.camera_poses.param_vec)
-      # print('cameras: ', self.cameras.param_vec)
-      # print('boards: ', self.board_poses.param_vec)
-      # print('motion: ', self.motion.param_vec)
       self.report(f"Adjust_outliers {i}:")
       f_scale = apply_none(select_scale, self.reprojection_error) or 1.0
       if select_scale is not None:

@@ -193,14 +193,14 @@ class Workspace:
             info(camera)
             info("")
 
-    def initialise_poses_old(self, motion_model=StaticFrames, camera_poses=None, isFisheye=False):
+    def initialise_poses(self, motion_model=StaticFrames, camera_poses=None, isFisheye=False):
         assert self.cameras is not None, "initialise_poses: no cameras set, first use calibrate_single or set_cameras"
         self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras)
 
         info("Pose counts:")
         tables.table_info(self.pose_table.valid, self.names)
 
-        pose_init = tables.initialise_poses(self.pose_table,
+        pose_init = tables.initialise_poses(self.pose_table, 
           camera_poses=None if camera_poses is None else np.array([camera_poses[k] for k in self.names.camera])
         )
 
@@ -211,39 +211,6 @@ class Workspace:
             PoseSet(pose_init.camera, self.names.camera),
             PoseSet(pose_init.board, self.names.board),
             motion_model.init(pose_init.times, self.names.image),
-        )
-
-        # calib = calib.reject_outliers_quantile(0.75, 5)
-        calib.report(f"Initialisation")
-
-        self.calibrations["initialisation"] = calib
-        return calib
-
-    def initialise_poses(self, motion_model=StaticFrames, camera_poses=None, isFisheye=False):
-        assert self.cameras is not None, "initialise_poses: no cameras set, first use calibrate_single or set_cameras"
-        self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras)
-
-        info("Pose counts:")
-        tables.table_info(self.pose_table.valid, self.names)
-
-        # pose_init = tables.initialise_poses(self.pose_table,
-        #   camera_poses=None if camera_poses is None else np.array([camera_poses[k] for k in self.names.camera])
-        # )
-
-        # new
-        pose_init = tables.initialise_poses(self,
-                                            camera_poses=None if camera_poses is None else np.array(
-                                                [camera_poses[k] for k in self.names.camera])
-                                            )
-
-        calib = Calibration(
-            ParamList(self.cameras, self.names.camera),
-            ParamList(self.boards, self.names.board),
-            self.point_table,
-            PoseSet(pose_init.camera, self.names.camera),
-            PoseSet(pose_init.board, self.names.board),
-            motion_model.init(self.pose_table, pose_init, self.names.image),
-            # motion_model.init(pose_init.times, self.names.image)
         )
 
         # calib = calib.reject_outliers_quantile(0.75, 5)
