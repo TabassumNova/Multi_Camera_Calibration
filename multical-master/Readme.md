@@ -5,6 +5,7 @@
 - Check board square parameter problem
 - acquire more images for intrinsic
 - Write script for making images as gray scale
+- Try to run multical in Left pc (Opencv problem)
 
 ## Sample Datasets
 - https://1drv.ms/f/s!At7UW7zuEoCCitg70yK6TGkrBGQGnQ?e=ztgpLs
