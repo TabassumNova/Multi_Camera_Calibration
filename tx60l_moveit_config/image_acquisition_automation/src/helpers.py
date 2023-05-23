@@ -2,6 +2,10 @@ import os
 import xlrd, xlsxwriter
 import numpy as np
 import plotly.graph_objects as go
+from re import X
+import numpy as np 
+from scipy.spatial.transform import Rotation as ScyRot 
+import cv2
 
 
 def make_directory(path):
@@ -36,10 +40,10 @@ def write_cartesian_position(row, position):
   worksheet.write(row, 11, (str(position[0])+','+str(position[1])+','+str(position[2])))
   # workbook.close()
 
-def create_points(planNum):
-  xBound = np.arange(-0.15, 0.11, 0.02)
-  yBound = np.arange(-0.31, 0, 0.02)
-  zBound = np.arange(0.75, 1.1, 0.02)
+def create_points(pointx, pointy, pointz, planNum):
+  xBound = np.arange(pointx-0.1, pointx+0.1, 0.02)
+  yBound = np.arange(pointy-0.1, pointy+0.1, 0.02)
+  zBound = np.arange(pointz-0.1, pointz+0.1, 0.02)
 
   i = planNum
   x = []
@@ -60,9 +64,9 @@ def create_points(planNum):
 def view3D(new_x, new_y, new_z, newtext):
   # Helix equation
   # t = np.linspace(0, 10, 50)
-  pointx = np.array((-0.02, 0.11, 0.11, 0, 0.096, -0.12))
-  pointy = np.array((-0.019, - 0.31, -0.17, -0.3, -0.25, -0.25))
-  pointz = np.array((1.09, 0.94, 0.98, 0.95, 0.95, 0.78))
+  pointx = np.array((0.096))
+  pointy = np.array((-0.25))
+  pointz = np.array((0.95))
   # x, y, z = np.cos(t), np.sin(t), t
 
   all_fig = []
@@ -89,9 +93,9 @@ def view3D(new_x, new_y, new_z, newtext):
     text=['Cam233', 'Cam643', 'Cam241', 'Cam237', 'Cam218', 'Cam642']
   )
   all_fig.append(fig2)
-  camx = np.array((1.2, 1, 1.2, 1.2, 1.2, -0.1))
-  camy = np.array((0.14, -1.4, .14, -1.2, 0.14, -1.4))
-  camz = np.array((0.62, 0.67, 1, 1, 0.1, 0.67))
+  camx = np.array((1.2, 1.2, 1.2, -0.2, -0.2, 0.8))
+  camy = np.array((0.14, -1.2, 0.14, -1.4, -1.4, -1.4))
+  camz = np.array((1, 1, 0.1, 1.1, 0.1, 0.1))
   fig3 = go.Scatter3d(
     x=camx,
     y=camy,
@@ -101,7 +105,7 @@ def view3D(new_x, new_y, new_z, newtext):
       size=6,
       color='rgb(0,255,0)'
     ),
-    text=['Cam218', 'Cam233', 'Cam237', 'Cam241', 'Cam642', 'Cam643']
+    text=['Cam237', 'Cam241', 'Cam642', 'Cam643', 'Cam218', 'Cam233']
   )
   all_fig.append(fig3)
 
@@ -124,3 +128,62 @@ def view3D(new_x, new_y, new_z, newtext):
   final_layout.show()
 
   print("end")
+
+
+
+def euler2T(translation, angles, extrinsic=True): 
+    """
+    Takes XYZ-euler angles/quaternion/rotation matrix and the translation and 
+    returns a 4x4 homogeneous tranformation matrix. 
+    """
+    # list to np
+    if(type(translation)==type([])):
+        translation = np.array(translation, dtype="float") 
+    if(type(angles)==type([])):
+        angles = np.array(angles, dtype="float") 
+
+
+    # init
+    T = np.zeros((4,4), dtype="float") 
+    T[3,3] = 1.0 
+    # rotation 
+    if(len(angles) == 4): # quaternion
+        T[:3,:3] = ScyRot.from_quat(angles).as_matrix()
+    elif(angles.shape == (3,3)): # matrix 
+        T[:3,:3] = angles 
+    elif(len(angles) == 3): # euler 
+        eulertype = "xyz" if extrinsic==True else "XYZ" 
+        T[:3,:3] = ScyRot.from_euler(eulertype, angles, degrees=True).as_matrix()
+    else: 
+        raise ValueError("Wrong input")
+    # translatory 
+    # (n, 1) -> (n,)
+    if len(translation.shape) > 1:
+        translation = translation.flatten() 
+    T[:3,3] = translation
+
+    return T 
+
+
+def T_mm2m(T):
+    T[:3,3] = T[:3,3]/1000.0
+    return T
+
+def T_m2mm(T): 
+    T[:3,3] = T[:3,3]*1000.0
+    return T 
+
+
+def unit_transform(): 
+    """
+    Returns a unit homogeneous transformation that does 
+    not change the rotation or the translation. 
+    """
+    T = np.zeros((4,4), dtype="float") 
+    T[0,0] = 1.0
+    T[1,1] = 1.0 
+    T[2,2] = 1.0
+    T[3,3] = 1.0 
+
+    return T 
+

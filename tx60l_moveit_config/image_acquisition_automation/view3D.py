@@ -4,9 +4,9 @@ import numpy as np
 def view3D():
     # Helix equation
     # t = np.linspace(0, 10, 50)
-    pointx = np.array((-0.02, 0.11, 0.11, 0, 0.096, -0.12))
-    pointy = np.array((-0.019,- 0.31, -0.17, -0.3, -0.25, -0.25))
-    pointz = np.array((1.09, 0.94, 0.98, 0.95, 0.95, 0.78))
+    pointx = np.array((0.096))
+    pointy = np.array((-0.25))
+    pointz = np.array((0.95))
     # x, y, z = np.cos(t), np.sin(t), t
 
     all_fig = []
@@ -33,9 +33,9 @@ def view3D():
         text= ['Cam233', 'Cam643', 'Cam241', 'Cam237', 'Cam218', 'Cam642']
     )
     all_fig.append(fig2)
-    camx = np.array((1.2, 1, 1.2, 1.2, 1.2, -0.1))
-    camy = np.array((0.14, -1.4, .14, -1.2, 0.14, -1.4))
-    camz = np.array((0.62, 0.67, 1, 1, 0.1, 0.67))
+    camx = np.array((1.2, 1.2, 1.2, -0.2, -0.2, 0.8))
+    camy = np.array((0.14, -1.2, 0.14, -1.4, -1.4, -1.4))
+    camz = np.array((1, 1, 0.1, 1.1, 0.1, 0.1))
     fig3 = go.Scatter3d(
         x=camx,
         y=camy,
@@ -45,7 +45,7 @@ def view3D():
             size=6,
             color='rgb(0,255,0)'  
         ),
-        text= ['Cam218', 'Cam233', 'Cam237', 'Cam241', 'Cam642', 'Cam643']
+        text= ['Cam237', 'Cam241', 'Cam642', 'Cam643', 'Cam218', 'Cam233']
     )
     all_fig.append(fig3)
 
@@ -69,9 +69,9 @@ def view3D():
     print("end")
 
 def create_points():
-    xBound = np.arange(-0.15, 0.11, 0.02)
-    yBound = np.arange(-0.31, 0, 0.02)
-    zBound = np.arange(0.75, 1.1, 0.02)
+    xBound = np.arange(0, 0.2, 0.02)
+    yBound = np.arange(-0.3, -0.1, 0.02)
+    zBound = np.arange(0.8, 1, 0.02)
 
     i = 50
     x = []
