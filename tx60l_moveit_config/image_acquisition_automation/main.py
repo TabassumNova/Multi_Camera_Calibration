@@ -1,6 +1,7 @@
 import rospy
 import sys
 from src.box_attacher_3 import Box_Attacher_3
+from src.view_planning import view_Plan
 
 def main():
     rospy.init_node('box_attacher_3_node', anonymous=True)
@@ -53,7 +54,9 @@ def main():
 
         # row_start (from excel row)
         # box_attacher.plan_xlxs_joint_goal(row_end=8, library = 'arv')
-        box_attacher.plan_cluster_point_goal(plan_num=50)
+        # box_attacher.plan_cluster_point_goal(plan_num=50)
+        view_Plan(box_attacher)
+
 
 
         print('To prevent initialisation errors please press plan and then execute without moving the robot.')
