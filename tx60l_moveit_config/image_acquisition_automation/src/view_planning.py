@@ -38,7 +38,7 @@ def view_Plan(box_attacher):
         start = wpose.position.x
         end = 0.0
         step = 0.01
-        plan_Line(box_attacher, start, end, step, slope_base)
+        plan_Line(box_attacher, start, end, step, slope_base, pose, output_path)
     else:
         start = wpose.position.x
         end = 0.0
@@ -47,30 +47,45 @@ def view_Plan(box_attacher):
     pass
 
 def detect_board(image_path):
-    b = boards.Boards(boards=board_yaml, detect=image_path, pixels_mm=10)
-    b.execute()
-    pass
+    b = boards.Boards(boards=board_yaml, detect=image_path, pixels_mm=10, show_image=False)
+    detections = b.execute()
+    return detections
 
-def analyze_camera_images(output_path, pose):
+def analyze_camera_images(box_attacher, output_path, pose):
     camera_serial = arv_get_image(output_path, pose)
+    camera_board = {}
+    camera_views = {}
     for cam in range(len(camera_serial)):
+        view = 1
+        camera_board[cam] = {}
         image_path = output_path + camera_serial[cam] + '/p' + str(pose) + '.png'
-        # image = glob.glob(path)[0]
-        detect_board(image_path)
+        detections = detect_board(image_path)
+        max = 0
+        for d in detections:
+            ## choose most detected board of that camera
+            if d.ids.size > max:
+                board = d
+                camera_board[cam]['board'] = board
+                camera_board[cam]['detected_points'] = d.ids.size
 
-    pass
+        if camera_board[cam]['detected_points'] > 0:
+            pose = box_attacher.move_group.get_current_pose().pose
+            camera_views[cam][view] = pose
+            view += 1
+
 
 def get_intrinsic_poses():
     pass
 
 
-def plan_Line(box_attacher, start, end, step, slope):
+def plan_Line(box_attacher, start, end, step, slope, pose_num, path):
     poses = np.linspace(start, end, 10)
     for plan_x in poses:
     # for plan_x in range(start, end, step):
         pose = box_attacher.move_group.get_current_pose().pose
         pose.position.x = plan_x
         pose.position.y = slope*plan_x
-        plan = box_attacher.move_group.go(wait=True)
+        plan = box_attacher.move_group.go(pose, wait=True)
         box_attacher.move_group.stop()
-        analyze_camera_images()
+        analyze_camera_images(box_attacher, path, pose_num)
+        pose_num += 1

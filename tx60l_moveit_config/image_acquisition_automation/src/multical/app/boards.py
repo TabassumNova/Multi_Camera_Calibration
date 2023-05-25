@@ -41,8 +41,14 @@ class Boards:
   paper_size_mm : Optional[str] = None # Paper size in mm WxH 
   paper_size : Optional[str] = choice(*standard_sizes.keys(), default=None)
 
-  def execute(self):
-    show_boards(self)
+  show_image: bool = True
+
+  def execute(self, args):
+    if args.show_image:
+      show_boards(self)
+    else:
+      detections = show_boards(self)
+      return detections
 
 
 
@@ -93,8 +99,11 @@ def show_boards(args):
     for k, d in zip(boards.keys(), detections):
       print(f"Board {k}: detected {d.ids.size} points")
 
-    image = show_detections(image, detections, radius=10)
-    display(image)
+    if args.show_image:
+      image = show_detections(image, detections, radius=10)
+      display(image)
+    else:
+      return detections
 
   elif args.write is not None:
     pathlib.Path(args.write).mkdir(parents=True, exist_ok=True)
