@@ -4,7 +4,7 @@ import pathlib
 from multical.board.board import Board
 
 import numpy as np
-from multical.motion import StaticFrames
+from multical.motion import StaticFrames, HandEye
 from multiprocessing import cpu_count
 
 from multical.optimization.parameters import ParamList
@@ -193,7 +193,7 @@ class Workspace:
             info(camera)
             info("")
 
-    def initialise_poses_old(self, motion_model=StaticFrames, camera_poses=None, isFisheye=False):
+    def initialise_poses(self, motion_model=StaticFrames, camera_poses=None, isFisheye=False):
         assert self.cameras is not None, "initialise_poses: no cameras set, first use calibrate_single or set_cameras"
         self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras)
 
@@ -219,7 +219,7 @@ class Workspace:
         self.calibrations["initialisation"] = calib
         return calib
 
-    def initialise_poses(self, motion_model=StaticFrames, camera_poses=None, isFisheye=False):
+    def initialise_HandEye(self, motion_model=HandEye, camera_poses=None, isFisheye=False):
         assert self.cameras is not None, "initialise_poses: no cameras set, first use calibrate_single or set_cameras"
         self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras)
 
@@ -231,7 +231,7 @@ class Workspace:
         # )
 
         # new
-        pose_init = tables.initialise_poses(self,
+        pose_init = tables.initialise_HandEye(self,
                                             camera_poses=None if camera_poses is None else np.array(
                                                 [camera_poses[k] for k in self.names.camera])
                                             )

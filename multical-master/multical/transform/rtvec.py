@@ -52,4 +52,7 @@ def as_rtvec(extrinsic):
   else:
     assert False, f"expected extrinsic of shape 6 or 4x4, got: {extrinsic.shape}"
 
-
+def euler_angle(rvec, degree=True):
+  r = R.from_rotvec(rvec.reshape(-1))
+  euler_deg = r.as_euler('xyz', degrees=degree)
+  return euler_deg

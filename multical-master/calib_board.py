@@ -25,9 +25,10 @@ def checker_detection(frame, board):
 
     return num, corners, ids, objpoints
 
-def board_pose(objpoints, corners, ids, board, camMatrix, camDist):
+def board_pose(objpoints, corners, ids, board, camMatrix, camDist, image):
     ret, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(corners, ids, board, camMatrix, camDist, np.empty(1), np.empty(1))
     euler_deg = rotVec_to_euler(rvecs)
+    print(image + ' angle = ', euler_deg )
 
     ret2, rvecs2, tvecs2 = cv2.solvePnP(objpoints, corners, camMatrix, camDist, np.empty(1), np.empty(1))
     euler_deg2 = rotVec_to_euler(rvecs2)
@@ -58,7 +59,7 @@ def board_config():
     ## set input
     cam_id = '08320217'
     dict_id = 11
-    offset = 108
+    offset = 216
     aruco_dict = cv2.aruco.getPredefinedDictionary(dict_id)
     width, height = (12, 9)
     square_length, marker_length = 0.013, 0.009
@@ -120,14 +121,18 @@ if __name__ == '__main__':
           -0.053382230338634616
         ]
       ])
-    ##
 
-    img_path = "D:/MY_DRIVE_N/Masters_thesis/Dataset/Latest Pattern/board_images/Board_108.png"
+
+
+
+    ##
+    image = '13_p27.png'
+    img_path = "D:/MY_DRIVE_N/Masters_thesis/Dataset/docker_V11/input/data/extrinsic/08320221/" + image
     frame = cv2.imread(img_path)
     board = board_config()
     num_corners, corners, ids, objpoints = checker_detection(frame, board)
 
-    ret, rvecs, tvecs = board_pose(objpoints, corners, ids, board, cam_matrix, dist_coeff)
+    ret, rvecs, tvecs = board_pose(objpoints, corners, ids, board, cam_matrix, dist_coeff, image)
 
     # Draw
     imageCopy = cv2.imread(img_path)

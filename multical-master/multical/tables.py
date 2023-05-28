@@ -8,8 +8,10 @@ from scipy.spatial.transform import Rotation as R
 from structs.struct import transpose_structs, invert_keys
 from structs.numpy import shape_info, struct, Table, shape
 
-from .transform import rtvec, matrix
+from .transform import rtvec, matrix, hand_eye
 from . import graph
+# from multical.motion import HandEye
+from multical.transform.rtvec import *
 
 
 
@@ -345,11 +347,108 @@ def report_poses(k, init, ref):
     f"rotation (deg): {errs.rotation_deg[i]:.4f}, "
     f"translation: {errs.translation[i]:.4f}")
 
-def estimate_camera_poses(ws):
+def analyze_view_angle(pose_table):
+  rtvec = from_matrix(pose_table)
+  r = R.from_rotvec(rtvec[0:3].reshape(-1))
+  euler_deg = r.as_euler('xyz', degrees=True)
+  return euler_deg
+
+def select_best_viewed_boards(ws):
+  num_cameras = len(ws.names.camera)
+  num_images = len(ws.names.image)
+  num_boards = len(ws.names.board)
+
+  for cam in range (0, num_cameras):
+    for img in range (0, num_images):
+      for board in range (0, num_boards):
+        if ws.pose_table.valid[cam][img][board]:
+          pose_table = ws.pose_table.poses[cam][img][board]
+          euler_deg = analyze_view_angle(pose_table)
+          if abs(euler_deg[0]) > 45:
+            ws.pose_table.valid[cam][img][board] = False
+
+def select_board_majority(ws, image_threshold =10):
+  num_cameras = len(ws.names.camera)
+  num_images = len(ws.names.image)
+  num_boards = len(ws.names.board)
+
+  for cam in range (0, num_cameras):
+    for board in range(0, num_boards):
+      count_img = 0
+      for img in range (0, num_images):
+        if ws.pose_table.valid[cam][img][board]:
+          count_img += 1
+      if count_img >= image_threshold:
+        pass
+      else:
+        for img in range(0, num_images):
+          ws.pose_table.valid[cam][img][board] = False
+
+def camera_board_calibration(ws):
+  num_cameras = len(ws.names.camera)
+  num_images = len(ws.names.image)
+  num_boards = len(ws.names.board)
+  pass
+
+def master_slave_pose(ws, master_cam, slave_cam):
+  num_cameras = len(ws.names.camera)
+  num_images = len(ws.names.image)
+  num_boards = len(ws.names.board)
+
+  masterR_list = []
+  masterT_list = []
+  slaveR_list = []
+  slaveT_list = []
+
+  for img in range(0, num_images):
+    for board in range(0, num_boards):
+      if ws.pose_table.valid[master_cam][img][board]:
+        master_board = board
+        master_pose = ws.pose_table.poses[master_cam][img][master_board]
+        master_R, master_t = matrix.split(master_pose)
+        for board in range(0, num_boards):
+          if ws.pose_table.valid[slave_cam][img][board]:
+            slave_board = board
+            slave_pose = ws.pose_table.poses[slave_cam][img][slave_board]
+            slave_R, slave_t = matrix.split(slave_pose)
+            masterR_list.append(master_R)
+            masterT_list.append(master_t)
+            slaveR_list.append(slave_R)
+            slaveT_list.append(slave_t)
+
+  return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list)
+
+
+
+def handEye_table(ws, master_cam = 0):
+  num_cameras = len(ws.names.camera)
+  num_images = len(ws.names.image)
+  num_boards = len(ws.names.board)
+
+  for slave_cam in range(0, num_cameras):
+    if slave_cam != master_cam:
+      masterR, masterT, slaveR, slaveT = master_slave_pose(ws, master_cam, slave_cam)
+      board_wrt_boardM, slave_wrt_master, err = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
+      print('master ', master_cam, ', slave ', slave_cam, ': ', err, ' err_min: ', err.min(), 'err_max: ', err.max())
+
+  # return board_wrt_boardM, slave_wrt_master, err
+
+def estimate_camera_board_poses_new(ws):
+  num_cameras = len(ws.names.camera)
+  master_cam = 0
+  boards = ws.boards
+  select_best_viewed_boards(ws)
+  handEye_table(ws)
+  # for cam in range(0, num_cameras):
+  #   board_wrt_boardM, slave_wrt_master, err = handEye_table(ws, master_cam=cam)
+  #
+
+def estimate_camera_board_poses(ws):
   master_cam = 0
   boards = ws.boards
   # objp = boards[0].adjusted_points
 
+  # select_best_viewed_boards(ws)
   # select one board for each camera
   num_cam = ws.point_table['points'].shape[0]
   num_img = ws.point_table['points'].shape[1]
@@ -494,7 +593,7 @@ def estimate_camera_poses(ws):
   return rel_cam_poses, rel_board_poses, board_selection_matrix
 
 
-def initialise_poses_old(pose_table, camera_poses=None):
+def initialise_poses(pose_table, camera_poses=None):
     # Find relative transforms between cameras and rig poses
   camera = estimate_relative_poses(pose_table, axis=0)
 
@@ -519,12 +618,10 @@ def initialise_poses_old(pose_table, camera_poses=None):
 
   return struct(times=times, camera=camera, board=board)
 
-def initialise_poses(ws, camera_poses=None):
+def initialise_HandEye(ws, camera_poses=None):
 
   # Find relative transforms between cameras and rig poses
-  # camera = estimate_relative_poses(ws.pose_table, axis=0)
-  camera, board, board_selection_matrix = estimate_camera_poses(ws)
-  print(camera)
+  camera, board, board_selection_matrix = estimate_camera_board_poses(ws)
 
   if camera_poses is not None:
     info("Camera initialisation vs. supplied calibration")
@@ -533,8 +630,6 @@ def initialise_poses(ws, camera_poses=None):
       poses=camera_poses,
       valid=np.ones(camera_poses.shape[0], dtype=np.bool)
     )
-
-  board2 = estimate_relative_poses_inv(ws.pose_table, axis=2)
 
   # solve for the rig transforms cam @ rig @ board = pose
   # first take inverse of both sides by board pose
