@@ -29,22 +29,56 @@ board_yaml = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/im
 # then start the program
 def view_Plan(box_attacher):
     wpose = box_attacher.move_group.get_current_pose().pose
-    pose = 1
-    # analyze_camera_images(output_path, pose)
-    # get_intrinsic_poses()
-    # calculate the slope to robot base
-    slope_base = wpose.position.y/wpose.position.x
-    if wpose.position.x<0:
-        start = wpose.position.x
-        end = 0.0
-        step = 0.01
-        plan_Line(box_attacher, start, end, step, slope_base, pose, output_path)
-    else:
-        start = wpose.position.x
-        end = 0.0
-        step = -0.01
-        plan_Line(box_attacher, start, end, step, slope_base)
-    pass
+
+    circular_path(box_attacher, wpose)
+
+    # pose = 1
+    # # analyze_camera_images(output_path, pose)
+    # # get_intrinsic_poses()
+    # # calculate the slope to robot base
+    # slope_base = wpose.position.y/wpose.position.x
+    # if wpose.position.x<0:
+    #     start = wpose.position.x
+    #     end = 0.0
+    #     step = 0.01
+    #     plan_Line(box_attacher, start, end, step, slope_base, pose, output_path)
+    # else:
+    #     start = wpose.position.x
+    #     end = 0.0
+    #     step = -0.01
+    #     plan_Line(box_attacher, start, end, step, slope_base)
+    # pass
+
+def circular_path(box_attacher, wpose, radious= 0.05, step=10):
+    theta = np.linspace(0, 2 * np.pi, step)
+    # the radius of the circle
+    r = np.sqrt(radious)
+    # compute x, y
+    x = r * np.cos(theta) + wpose.position.x
+    y = r * np.sin(theta) + wpose.position.y
+
+    pose_num = 1
+    for path in range(0, len(x)):
+        # for plan_x in range(start, end, step):
+        pose = box_attacher.move_group.get_current_pose().pose
+        pose.position.x = x[path]
+        pose.position.y = y[path]
+        print('Pose: ', pose)
+        plan = box_attacher.move_group.go(pose, wait=True)
+        box_attacher.move_group.stop()
+        camera_serial = arv_get_image(output_path, pose_num)
+        pose_num += 1
+        pose_num = change_orientation(box_attacher, pose_num)
+
+def change_orientation(box_attacher, pose):
+    initial_pose = get_pose(box_attacher, euler=True)
+    pose_list = get_calib_poses(box_attacher, initial_pose)
+    for i in range(len(pose_list)):
+        print('Pose: ', pose)
+        motion_successful = move_robot(box_attacher, pose_list[i])
+        camera_serial = arv_get_image(output_path, pose)
+        pose += 1
+    return pose
 
 def detect_board(image_path):
     b = boards.Boards(boards=board_yaml, detect=image_path, pixels_mm=10, show_image=False)
