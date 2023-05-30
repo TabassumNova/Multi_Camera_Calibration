@@ -4,8 +4,8 @@ import multical.config.workspace as workspace
 
 if __name__ == '__main__':
 
-    pathO = args.PathOpts(image_path="D:\MY_DRIVE_N\Masters_thesis\Dataset\V19_sorted\external")
-    cam = args.CameraOpts(motion_model='hand_eye', calibration='D:\MY_DRIVE_N\Masters_thesis\Dataset\V19_sorted\internal\calibration.json')
+    pathO = args.PathOpts(image_path="D:/MY_DRIVE_N/Masters_thesis/Dataset/V20")
+    cam = args.CameraOpts(motion_model='hand_eye')
     # pathO = args.PathOpts(image_path="D:\MY_DRIVE_N\Masters_thesis\Dataset\V10_debug\data/train")
     # cam = args.CameraOpts()
     runt = args.RuntimeOpts()

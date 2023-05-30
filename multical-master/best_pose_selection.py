@@ -13,8 +13,8 @@ def checker_detection(img, aruco_dict):
     return len(corners)
 
 #### INPUT ####
-directory = 'C:/Users/HP/Downloads/V19/'
-new_directory = 'C:/Users/HP/Downloads/V19_sorted/'
+directory = 'D:/MY_DRIVE_N/Masters_thesis/Dataset/V20/'
+new_directory = 'D:/MY_DRIVE_N/Masters_thesis/Dataset/V20_sorted/'
 aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_1000)
 ###############
 

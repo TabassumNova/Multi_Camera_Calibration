@@ -364,7 +364,7 @@ def select_best_viewed_boards(ws):
         if ws.pose_table.valid[cam][img][board]:
           pose_table = ws.pose_table.poses[cam][img][board]
           euler_deg = analyze_view_angle(pose_table)
-          if abs(euler_deg[0]) > 45:
+          if abs(euler_deg[0]) > 15:
             ws.pose_table.valid[cam][img][board] = False
 
 def select_board_majority(ws, image_threshold =10):
@@ -401,14 +401,14 @@ def master_slave_pose(ws, master_cam, slave_cam):
   slaveT_list = []
 
   for img in range(0, num_images):
-    for board in range(0, num_boards):
-      if ws.pose_table.valid[master_cam][img][board]:
-        master_board = board
+    for board1 in range(0, num_boards):
+      if ws.pose_table.valid[master_cam][img][board1]:
+        master_board = board1
         master_pose = ws.pose_table.poses[master_cam][img][master_board]
         master_R, master_t = matrix.split(master_pose)
-        for board in range(0, num_boards):
-          if ws.pose_table.valid[slave_cam][img][board]:
-            slave_board = board
+        for board2 in range(0, num_boards):
+          if ws.pose_table.valid[slave_cam][img][board2]:
+            slave_board = board2
             slave_pose = ws.pose_table.poses[slave_cam][img][slave_board]
             slave_R, slave_t = matrix.split(slave_pose)
             masterR_list.append(master_R)
@@ -425,25 +425,35 @@ def handEye_table(ws, master_cam = 0):
   num_images = len(ws.names.image)
   num_boards = len(ws.names.board)
 
+  handEye_dict = {}
+  # handEye_dict[master_cam] = {}
   for slave_cam in range(0, num_cameras):
     if slave_cam != master_cam:
+      handEye_dict[slave_cam] = {}
       masterR, masterT, slaveR, slaveT = master_slave_pose(ws, master_cam, slave_cam)
-      board_wrt_boardM, slave_wrt_master, err = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
-      print('master ', master_cam, ', slave ', slave_cam, ': ', err, ' err_min: ', err.min(), 'err_max: ', err.max())
+      board_wrt_boardM, slave_wrt_master, err, err2 = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
+      print('master ', master_cam, ', slave ', slave_cam, ': err_min: ', err.min(), 'err_max: ', err.max(), ', err2: ', err2.min(), err2.max())
+      handEye_dict[slave_cam]['board_wrt_boardM'] = board_wrt_boardM
+      handEye_dict[slave_cam]['slave_wrt_master'] = slave_wrt_master
+      handEye_dict[slave_cam]['err'] = err
+      handEye_dict[slave_cam]['err2'] = err2
+      # return board_wrt_boardM, slave_wrt_master, err
 
-  # return board_wrt_boardM, slave_wrt_master, err
+  return handEye_dict
 
-def estimate_camera_board_poses_new(ws):
+def estimate_camera_board_poses(ws):
   num_cameras = len(ws.names.camera)
   master_cam = 0
   boards = ws.boards
   select_best_viewed_boards(ws)
-  handEye_table(ws)
-  # for cam in range(0, num_cameras):
-  #   board_wrt_boardM, slave_wrt_master, err = handEye_table(ws, master_cam=cam)
+  # handEye_table(ws)
+  handEye_dict = {}
+  for cam in range(0, num_cameras):
+    # board_wrt_boardM, slave_wrt_master, err = handEye_table(ws, master_cam=cam)
+    handEye_dict[cam] = handEye_table(ws, master_cam=cam)
   #
 
-def estimate_camera_board_poses(ws):
+def estimate_camera_board_poses_old(ws):
   master_cam = 0
   boards = ws.boards
   # objp = boards[0].adjusted_points
