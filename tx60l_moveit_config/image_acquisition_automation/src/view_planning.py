@@ -28,6 +28,7 @@ board_yaml = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/im
 # manually place one board very near to one camera
 # then start the program
 def view_Plan(box_attacher):
+    get_intrinsic_poses()
     wpose = box_attacher.move_group.get_current_pose().pose
 
     circular_path(box_attacher, wpose)
@@ -108,11 +109,45 @@ def analyze_camera_images(box_attacher, output_path, pose):
             view += 1
 
 
-def get_intrinsic_poses():
-    pass
+def get_intrinsic_poses(box_attacher):
+    # joint infos
+    common_focus = [-61, -19, 117, 112, 5, -247]
+    cameras = {}
+    cameras['cam_218'] = [117, -55, -14, 186, 25, -143]
+    cameras['cams_220'] = [-31, -5, 100, 102 , -19, -236]
+    cameras['cam_113'] = [113, -52, -24, -108, 69, 150]
+    cameras['cam_222'] = [85, -16, -82, -88, 59, 113]
 
+    plan = box_attacher.move_robot_joints(np.array(common_focus))
+    common_focus_pose = box_attacher.move_group.get_current_pose().pose
+    for keys in cameras:
+        pose_num = 1
+        plan1 = box_attacher.move_robot_joints(np.array(cameras[keys]))
+        camera_serial = arv_get_image(output_path, pose_num)
+        pose_num += 1
+        pose_num = change_orientation(box_attacher, pose_num)
+        plan2 = box_attacher.move_robot_joints(np.array(cameras[keys]))
+        cam_pose = box_attacher.move_group.get_current_pose().pose
+        plan_line(box_attacher, cam_pose, common_focus_pose, step=2)
+        camera_serial = arv_get_image(output_path, pose_num)
+        pose_num += 1
+        pose_num = change_orientation(box_attacher, pose_num)
 
-def plan_Line(box_attacher, start, end, step, slope, pose_num, path):
+def plan_line(box_attacher, start, end, step):
+    start_x = start.position.x
+    end_x = end.position.x
+    start_y = start.position.y
+    end_y = end.position.y
+    slope = (end_y-start_y)/(end_x-start_x)
+    poses = np.linspace(start_x, end_x, step)
+    for plan_x in poses:
+        pose = box_attacher.move_group.get_current_pose().pose
+        pose.position.x = plan_x
+        pose.position.y = slope * plan_x
+        plan = box_attacher.move_group.go(pose, wait=True)
+        box_attacher.move_group.stop()
+
+def plan_Line_old(box_attacher, start, end, step, slope, pose_num, path):
     poses = np.linspace(start, end, 10)
     for plan_x in poses:
     # for plan_x in range(start, end, step):
