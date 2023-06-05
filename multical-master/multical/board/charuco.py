@@ -91,7 +91,7 @@ class CharucoBoard(Parameters, Board):
       return self.__str__()      
 
 
-  def detect(self, image):    
+  def detect(self, image):
     corners, ids, _ = cv2.aruco.detectMarkers(image, 
       self.board.dictionary, parameters=aruco_config(self.aruco_params))     
     if ids is None: return empty_detection
@@ -107,7 +107,8 @@ class CharucoBoard(Parameters, Board):
       min_points=self.min_points, min_rows=self.min_rows)
 
   def estimate_pose_points(self, camera, detections):
-    return estimate_pose_points(self, camera, detections)
+    poses, error = estimate_pose_points(self, camera, detections)
+    return poses, error
 
 
   @cached_property

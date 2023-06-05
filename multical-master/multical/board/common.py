@@ -36,16 +36,18 @@ def has_min_detections_grid(grid_size, ids, min_points, min_rows):
 
 def estimate_pose_points(board, camera, detections):
     if not board.has_min_detections(detections):
-        return None
+        return None, 0
 
     undistorted = camera.undistort_points(detections.corners)      
-    valid, rvec, tvec = cv2.solvePnP(board.points[detections.ids], 
+    # valid, rvec, tvec = cv2.solvePnP(board.points[detections.ids],
+    #   undistorted, camera.intrinsic, np.zeros(0))
+    valid, rvec, tvec, error = cv2.solvePnPGeneric(board.points[detections.ids],
       undistorted, camera.intrinsic, np.zeros(0))
 
     if not valid:
-      return None
+      return None, 0
 
-    return rtvec.join(rvec.flatten(), tvec.flatten())
+    return rtvec.join(rvec[0].flatten(), tvec[0].flatten()), error[0][0]
 
 
 def subpix_corners(image, detections, window):

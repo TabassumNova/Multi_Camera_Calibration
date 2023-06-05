@@ -44,8 +44,8 @@ class Boards:
   show_image : bool = True
 
   def execute(self):
-    show_boards(self)
-
+    detection = show_boards(self)
+    return detection
 
 
 def show_boards(args):

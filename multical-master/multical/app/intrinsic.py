@@ -44,7 +44,8 @@ def setup_paths(paths):
 def calibrate_intrinsic(args):
     paths=setup_paths(args.paths)
 
-    setup_logging(args.runtime.log_level, [], log_file=paths.log_file)
+    # setup_logging(args.runtime.log_level, [], log_file=paths.log_file)
+    setup_logging(args.runtime.log_level, [], log_file=path.join(args.paths.image_path, f"{args.paths.name}.txt"))
     info(pformat_struct(args)) 
 
     image_path = os.path.expanduser(args.paths.image_path)
@@ -60,7 +61,7 @@ def calibrate_intrinsic(args):
 
     info("Edited by Nova..")
     info("Loading images..")
-    images = image.detect.load_images(camera_images.filenames,  
+    images = image.detect.load_images(camera_images.filenames,
       prefix=camera_images.image_path, j=args.runtime.num_threads)
     image_sizes = map_list(common_image_size, images)
 
@@ -68,14 +69,14 @@ def calibrate_intrinsic(args):
     info({k:image_size for k, image_size in zip(camera_images.cameras, image_sizes)})
     cache_key = struct(boards=boards, image_sizes=image_sizes, filenames=camera_images.filenames)
 
-    detected_points = detect_boards_cached(boards, images, 
+    detected_points = detect_boards_cached(boards, images,
         paths.detections, cache_key, j=args.runtime.num_threads)
 
     cameras, errs = calibrate_cameras(boards, detected_points, image_sizes,  
       model=args.camera.distortion_model, fix_aspect= args.camera.fix_aspect, max_images= args.camera.limit_intrinsic)
      
     for name, camera, err in zip(camera_images.cameras, cameras, errs):
-        info(f"Calibrated {name}, with RMS={err:.2f}")
+        info(f"Calibrated {name}, with RMS={err:.2f}, Number of views={len(camera.error_perview)}")
         info(camera)
         info("")
 

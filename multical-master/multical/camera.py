@@ -26,7 +26,7 @@ from structs.struct import split_list
 
 
 class Camera(Parameters):
-  def __init__(self, image_size, intrinsic, dist, model='standard', fix_aspect=False, has_skew=False):
+  def __init__(self, image_size, intrinsic, dist, model='standard', fix_aspect=False, has_skew=False, error_perview=None):
 
     assert model in Camera.model,\
         f"unknown camera model {model} options are {list(self.model.keys())}"
@@ -38,6 +38,7 @@ class Camera(Parameters):
     self.dist = np.zeros(5) if dist is None else dist
     self.fix_aspect = fix_aspect
     self.has_skew = has_skew
+    self.error_perview = error_perview
 
   model = struct(
       standard=0,
@@ -77,23 +78,23 @@ class Camera(Parameters):
                 cv2.TERM_CRITERIA_MAX_ITER, max_iter, eps)
     flags = Camera.flags(model, fix_aspect) | flags
 
-    ## new ##
-    # info("points.object_points: ", (points.object_points[0]))
-    # o = []
-    # for p in points.object_points:
-    #     o.append(np.array(p))
-    # i = []
-    # for p in points.corners:
-    #     i.append(np.array(p))
-
-    # # info("points.object_points: ", (o[0]))
-    # err, K, dist, _, _ = cv2.calibrateCamera(o, i, image_size, None, None, criteria=criteria, flags=flags)
-    ### new ###
-
-    err, K, dist, _, _ = cv2.calibrateCamera(points.object_points, points.corners, image_size, None, None, criteria=criteria, flags=flags)
+    ## new
+    err = 1
+    while abs(err)>0.50:
+      err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
+                                                                            image_size, None, None, criteria=criteria,
+                                                                            flags=flags)
+      err = float("{:.2f}".format(err))
+      threshold = np.quantile(error_perView, 0.95)
+      inliers = [(i) for i in range(0, len(error_perView)) if error_perView[i]<threshold]
+      points.object_points = np.array([points.object_points[i] for i in inliers], dtype=object)
+      points.corners = np.array([points.corners[i] for i in inliers], dtype=object)
+      info(f"RMS={err:.2f}, Number of views={len(error_perView)}")
+    ## new
+    # err, K, dist, r, t,_,_,error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners, image_size, None, None, criteria=criteria, flags=flags)
 
     return Camera(intrinsic=K, dist=dist, image_size=image_size,
-                  model=model, fix_aspect=fix_aspect, has_skew=has_skew), err
+                  model=model, fix_aspect=fix_aspect, has_skew=has_skew, error_perview=error_perView), err
 
   def scale_image(self, factor):
     intrinsic = self.intrinsic.copy()

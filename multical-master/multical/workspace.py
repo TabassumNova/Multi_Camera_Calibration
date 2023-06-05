@@ -223,6 +223,12 @@ class Workspace:
         assert self.cameras is not None, "initialise_poses: no cameras set, first use calibrate_single or set_cameras"
         self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras)
 
+        for idx, cam in enumerate(self.pose_table['valid']):
+            num_views = cam.sum()
+            if num_views<20:
+                self.pose_table['valid'][idx] *= False
+                info(f"Camera {self.names.camera[idx]} have {num_views} views that is not enough")
+
         info("Pose counts:")
         tables.table_info(self.pose_table.valid, self.names)
 

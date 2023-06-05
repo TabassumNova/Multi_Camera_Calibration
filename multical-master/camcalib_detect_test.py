@@ -8,7 +8,7 @@ from numpy.linalg import inv
 
 if __name__ == '__main__':
 
-    pathO = args.PathOpts(image_path="D:\MY_DRIVE_N\Masters_thesis\Dataset\docker_V11\input\data\extrinsic")
+    pathO = args.PathOpts(image_path="D:/MY_DRIVE_N/Masters_thesis/Dataset/view_plan/Intrinsic/test")
     cam = args.CameraOpts()
     runt = args.RuntimeOpts()
     opt = args.OptimizerOpts()

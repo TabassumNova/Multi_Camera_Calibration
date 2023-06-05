@@ -38,17 +38,25 @@ def sparse_points(points):
   ids = np.flatnonzero(points.valid)
   return struct(corners=points.points[ids], ids=ids)
 
-invalid_pose = struct(poses=np.eye(4), num_points=0, valid=False)
+invalid_pose = struct(poses=np.eye(4), num_points=0, valid=False, reprojection_error=0, view_angles=[0, 0, 0])
 
-def valid_pose(t):
-  return struct(poses=t, valid=True)
+def valid_pose(t, error, angles):
+  return struct(poses=t, valid=True, reprojection_error=error, view_angles=angles)
 
 
 def extract_pose(points, board, camera):
   detections = sparse_points(points)
-  poses = board.estimate_pose_points(camera, detections)
+  poses, error = board.estimate_pose_points(camera, detections)
+  if error>1.0:
+    poses = None
+  if poses is not None:
+    angles = analyze_view_angle(rtvec.to_matrix(poses))
+    # if abs(angles[0])>45 or abs(angles[1])>45:
+    #   poses = None
+  else:
+    angles = [0, 0, 0]
 
-  return valid_pose(rtvec.to_matrix(poses))._extend(num_points=len(detections.ids))\
+  return valid_pose(rtvec.to_matrix(poses), error, list(angles))._extend(num_points=len(detections.ids))\
       if poses is not None else invalid_pose
 
 def map_table(f, point_table, boards, cameras):
@@ -353,19 +361,29 @@ def analyze_view_angle(pose_table):
   euler_deg = r.as_euler('xyz', degrees=True)
   return euler_deg
 
-def select_best_viewed_boards(ws):
+def select_best_viewed_boards(ws, angle_threshold = 15):
   num_cameras = len(ws.names.camera)
   num_images = len(ws.names.image)
   num_boards = len(ws.names.board)
+  board_selection_matrix = np.zeros((num_cameras))
 
+  board_selection_dict = {}
   for cam in range (0, num_cameras):
+    board_selection_dict[cam] = []
     for img in range (0, num_images):
       for board in range (0, num_boards):
         if ws.pose_table.valid[cam][img][board]:
           pose_table = ws.pose_table.poses[cam][img][board]
           euler_deg = analyze_view_angle(pose_table)
-          if abs(euler_deg[0]) > 15:
+          if abs(euler_deg[0]) > angle_threshold:
             ws.pose_table.valid[cam][img][board] = False
+          else:
+            board_selection_dict[cam].append(board)
+    board_selection_matrix[cam] = max(set(board_selection_dict[cam]), key=board_selection_dict[cam].count)
+
+  return board_selection_matrix
+
+
 
 def select_board_majority(ws, image_threshold =10):
   num_cameras = len(ws.names.camera)
@@ -384,39 +402,55 @@ def select_board_majority(ws, image_threshold =10):
         for img in range(0, num_images):
           ws.pose_table.valid[cam][img][board] = False
 
+
+
 def camera_board_calibration(ws):
   num_cameras = len(ws.names.camera)
   num_images = len(ws.names.image)
   num_boards = len(ws.names.board)
   pass
 
-def master_slave_pose(ws, master_cam, slave_cam):
-  num_cameras = len(ws.names.camera)
+def master_slave_pose(ws, master_cam, master_board, slave_cam, slave_board):
+  # num_cameras = len(ws.names.camera)
   num_images = len(ws.names.image)
-  num_boards = len(ws.names.board)
+  # num_boards = len(ws.names.board)
 
   masterR_list = []
   masterT_list = []
   slaveR_list = []
   slaveT_list = []
+  image_list = []
 
   for img in range(0, num_images):
-    for board1 in range(0, num_boards):
-      if ws.pose_table.valid[master_cam][img][board1]:
-        master_board = board1
-        master_pose = ws.pose_table.poses[master_cam][img][master_board]
-        master_R, master_t = matrix.split(master_pose)
-        for board2 in range(0, num_boards):
-          if ws.pose_table.valid[slave_cam][img][board2]:
-            slave_board = board2
-            slave_pose = ws.pose_table.poses[slave_cam][img][slave_board]
-            slave_R, slave_t = matrix.split(slave_pose)
-            masterR_list.append(master_R)
-            masterT_list.append(master_t)
-            slaveR_list.append(slave_R)
-            slaveT_list.append(slave_t)
+    master_valid = ws.pose_table.valid[master_cam][img][master_board]
+    slave_valid = ws.pose_table.valid[slave_cam][img][slave_board]
+    if master_valid and slave_valid:
+      master_pose = ws.pose_table.poses[master_cam][img][master_board]
+      master_R, master_t = matrix.split(master_pose)
+      slave_pose = ws.pose_table.poses[slave_cam][img][slave_board]
+      slave_R, slave_t = matrix.split(slave_pose)
+      masterR_list.append(master_R)
+      masterT_list.append(master_t)
+      slaveR_list.append(slave_R)
+      slaveT_list.append(slave_t)
+      image_list.append(img)
+  # for img in range(0, num_images):
+  #   for board1 in range(0, num_boards):
+  #     if ws.pose_table.valid[master_cam][img][board1]:
+  #       master_board = board1
+  #       master_pose = ws.pose_table.poses[master_cam][img][master_board]
+  #       master_R, master_t = matrix.split(master_pose)
+  #       for board2 in range(0, num_boards):
+  #         if ws.pose_table.valid[slave_cam][img][board2]:
+  #           slave_board = board2
+  #           slave_pose = ws.pose_table.poses[slave_cam][img][slave_board]
+  #           slave_R, slave_t = matrix.split(slave_pose)
+  #           masterR_list.append(master_R)
+  #           masterT_list.append(master_t)
+  #           slaveR_list.append(slave_R)
+  #           slaveT_list.append(slave_t)
 
-  return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list)
+  return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list), image_list
 
 
 
@@ -427,25 +461,58 @@ def handEye_table(ws, master_cam = 0):
 
   handEye_dict = {}
   # handEye_dict[master_cam] = {}
+  handEye_dict['slave_wrt_master'] = {}
+  handEye_dict['board_wrt_boardM'] = {}
+  master_boards = [b for b in range(0,num_boards) if ws.pose_table.valid[master_cam][:,b].sum()>20]
   for slave_cam in range(0, num_cameras):
+    slave_boards = [b for b in range(0,num_boards) if ws.pose_table.valid[slave_cam][:,b].sum()>20]
     if slave_cam != master_cam:
-      handEye_dict[slave_cam] = {}
-      masterR, masterT, slaveR, slaveT = master_slave_pose(ws, master_cam, slave_cam)
-      board_wrt_boardM, slave_wrt_master, err, err2 = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
-      print('master ', master_cam, ', slave ', slave_cam, ': err_min: ', err.min(), 'err_max: ', err.max(), ', err2: ', err2.min(), err2.max())
-      handEye_dict[slave_cam]['board_wrt_boardM'] = board_wrt_boardM
-      handEye_dict[slave_cam]['slave_wrt_master'] = slave_wrt_master
-      handEye_dict[slave_cam]['err'] = err
-      handEye_dict[slave_cam]['err2'] = err2
-      # return board_wrt_boardM, slave_wrt_master, err
+      for boardM in master_boards:
+        for boardS in slave_boards:
+          # handEye_dict[slave_cam] = {}
+          masterR, masterT, slaveR, slaveT, image_list = master_slave_pose(ws, master_cam, boardM, slave_cam, boardS)
+          board_wrt_boardM, slave_wrt_master, err, err2 = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
+          '''
+          ## for reprojection error
+          base_wrt_gripper = matrix.join(masterR, masterT)
+          world_wrt_camera = matrix.join(slaveR, slaveT)
+          T1 = matrix.transform(base_wrt_gripper, board_wrt_boardM)
+          T2 = matrix.transform(np.linalg.inv(slave_wrt_master), T1)
+          cameraMatrix = ws.cameras[slave_cam].intrinsic
+          distortion = ws.cameras[slave_cam].dist
+          for i in range(0, T2.shape[0]):
 
-  return handEye_dict
+            imagePoints = ws.detected_points[slave_cam][image_list[i]][boardS]['corners']
+            point_ids =  ws.detected_points[slave_cam][image_list[i]][boardS]['ids']
+            objectPoints = np.array([ws.boards[boardS].adjusted_points[i] for i in point_ids])
+            # t = T2[i]
+            # rtvec = rtvec.from_matrix(t)
+            rmatrix = T2[i][0:3, 0:3]
+            tmatrix = T2[i][0:3, 3]
+            rvec = (R.from_matrix([rmatrix]).as_rotvec())
+            tvec = (tmatrix.T)
+            imP, _ = cv2.projectPoints(np.copy(objectPoints), rvec, tvec, cameraMatrix, distortion)
+            error = imagePoints - imP.reshape([-1, 2])
+          ## end
+          '''
+          print('master ', master_cam, ', slave ', slave_cam, ': err_min: ', err.min(), 'err_max: ', err.max(), ', err2: ', err2.min(), err2.max())
+          handEye_dict['slave_wrt_master'][slave_cam] = slave_wrt_master
+          handEye_dict['board_wrt_boardM'][slave_cam] = board_wrt_boardM
+          # handEye_dict[slave_cam]['board_wrt_boardM'] = board_wrt_boardM
+          # handEye_dict[slave_cam]['slave_wrt_master'] = slave_wrt_master
+          # handEye_dict[slave_cam]['err'] = err
+          # handEye_dict[slave_cam]['err2'] = err2
+          # return board_wrt_boardM, slave_wrt_master, err
+    else:
+      handEye_dict['slave_wrt_master'][slave_cam] = np.eye(4, dtype='float64')
+
+  return handEye_dict['slave_wrt_master'], handEye_dict['board_wrt_boardM']
 
 def estimate_camera_board_poses(ws):
   num_cameras = len(ws.names.camera)
   master_cam = 0
   boards = ws.boards
-  select_best_viewed_boards(ws)
+  # board_selection_matrix = select_best_viewed_boards(ws, angle_threshold=45)
   # handEye_table(ws)
   handEye_dict = {}
   for cam in range(0, num_cameras):

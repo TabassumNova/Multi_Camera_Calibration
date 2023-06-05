@@ -82,6 +82,8 @@ def hand_eye_robot_world(base_gripper_R, base_gripper_t, world_camera_R, world_c
   ZB = matrix.transform(base_wrt_world, world_wrt_camera)
   error2 = base_wrt_gripper - matrix.transform(np.linalg.inv(gripper_wrt_camera), ZB)
 
+
+
   return base_wrt_world, gripper_wrt_camera, np.linalg.norm(err, axis=(1, 2)), np.linalg.norm(error2, axis=(1, 2))
 
 
