@@ -1,7 +1,7 @@
 import sys
 import roslib
 import xlsxwriter
-
+import json
 import numpy as np
 
 import rospy
@@ -107,24 +107,50 @@ class Box_Attacher_3(object):
         self.move_group.stop()
         return plan
 
+    def plan_box_param(self, library = 'arv'):
+        enter = input("Hit ENTER if you want to start planning: ")
+        wpose = self.move_group.get_current_pose().pose
+        initial_pose = get_pose(self, euler=True)
+        pose_list = get_calib_poses_new(self, initial_pose)
+        pose = 1
+        if enter == '':
+            for i in range(len(pose_list)):
+                # Move to first point automatically
+                if library == 'cvb':
+                    cam_streamer.start_cvb_image_acquisition(pose)
+                elif library == 'tis':
+                    start_tis_image_acquisition(self, pose)
+                elif library == 'arv':
+                    start_arv_image_acquisition(self, pose)
+                    pass
+                print('Pose: ', pose)
+                motion_successful = move_robot(self, pose_list[i])
+                pose += 1
+                
+
     def plan_cluster_point_goal(self, plan_num=10, library = 'arv'):
         enter = input("Hit ENTER if you want to start planning: ")
         ### new
+        common_focus = [-61, -19, 117, 112, 5, -247]
+        plan = self.move_robot_joints(np.array(common_focus))
+        
         wpose = self.move_group.get_current_pose().pose
         pointx = np.array((wpose.position.x))
         pointy = np.array((wpose.position.y))
         pointz = np.array((wpose.position.z))
         newX, newY, newZ = create_points(pointx, pointy, pointz, planNum=plan_num)
-        pointx = np.append(pointx, newX)
-        pointy = np.append(pointy, newY)
-        pointz = np.append(pointz, newZ)
+        pointx = np.array(newX)
+        pointy = np.array(newY)
+        pointz = np.array(newZ)
         pose = 1
+        json_dict = {}
         if library == 'cvb':
             cam_streamer = CamStreamer(-1)
         if enter == '':
             for j in range(pointx.shape[0]):
+                plan = self.move_ef_position(pointx[j], pointy[j], pointz[j])
                 initial_pose = get_pose(self, euler=True)
-                pose_list = get_calib_poses(self, initial_pose)
+                pose_list = get_calib_poses_new(self, initial_pose)
                 for i in range(len(pose_list)):
                     # Move to first point automatically
                     if library == 'cvb':
@@ -133,9 +159,24 @@ class Box_Attacher_3(object):
                         start_tis_image_acquisition(self, pose)
                     elif library == 'arv':
                         start_arv_image_acquisition(self, pose)
+                        pass
                     print('Pose: ', pose)
+                    json_dict[pose] = {}
+                    current_pose = self.move_group.get_current_pose().pose.position
+                    current_orientation = self.move_group.get_current_pose().pose.orientation
+                    json_dict[pose]['position (x,y,z)'] = [str(current_pose.x), str(current_pose.y), str(current_pose.z)]
+                    json_dict[pose]['orintation (w,x,y,z)'] = [str(current_orientation.w), str(current_orientation.x), str(current_orientation.y), str(current_orientation.z)]
+                    json_dict[pose]['joint_goal'] = [str(a) for a in self.move_group.get_current_joint_values()]
+
                     motion_successful = move_robot(self, pose_list[i])
                     pose += 1
+                
+                # Serializing json
+                json_object = json.dumps(json_dict, indent=4)
+                # Writing to sample.json
+                with open("/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/poses.json", "w") as outfile:
+                    outfile.write(json_object)
+                plan = self.move_ef_position(pointx[j], pointy[j], pointz[j])
 
         ### new
         # pointx = np.array((0.096))

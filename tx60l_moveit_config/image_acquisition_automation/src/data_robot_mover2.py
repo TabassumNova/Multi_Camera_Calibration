@@ -96,20 +96,6 @@ def get_pose(box_attacher, euler=False, print_msg=False, ros_format=False, extri
         
     return pose_dict 
 
-def get_orientation(box_attacher, initial_pose, rotation_degree):
-    '''
-    Input: initial_pose, rotation_degree(x,y,z)
-    Output: transformation matrix
-    '''
-    T_init = euler2T(initial_pose["position"], initial_pose["orientation"], extrinsic=True)
-    T_rot = euler2T(np.array([0.0, 0.0, 0.0], dtype="float"),
-                    ScyRot.from_euler('xyz', [rotation_degree[0], rotation_degree[1], rotation_degree[2]],
-                                      degrees=True).as_matrix())
-    T_b_f_rot = np.linalg.multi_dot([T_init, T_rot])
-
-    return T_b_f_rot
-
-
 def get_calib_poses(box_attacher, initial_pose, offsetpoint=[0.0, 0.0, 0.0], angles=None): 
     """
     Creates a list of robot endeffector motion poses for calibration
@@ -131,12 +117,12 @@ def get_calib_poses(box_attacher, initial_pose, offsetpoint=[0.0, 0.0, 0.0], ang
     # use default rotation angles if no angle lists are given
     if(angles==None): 
         # euler rotations around each axis relative to the initial pose; 0.0 is automatically included 
-        angle_x_list = [0, 10.0, 15.0, 20, -10.0, -15.0, -20] 
-        angle_y_list = [0, 10.0, 15.0, 20, -10.0, -15.0, -20]#, -10.0] 
-        angle_z_list = [0, 10.0, 15.0, 20, -10.0, -15.0, -20] 
-        # angle_x_list = [0.0, 10.0, -10.0] 
-        # angle_y_list = [0.0, 10.0, 15.0]#, -10.0] 
-        # angle_z_list = [0.0, 10.0, -10.0] 
+        # angle_x_list = [0, 10.0, 15.0, 20, -10.0, -15.0, -20] 
+        # angle_y_list = [0, 10.0, 15.0, 20, -10.0, -15.0, -20]#, -10.0] 
+        # angle_z_list = [0, 10.0, 15.0, 20, -10.0, -15.0, -20] 
+        angle_x_list = [0.0, 10.0, -10.0] 
+        angle_y_list = [0.0, 10.0, 15.0]#, -10.0] 
+        angle_z_list = [0.0, 10.0, -10.0] 
     else:
         angle_x_list = angles[0] 
         angle_y_list = angles[1] 
@@ -171,7 +157,133 @@ def get_calib_poses(box_attacher, initial_pose, offsetpoint=[0.0, 0.0, 0.0], ang
                 T_b_f_rot = np.linalg.multi_dot( [T_init, T_f_m, T_rot, np.linalg.inv(T_f_m)] ) 
                 T_b_f_rot_list.append(T_b_f_rot) 
     
-    return T_b_f_rot_list 
+    return T_b_f_rot_list
+
+
+def get_orientation(box_attacher, initial_pose, rotation_degree):
+    '''
+    Input: initial_pose, rotation_degree[x,y,z]
+    Output: transformation matrix
+    '''
+    T_init = euler2T(initial_pose["position"], initial_pose["orientation"], extrinsic=True)
+    T_rot = euler2T(np.array([0.0, 0.0, 0.0], dtype="float"),
+                    ScyRot.from_euler('xyz', [rotation_degree[0], rotation_degree[1], rotation_degree[2]],
+                                      degrees=True).as_matrix())
+    T_b_f_rot = np.linalg.multi_dot([T_init, T_rot])
+
+    return T_b_f_rot
+
+def get_position(box_attacher, initial_pose, position):
+    '''
+    position -> numpy array
+    '''
+    T_init = euler2T(initial_pose["position"], initial_pose["orientation"], extrinsic=True)
+    T_translation = euler2T(position, initial_pose["orientation"], extrinsic=True)
+    
+    T_b_f_translation = np.linalg.multi_dot([T_init, T_translation])
+
+    return T_b_f_translation
+
+
+def get_calib_poses_new(box_attacher, initial_pose, offsetpoint=[0.0, 0.0, 0.0], angles=None):
+    """
+    Creates a list of robot endeffector motion poses for calibration
+
+    Input
+    - initial_pose [dict]:  initial flange pose relative to base;
+                            is used as the center point for all calibration motions
+                            initial_pose["position"] = [x, y, z] in meters;
+                            initial_pose["orientation"] = [rx, ry, rz] in xyz Euler;
+    - offsetpoint (3x1-list; float):    rotate around this offset point; in m; default: no offset
+    - angles (3xn float list):  rotation angle lists for xyz axis in Euler.
+                                Default is +-10° around every axis.
+                                [[x angles], [y angles], [z angles]]
+
+    """
+
+    # create calibration poses
+    pose_list = []
+    # use default rotation angles if no angle lists are given
+    if (angles == None):
+        # euler rotations around each axis relative to the initial pose; 0.0 is automatically included
+        angle_x_list = [0, 10.0, 20, 30, 40, -10.0, -20, -30, -40]
+        angle_y_list = [0, 10.0, 20, 30, 40, -10.0, -20, -30, -40]  # , -10.0]
+        angle_z_list = [0, 10.0, 20, 30, 40, -10.0, -20, -30, -40]
+        # angle_x_list = [0]
+        # angle_y_list = [0]  # , -10.0]
+        # angle_z_list = [0, 20.0, 40.0, 60.0, 80.0, 100.0, 110.0, 120.0, 130.0, 140.0, 150.0, 160.0, 
+        #                 170.0, 180.0, 190.0, 200.0, 210.0, 220.0, 230.0, 250.0, 260.0, 280.0, -20.0, 
+        #                 -40.0, -60.0, -80.0, -100.0, -110.0, -120.0, -130.0, -140.0, -150.0, -160.0, 
+        #                 -170.0, -180.0, -190.0, -200.0, -210.0, -220.0, -230.0, -250.0, -260.0, -280.0]
+        # angle_x_list = [0.0, 10.0]
+        # angle_y_list = [0.0, 10.0]#, -10.0]
+        # angle_z_list = [0.0, 10.0]
+    else:
+        angle_x_list = angles[0]
+        angle_y_list = angles[1]
+        angle_z_list = angles[2]
+
+        # list of resulting poses for the robot in meters
+    T_b_f_rot_list = []
+    # offset point
+    T_f_m = euler2T(np.array(offsetpoint, dtype="float"),
+                    ScyRot.from_euler('xyz', [0, 0, 0], degrees=True).as_matrix())
+    # initial pose as matrix
+    T_init = euler2T(initial_pose["position"], initial_pose["orientation"], extrinsic=True)
+
+    # create poses
+    # around z-axis
+    for rz in angle_z_list:
+        # current xyz-euler angles relative initial pose
+        angles_tmp = [0, 0, rz]
+        # euler angles (rx, ry, rz) to quaternions (x, y, z, w); extrinsic rotation;
+        # transform for rotion around point
+        # T_rot = euler2T( np.array([0.0,0.0,0.0], dtype="float"),
+        #                                 ScyRot.from_euler('XYZ', [angles_tmp[0], angles_tmp[1], angles_tmp[2]],
+        #                                                             degrees=True).as_matrix() )
+        T_rot = euler2T(np.array([0.0, 0.0, 0.0], dtype="float"),
+                        ScyRot.from_euler('xyz', [angles_tmp[0], angles_tmp[1], angles_tmp[2]],
+                                          degrees=True).as_matrix())
+        # Rotate around robot flange: T_b_f * T_f_m * T_rot * T_m_f
+        T_b_f_rot = np.linalg.multi_dot([T_init, T_f_m, T_rot, np.linalg.inv(T_f_m)])
+        T_b_f_rot_list.append(T_b_f_rot)
+
+    T_b_f_rot_list.append(T_init)
+
+    # around y-axis
+    for ry in angle_y_list:
+        angles_tmp = [0, ry, 0]
+        # euler angles (rx, ry, rz) to quaternions (x, y, z, w); extrinsic rotation;
+        # transform for rotion around point
+        # T_rot = euler2T( np.array([0.0,0.0,0.0], dtype="float"),
+        #                                 ScyRot.from_euler('XYZ', [angles_tmp[0], angles_tmp[1], angles_tmp[2]],
+        #                                                             degrees=True).as_matrix() )
+        T_rot = euler2T(np.array([0.0, 0.0, 0.0], dtype="float"),
+                        ScyRot.from_euler('xyz', [angles_tmp[0], angles_tmp[1], angles_tmp[2]],
+                                          degrees=True).as_matrix())
+        # Rotate around robot flange: T_b_f * T_f_m * T_rot * T_m_f
+        T_b_f_rot = np.linalg.multi_dot([T_init, T_f_m, T_rot, np.linalg.inv(T_f_m)])
+        T_b_f_rot_list.append(T_b_f_rot)
+
+    T_b_f_rot_list.append(T_init)
+    # around x-axis
+    for rx in angle_x_list:
+        angles_tmp = [rx, 0, 0]
+        # euler angles (rx, ry, rz) to quaternions (x, y, z, w); extrinsic rotation;
+        # transform for rotion around point
+        # T_rot = euler2T( np.array([0.0,0.0,0.0], dtype="float"),
+        #                                 ScyRot.from_euler('XYZ', [angles_tmp[0], angles_tmp[1], angles_tmp[2]],
+        #                                                             degrees=True).as_matrix() )
+        T_rot = euler2T(np.array([0.0, 0.0, 0.0], dtype="float"),
+                        ScyRot.from_euler('xyz', [angles_tmp[0], angles_tmp[1], angles_tmp[2]],
+                                          degrees=True).as_matrix())
+        # Rotate around robot flange: T_b_f * T_f_m * T_rot * T_m_f
+        T_b_f_rot = np.linalg.multi_dot([T_init, T_f_m, T_rot, np.linalg.inv(T_f_m)])
+        T_b_f_rot_list.append(T_b_f_rot)
+
+    T_b_f_rot_list.append(T_init)
+
+    return T_b_f_rot_list
 
 def move_robot(box_attacher, pose, extrinsic_euler=True): #TODO save_motionplan=None, load_motionplan=None
     """"

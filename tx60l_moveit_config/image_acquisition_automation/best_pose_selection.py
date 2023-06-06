@@ -13,8 +13,8 @@ def checker_detection(img, aruco_dict):
     return len(corners)
 
 #### INPUT ####
-directory = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/V19/'
-new_directory = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/V19_sorted/'
+directory = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/V23/'
+new_directory = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/V23_sorted/'
 aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_1000)
 ###############
 
@@ -41,7 +41,7 @@ for filename in os.listdir(directory):
     for pose in sorted_k:
         frame = cv2.imread(os.path.join(directory, filename, pose))
         f = new_directory + filename + '/' + str(p)+'_' + pose
-        cv2.imwrite(f, frame)
+        cv2.imwrite(f, frame[:,:,0])
         p += 1
 
 print('end')

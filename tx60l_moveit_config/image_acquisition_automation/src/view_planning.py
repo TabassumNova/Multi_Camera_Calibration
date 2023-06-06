@@ -28,10 +28,12 @@ board_yaml = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/im
 # manually place one board very near to one camera
 # then start the program
 def view_Plan(box_attacher):
-    get_intrinsic_poses()
+    # common_focus = [-61, -19, 117, 112, 5, -247]
+    # plan = box_attacher.move_robot_joints(np.array(common_focus))
+    get_intrinsic_poses(box_attacher)
     wpose = box_attacher.move_group.get_current_pose().pose
-
-    circular_path(box_attacher, wpose)
+    
+    # circular_path(box_attacher, wpose)
 
     # pose = 1
     # # analyze_camera_images(output_path, pose)
@@ -50,7 +52,7 @@ def view_Plan(box_attacher):
     #     plan_Line(box_attacher, start, end, step, slope_base)
     # pass
 
-def circular_path(box_attacher, wpose, radious= 0.05, step=10):
+def circular_path(box_attacher, wpose, radious= 0.012, step=10):
     theta = np.linspace(0, 2 * np.pi, step)
     # the radius of the circle
     r = np.sqrt(radious)
@@ -61,15 +63,17 @@ def circular_path(box_attacher, wpose, radious= 0.05, step=10):
     pose_num = 1
     for path in range(0, len(x)):
         # for plan_x in range(start, end, step):
-        pose = box_attacher.move_group.get_current_pose().pose
+        # pose = box_attacher.move_group.get_current_pose().pose
+        pose = wpose
         pose.position.x = x[path]
         pose.position.y = y[path]
         print('Pose: ', pose)
         plan = box_attacher.move_group.go(pose, wait=True)
         box_attacher.move_group.stop()
-        camera_serial = arv_get_image(output_path, pose_num)
-        pose_num += 1
+        # camera_serial = arv_get_image(output_path, pose_num)
+        # pose_num += 1
         pose_num = change_orientation(box_attacher, pose_num)
+        pose_num += 1
 
 def change_orientation(box_attacher, pose):
     initial_pose = get_pose(box_attacher, euler=True)
@@ -113,7 +117,7 @@ def get_intrinsic_poses(box_attacher):
     # joint infos
     common_focus = [-61, -19, 117, 112, 5, -247]
     cameras = {}
-    cameras['cam_218'] = [117, -55, -14, 186, 25, -143]
+    # cameras['cam_218'] = [117, -55, -14, 186, 25, -143]
     cameras['cams_220'] = [-31, -5, 100, 102 , -19, -236]
     cameras['cam_113'] = [113, -52, -24, -108, 69, 150]
     cameras['cam_222'] = [85, -16, -82, -88, 59, 113]
