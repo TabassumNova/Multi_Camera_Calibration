@@ -4,25 +4,23 @@ import numpy as np
 import random
 import multical.app.boards as boards
 import os
+from .action_moveRobot import *
+from src.aravis_image_acquisition import *
 
-def detection(pose):
-    board_yaml = "D:\MY_DRIVE_N\Masters_thesis\Dataset/view_plan\V2/boards.yaml"
-    detect_folder = "train folder"
-    detection_dict = {}
-    for subdir, dirs, files in os.walk(detect_folder):
-        for camera in dirs:
-            detect_img = os.path.join(detect_folder, camera, 'p' + str(pose) + '.png')
-            b = boards.Boards(boards=board_yaml, detect=detect_img, pixels_mm=10, show_image=False)
-            detection = b.execute()
-            key = str(camera) + "_detection"
-            detection_dict[key] = detection
-
-    return detection_dict
+board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/view_plan\V2/boards.yaml"
+train_path = "train folder"
 
 class ShowerEnv(Env):
     def __init__(self):
         # Actions we can take: position (x,y,z), orientation(x,y,z)
-        self.action_space = MultiBinary(6)
+        self.action_space = Dict({"move_x": Discrete(3, start=-1),
+                                  "move_y": Discrete(3, start=-1),
+                                  "move_z": Discrete(3, start=-1),
+                                  "rotate_x": Discrete(3, start=-1),
+                                  "rotate_y": Discrete(3, start=-1),
+                                  "rotate_z": Discrete(3, start=-1)
+                                 })
+
         # Checker detection array
         # self.observation_space = Box(low=np.array([0]), high=np.array([88]))
         b = Box(low=np.array([-180]), high=np.array([180]))
@@ -35,17 +33,36 @@ class ShowerEnv(Env):
                                        })
         # Set start temp
         # self.state = 38 + random.randint(-3, 3)
-        pose = 1
-        self.state = detection(pose)
+        self.pose = 1
+        self.detection_dict = {}
+        self.state = self.detection(self, board_path, train_path)
         # Set shower length
         self.shower_length = 60
 
-    def step(self, action):
+    def detection(self, board_path, train_path):
+        self.detection_dict[self.pose] = {}
+        total_detect = 0
+        for subdir, dirs, files in os.walk(train_path):
+            for camera in dirs:
+                detect_img = os.path.join(train_path, camera, 'p' + str(self.pose) + '.png')
+                b = boards.Boards(boards=board_path, detect=detect_img, pixels_mm=10, show_image=False)
+                detection = b.execute()
+                key = str(camera) + "_detection"
+                self.detection_dict[self.pose][key] = len(detection)
+                total_detect += len(detection)
+            self.detection_dict[self.pose]["total_detection"] = len(detection)
+        self.pose += 1
+        return self.detection_dict[self.pose]
+
+    def step(self, box_attacher, action):
         # Apply action
         # 0 -1 = -1 temperature
         # 1 -1 = 0
         # 2 -1 = 1 temperature
-        sample = action
+        moveRobot(box_attacher, action)
+        camera_serial = arv_get_image(train_path, self.pose)
+        self.state = self.detection(self, board_path, train_path)
+
         self.state += action - 1
         # Reduce shower length by 1 second
         self.shower_length -= 1
@@ -76,25 +93,10 @@ class ShowerEnv(Env):
 
     def reset(self):
         # Reset shower temperature
-        self.state = 38 + random.randint(-3, 3)
+        self.pose = 1
+        self.detection_dict = {}
+        self.state = self.detection(self, board_path, train_path)
         # Reset shower time
         self.shower_length = 60
         return self.state
 
-env = ShowerEnv()
-print(env.action_space.sample())
-print(env.observation_space.sample())
-episodes = 10
-for episode in range(1, episodes + 1):
-    state = env.reset()
-    done = False
-    score = 0
-
-    while not done:
-        # env.render()
-        action = env.action_space.sample()
-        move_robot()
-        n_state, reward, done, info = env.step(action)
-        score += reward
-    # print(n_state, reward, done, info, score)
-    print('Episode:{} Score:{}'.format(episode, score))

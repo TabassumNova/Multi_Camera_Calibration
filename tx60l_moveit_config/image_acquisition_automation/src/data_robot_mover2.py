@@ -96,6 +96,20 @@ def get_pose(box_attacher, euler=False, print_msg=False, ros_format=False, extri
         
     return pose_dict 
 
+def get_orientation(box_attacher, initial_pose, rotation_degree):
+    '''
+    Input: initial_pose, rotation_degree(x,y,z)
+    Output: transformation matrix
+    '''
+    T_init = euler2T(initial_pose["position"], initial_pose["orientation"], extrinsic=True)
+    T_rot = euler2T(np.array([0.0, 0.0, 0.0], dtype="float"),
+                    ScyRot.from_euler('xyz', [rotation_degree[0], rotation_degree[1], rotation_degree[2]],
+                                      degrees=True).as_matrix())
+    T_b_f_rot = np.linalg.multi_dot([T_init, T_rot])
+
+    return T_b_f_rot
+
+
 def get_calib_poses(box_attacher, initial_pose, offsetpoint=[0.0, 0.0, 0.0], angles=None): 
     """
     Creates a list of robot endeffector motion poses for calibration
