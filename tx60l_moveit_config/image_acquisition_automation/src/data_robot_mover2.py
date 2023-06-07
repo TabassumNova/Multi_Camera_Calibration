@@ -173,14 +173,17 @@ def get_orientation(box_attacher, initial_pose, rotation_degree):
 
     return T_b_f_rot
 
-def get_position(box_attacher, initial_pose, position):
+def get_position(box_attacher, initial_pose, position, offsetpoint=[0.0, 0.0, 0.0]):
     '''
     position -> numpy array
     '''
     T_init = euler2T(initial_pose["position"], initial_pose["orientation"], extrinsic=True)
-    T_translation = euler2T(position, initial_pose["orientation"], extrinsic=True)
+    T_translation = euler2T(position, np.array([0.0, 0.0, 0.0], dtype="float"), extrinsic=True)
+    # offset point
+    T_f_m = euler2T(np.array(offsetpoint, dtype="float"),
+                    ScyRot.from_euler('xyz', [0, 0, 0], degrees=True).as_matrix())
     
-    T_b_f_translation = np.linalg.multi_dot([T_init, T_translation])
+    T_b_f_translation = np.linalg.multi_dot([T_init, T_f_m, T_translation, np.linalg.inv(T_f_m)])
 
     return T_b_f_translation
 
