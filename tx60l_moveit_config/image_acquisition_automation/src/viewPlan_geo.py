@@ -9,7 +9,7 @@ from src.data_robot_mover2 import *
 def viewPlan(box_attacher):
     enter = input("Hit ENTER if you want to start planning: ")
     common_focus = [-61, -19, 117, 112, 5, -247]
-    plan = self.move_robot_joints(np.array(common_focus))
+    plan = box_attacher.move_robot_joints(np.array(common_focus))
 
     pose_list = viewPlan_list(box_attacher)
     if enter == '':
@@ -18,12 +18,12 @@ def viewPlan(box_attacher):
             if library == 'cvb':
                 cam_streamer.start_cvb_image_acquisition(pose)
             elif library == 'tis':
-                start_tis_image_acquisition(self, pose)
+                start_tis_image_acquisition(box_attacher, pose)
             elif library == 'arv':
-                start_arv_image_acquisition(self, pose)
+                start_arv_image_acquisition(box_attacher, pose)
                 pass
             print('Pose: ', pose)
-            motion_successful = move_robot(self, pose_list[i])
+            motion_successful = move_robot(box_attacher, pose_list[i])
             pose += 1
     pass
 
