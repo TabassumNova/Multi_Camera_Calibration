@@ -15,13 +15,8 @@ def viewPlan(box_attacher):
     if enter == '':
         for i in range(len(pose_list)):
             # Move to first point automatically
-            if library == 'cvb':
-                cam_streamer.start_cvb_image_acquisition(pose)
-            elif library == 'tis':
-                start_tis_image_acquisition(box_attacher, pose)
-            elif library == 'arv':
-                start_arv_image_acquisition(box_attacher, pose)
-                pass
+            arv_get_image(path, pose)
+            pass
             print('Pose: ', pose)
             motion_successful = move_robot(box_attacher, pose_list[i])
             pose += 1
