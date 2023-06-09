@@ -113,4 +113,7 @@ catkin_make
 
 # Camera Parameters
 - Intrinsic (https://1drv.ms/f/s!At7UW7zuEoCCivQPV5hxq03VmbaI4A?e=VPgsl9)
+
 *** Not all the views are taken for calculating intrinsic. The program iteratively rejects outliers that have greater reprojection erro and optimizes the intrinsic parameters. How many views are taken for calculation are written in calibration.txt file
+
+**** cam222 has only 28 views??
