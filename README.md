@@ -111,4 +111,5 @@ catkin_make
 - From terminal run `roslaunch tx60l_moveit_config moveit_planning_execution.launch sim:=false robot_ip:=192.168.0.250`
 - From another terminal run `rosrun tx60l_moveit_config main.py`
 
-
+# Camera Parameters
+- Intrinsic (https://1drv.ms/f/s!At7UW7zuEoCCivQPV5hxq03VmbaI4A?e=VPgsl9)
