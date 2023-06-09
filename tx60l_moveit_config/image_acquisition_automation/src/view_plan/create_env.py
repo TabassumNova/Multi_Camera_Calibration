@@ -37,8 +37,7 @@ class ViewPlanEnv(Env):
         camera_serial = arv_get_image(train_path, self.pose)
         self.state = self.detection(board_path, train_path)
         self.pose += 1
-        # Set shower length
-        self.shower_length = 60
+        self.plan_length = 60
 
     def detection(self, board_path, train_path):
         self.detection_dict[self.pose] = {}
@@ -58,40 +57,26 @@ class ViewPlanEnv(Env):
         return self.detection_dict[self.pose]
 
     def step(self, box_attacher, action):
-        # Apply action
-        # 0 -1 = -1 temperature
-        # 1 -1 = 0
-        # 2 -1 = 1 temperature
+
         moveRobot(box_attacher, action)
         camera_serial = arv_get_image(train_path, self.pose)
         self.state = self.detection(board_path, train_path)
         self.pose += 1
-        # self.state += action - 1
-        # # Reduce shower length by 1 second
-        # self.shower_length -= 1
 
         # Calculate reward
         reward = self.reward()
-        # if self.state >= 37 and self.state <= 39:
-        #     reward = 1
-        # else:
-        #     reward = -1
 
-            # Check if shower is done
-        if self.shower_length <= 0:
+        if self.plan_length <= 0:
             done = True
         else:
             done = False
 
-        # Apply temperature noise
-        # self.state += random.randint(-1,1)
-        # Set placeholder for info
         info = {}
 
         # Return step information
         return self.state, reward, done, info
 
-    def reward():
+    def reward(self):
         if self.detection_dict[self.pose]['total_detection'] > self.detection_dict[self.pose-1]['total_detection']:
             reward = 1
         else:
@@ -103,11 +88,9 @@ class ViewPlanEnv(Env):
         pass
 
     def reset(self):
-        # Reset shower temperature
         self.pose = 1
         self.detection_dict = {}
-        self.state = self.detection(self, board_path, train_path)
-        # Reset shower time
-        self.shower_length = 60
+        self.state = self.detection(board_path, train_path)
+        self.plan_length = 60
         return self.state
 
