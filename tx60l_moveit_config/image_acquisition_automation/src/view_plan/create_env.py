@@ -77,11 +77,12 @@ class ViewPlanEnv(Env):
         return self.state, reward, done, info
 
     def reward(self):
-        if self.detection_dict[self.pose]['total_detection'] > self.detection_dict[self.pose-1]['total_detection']:
+        if self.detection_dict[self.pose-1]['total_detection'] > self.detection_dict[self.pose-2]['total_detection']:
             reward = 1
         else:
             reward = -1
         pass
+        return reward
 
     def render(self):
         # Implement viz
