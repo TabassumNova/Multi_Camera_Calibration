@@ -1,10 +1,10 @@
 from cached_property import cached_property
-from multical.motion.motion_model import MotionModel
-from multical.optimization.pose_set import PoseSet
+from src.multical.motion.motion_model import MotionModel
+from src.multical.optimization.pose_set import PoseSet
 import numpy as np
 from structs.numpy import Table, shape
 from structs.struct import struct, subset
-from multical import tables
+from src.multical import tables
 
 
 def project_cameras(cameras, local_points):

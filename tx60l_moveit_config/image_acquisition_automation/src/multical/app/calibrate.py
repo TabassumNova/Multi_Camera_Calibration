@@ -1,11 +1,11 @@
 
-from multical.io.logging import setup_logging
+from src.multical.io.logging import setup_logging
 from .vis import visualize_ws
 
 from structs.struct import struct, map_none, to_structs
 import numpy as np
 
-from multical.config import *
+from src.multical.config import *
 from dataclasses import dataclass
 
 @dataclass

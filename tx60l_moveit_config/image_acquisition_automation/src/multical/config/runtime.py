@@ -1,10 +1,10 @@
 import numpy as np
-import multical.image as image
-from multical.io.logging import info
+import src.multical.image as image
+from src.multical.io.logging import info
 from os import path
 
 from structs.struct import struct
-from multical.board import load_config, load_calico
+from src.multical.board import load_config, load_calico
 
 
 def find_board_config(image_path, board_file = None):

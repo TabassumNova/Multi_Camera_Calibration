@@ -1,19 +1,19 @@
-from multical.io.export_calib import export_single
-from multical.camera import calibrate_cameras
-from multical.workspace import detect_boards_cached
+from src.multical.io.export_calib import export_single
+from src.multical.camera import calibrate_cameras
+from src.multical.workspace import detect_boards_cached
 from os import path
 import pathlib
-from multical.config.runtime import find_board_config, find_camera_images
-from multical.image.detect import common_image_size
-from multical.io.logging import setup_logging
-from multical.io.logging import info
+from src.multical.config.runtime import find_board_config, find_camera_images
+from src.multical.image.detect import common_image_size
+from src.multical.io.logging import setup_logging
+from src.multical.io.logging import info
 
 from structs.struct import  map_list, pformat_struct, split_dict
-from multical import image
+from src.multical import image
 
 from structs.numpy import struct, shape
 
-from multical.config.arguments import *
+from src.multical.config.arguments import *
 
 @dataclass
 class Intrinsic:

@@ -8,12 +8,12 @@ from .viewer_3d.moving_cameras import MovingCameras
 
 from collections import OrderedDict
 import math
-from multical.interface.ui_files import load_ui
+from src.multical.interface.ui_files import load_ui
 
 from . import camera_params, view_table
 from .layout import h_layout, v_layout, widget
 
-from multical import image, tables
+from src.multical import image, tables
 
 from .viewer_image import ViewerImage, annotate_image
 from structs.struct import struct, split_dict

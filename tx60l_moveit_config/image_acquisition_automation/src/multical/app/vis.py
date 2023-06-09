@@ -1,12 +1,12 @@
 from os import path
 import numpy as np
 
-from multical.workspace import Workspace
+from src.multical.workspace import Workspace
 
-from multical.io.logging import error
-from multical.io.logging import setup_logging
+from src.multical.io.logging import error
+from src.multical.io.logging import setup_logging
 
-from multical.config.arguments import *
+from src.multical.config.arguments import *
 
 
 @dataclass

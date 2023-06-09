@@ -4,7 +4,7 @@ from .view_plan.action_moveRobot import *
 def viewPlan_RL(box_attacher):
     common_focus = [-61, -19, 117, 112, 5, -247]
     plan = box_attacher.move_robot_joints(np.array(common_focus))
-    env = ShowerEnv()
+    env = ViewPlanEnv()
     print(env.action_space.sample())
     print(env.observation_space.sample())
     episodes = 10

@@ -1,7 +1,7 @@
 import numpy as np
 from .logging import info
 
-from multical.transform import matrix
+from src.multical.transform import matrix
 
 def report_errors(name, errs):
   rms = np.sqrt(np.square(errs).mean())

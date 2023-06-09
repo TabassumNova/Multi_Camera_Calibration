@@ -10,7 +10,7 @@ from src.aravis_image_acquisition import *
 board_path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/view_plan/boards.yaml"
 train_path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/view_plan/train/"
 
-class ShowerEnv(Env):
+class ViewPlanEnv(Env):
     def __init__(self):
         # Actions we can take: position (x,y,z), orientation(x,y,z)
         self.action_space = Dict({"move_x": Discrete(3),

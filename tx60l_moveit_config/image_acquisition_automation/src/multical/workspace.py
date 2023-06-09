@@ -1,21 +1,21 @@
 from collections import OrderedDict
-from multical.threading import parmap_lists
+from src.multical.threading import parmap_lists
 import pathlib
-from multical.board.board import Board
+from src.multical.board.board import Board
 
 import numpy as np
-from multical.motion import StaticFrames, HandEye
+from src.multical.motion import StaticFrames, HandEye
 from multiprocessing import cpu_count
 
-from multical.optimization.parameters import ParamList
-from multical.optimization.pose_set import PoseSet
+from src.multical.optimization.parameters import ParamList
+from src.multical.optimization.pose_set import PoseSet
 from multical import config
 
 from os import path
-from multical.io import export_json, try_load_detections, write_detections
-from multical.image.detect import common_image_size
+from src.multical.io import export_json, try_load_detections, write_detections
+from src.multical.image.detect import common_image_size
 
-from multical.optimization.calibration import Calibration, select_threshold
+from src.multical.optimization.calibration import Calibration, select_threshold
 from structs.struct import map_list, split_dict, struct, subset, to_dicts
 from . import tables, image
 from .camera import calibrate_cameras

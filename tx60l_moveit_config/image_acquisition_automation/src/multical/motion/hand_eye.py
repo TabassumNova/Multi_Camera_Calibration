@@ -1,16 +1,16 @@
 # from multical.motion.static_frames import project_points
 import numpy as np
 from structs.struct import struct, subset
-from multical import tables
-from multical.io.export_calib import export_poses
-from multical.optimization.parameters import IndexMapper, Parameters
+from src.multical import tables
+from src.multical.io.export_calib import export_poses
+from src.multical.optimization.parameters import IndexMapper, Parameters
 from cached_property import cached_property
-from multical.motion.motion_model import MotionModel
+from src.multical.motion.motion_model import MotionModel
 from multical.optimization.pose_set import PoseSet
-from multical.transform import rtvec as transform_vec
+from src.multical.transform import rtvec as transform_vec
 from structs.numpy import Table, shape
 from structs.struct import struct, subset
-from multical import tables
+from src.multical import tables
 from numpy.linalg import inv
 import cv2
 from scipy.spatial.transform import Rotation as R

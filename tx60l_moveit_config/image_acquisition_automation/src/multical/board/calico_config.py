@@ -1,6 +1,6 @@
 from os import path
 from .charuco import CharucoBoard
-from multical.io.logging import error
+from src.multical.io.logging import error
 
 
 def read_pairs(filename):

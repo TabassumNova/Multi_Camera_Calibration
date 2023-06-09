@@ -4,7 +4,7 @@ import numpy as np
 
 from structs.struct import struct
 # from py_structs import struct
-from multical.transform import rtvec
+from src.multical.transform import rtvec
 
 
 def aruco_config(attrs):

@@ -7,18 +7,18 @@
 
 
 from dataclasses import dataclass
-from multical.config.arguments import run_with
-from multical.io.logging import MemoryHandler, info
+from src.multical.config.arguments import run_with
+from src.multical.io.logging import MemoryHandler, info
 
 
 # from multiprocessing import cpu_count
 from typing import Union
 
 
-from multical.app.boards import Boards
-from multical.app.calibrate import Calibrate
-from multical.app.intrinsic import Intrinsic
-from multical.app.vis import Vis
+from src.multical.app.boards import Boards
+from src.multical.app.calibrate import Calibrate
+from src.multical.app.intrinsic import Intrinsic
+from src.multical.app.vis import Vis
 
 
 @dataclass

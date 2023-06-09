@@ -4,7 +4,7 @@ from numbers import Integral
 from os import path
 
 from qtpy.QtGui import QBrush, QColor
-from multical import tables
+from src.multical import tables
 
 from qtpy.QtCore import Qt
 from qtpy.QtCore import QAbstractTableModel

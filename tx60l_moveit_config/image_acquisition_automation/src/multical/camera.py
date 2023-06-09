@@ -16,7 +16,7 @@ from structs.struct import struct
 from .optimization.parameters import Parameters
 
 from multiprocessing.pool import ThreadPool
-from multical.threading import cpu_count
+from src.multical.threading import cpu_count
 
 import cv2
 from tqdm import tqdm

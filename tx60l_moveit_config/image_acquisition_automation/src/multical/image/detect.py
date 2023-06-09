@@ -3,10 +3,10 @@ import os.path as path
 import cv2
 
 from multiprocessing import Pool                                          
-from multical.io.logging import LogWriter, info
+from src.multical.io.logging import LogWriter, info
 import numpy as np
-from multical.camera import  stereo_calibrate
-from multical.threading import parmap_lists
+from src.multical.camera import  stereo_calibrate
+from src.multical.threading import parmap_lists
 
 from structs.struct import transpose_structs, struct, filter_none
 

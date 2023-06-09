@@ -1,6 +1,6 @@
 
 import pickle
-from multical.io.logging import info
+from src.multical.io.logging import info
 
 from structs.struct import struct
 # from py_structs import struct

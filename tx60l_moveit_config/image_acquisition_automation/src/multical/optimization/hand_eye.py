@@ -4,11 +4,11 @@ import numpy as np
 from structs.numpy import table
 from structs.struct import subset
 from .calibration import Calibration
-from multical.transform.hand_eye import hand_eye_robot_world
+from src.multical.transform.hand_eye import hand_eye_robot_world
 
-from multical.motion import HandEye
+from src.multical.motion import HandEye
 from multical.transform import matrix
-from multical import tables
+from src.multical import tables
 
 class HandEyeCalibration:
   def __init__(self, calib : Calibration, gripper_wrt_base, world_wrt_camera):

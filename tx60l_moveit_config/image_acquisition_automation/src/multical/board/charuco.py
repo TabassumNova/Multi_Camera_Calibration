@@ -7,7 +7,7 @@ from .common import *
 
 from structs.struct import struct, choose, subset
 # from py_structs import struct, choose, subset
-from multical.optimization.parameters import Parameters
+from src.multical.optimization.parameters import Parameters
 
 class CharucoBoard(Parameters, Board):
   def __init__(self, size, square_length, marker_length, min_rows=3, min_points=20, 

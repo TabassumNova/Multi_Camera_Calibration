@@ -1,9 +1,9 @@
 from structs.struct import map_none
-from multical.io.import_calib import load_calibration
-from multical.motion.static_frames import StaticFrames
-from multical.motion.rolling_frames import RollingFrames
-from multical.motion.hand_eye import HandEye
-from multical.workspace import Workspace
+from src.multical.io.import_calib import load_calibration
+from src.multical.motion.static_frames import StaticFrames
+from src.multical.motion.rolling_frames import RollingFrames
+from src.multical.motion.hand_eye import HandEye
+from src.multical.workspace import Workspace
 
 from .arguments import *
 

@@ -6,15 +6,15 @@ import cv2
 import numpy as np
 from simple_parsing import choice
 
-from multical.display import show_detections
-from multical import board
-from multical.image.display import display, display_stacked
+from src.multical.display import show_detections
+from src.multical import board
+from src.multical.image.display import display, display_stacked
 
 import argparse
 from os import path
 
-from multical.image.detect import load_image
-from multical.config import *
+from src.multical.image.detect import load_image
+from src.multical.config import *
 
 
 standard_sizes = dict(

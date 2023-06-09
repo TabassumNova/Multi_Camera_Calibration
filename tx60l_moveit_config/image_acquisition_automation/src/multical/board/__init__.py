@@ -11,7 +11,7 @@ from typing import Tuple
 from omegaconf.omegaconf import OmegaConf, MISSING
 from structs.struct import struct
 
-from multical.io.logging import debug, info, error
+from src.multical.io.logging import debug, info, error
 
 @dataclass 
 class CharucoConfig:

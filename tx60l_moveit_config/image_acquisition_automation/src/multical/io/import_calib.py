@@ -3,9 +3,9 @@ import numpy as np
 
 from structs.struct import struct, to_structs
 # from py_structs import struct, to_structs
-from multical.transform import matrix
+from src.multical.transform import matrix
 
-from multical.camera import Camera
+from src.multical.camera import Camera
 
 
 def transpose_lists(lists):

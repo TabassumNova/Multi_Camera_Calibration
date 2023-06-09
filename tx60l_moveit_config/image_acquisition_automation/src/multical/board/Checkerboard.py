@@ -1,16 +1,16 @@
 from copy import copy
 
-from multical.io.logging import error
-from multical.board.board import Board
+from src.multical.io.logging import error
+from src.multical.board.board import Board
 from structs.numpy import Table
-from multical.board.common import *
+from src.multical.board.common import *
 from pprint import pformat
 from cached_property import cached_property
 import cv2
 import numpy as np
 
 from structs.struct import struct, choose, subset
-from multical.optimization.parameters import Parameters
+from src.multical.optimization.parameters import Parameters
 
 
 def import_Checkerboard():
