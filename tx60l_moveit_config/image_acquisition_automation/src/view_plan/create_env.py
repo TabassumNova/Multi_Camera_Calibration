@@ -79,11 +79,15 @@ class ViewPlanEnv(Env):
 
     def reward(self):
         if self.detection_dict[self.pose-1] == 0:
+            reward = -1
             self.reset()
         elif self.detection_dict[self.pose-1]['total_detection'] > self.detection_dict[self.pose-2]['total_detection']:
             reward = 1
         else:
             reward = -1
+
+        self.check_reprojection_error()
+
         pass
         return reward
 
@@ -91,7 +95,21 @@ class ViewPlanEnv(Env):
         # Implement viz
         pass
 
+    def load_camera_intrinsic(self):
+        pass
+
+    def check_reprojection_error(self):
+        pass
+
+    def check_board_angle():
+        pass
+
+    def check_dataset_variety():
+        pass  
+
     def reset(self):
+        common_focus = [-61, -19, 117, 112, 5, -247]
+        plan = self.box_attacher.move_robot_joints(np.array(common_focus))
         
         pass
         '''
