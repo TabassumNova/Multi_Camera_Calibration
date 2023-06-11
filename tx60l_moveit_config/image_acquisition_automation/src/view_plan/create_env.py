@@ -11,7 +11,7 @@ board_path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/im
 train_path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/view_plan/train/"
 
 class ViewPlanEnv(Env):
-    def __init__(self):
+    def __init__(self, box_attacher):
         # Actions we can take: position (x,y,z), orientation(x,y,z)
         self.action_space = Dict({"move_x": Discrete(3),
         "move_y": Discrete(3), 
@@ -22,6 +22,7 @@ class ViewPlanEnv(Env):
 
         # Checker detection array
         # self.observation_space = Box(low=np.array([0]), high=np.array([88]))
+        self.box_attacher = box_attacher
         b = Box(low=np.array([-180]), high=np.array([180]))
         self.observation_space = Dict({"08320217_detection": Box(low=np.array([0]), high=np.array([88])),
                                        "08320218_detection": Box(low=np.array([0]), high=np.array([88])),
@@ -77,7 +78,9 @@ class ViewPlanEnv(Env):
         return self.state, reward, done, info
 
     def reward(self):
-        if self.detection_dict[self.pose-1]['total_detection'] > self.detection_dict[self.pose-2]['total_detection']:
+        if self.detection_dict[self.pose-1] == 0:
+            self.reset()
+        elif self.detection_dict[self.pose-1]['total_detection'] > self.detection_dict[self.pose-2]['total_detection']:
             reward = 1
         else:
             reward = -1
@@ -89,9 +92,12 @@ class ViewPlanEnv(Env):
         pass
 
     def reset(self):
+        pass
+        '''
         self.pose = 1
         self.detection_dict = {}
         self.state = self.detection(board_path, train_path)
         self.plan_length = 60
         return self.state
+        '''
 
