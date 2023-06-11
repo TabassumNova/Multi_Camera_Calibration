@@ -92,6 +92,7 @@ class ViewPlanEnv(Env):
         pass
 
     def reset(self):
+        
         pass
         '''
         self.pose = 1
