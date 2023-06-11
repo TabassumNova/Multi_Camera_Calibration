@@ -2,7 +2,8 @@ from collections import OrderedDict
 from src.multical.threading import parmap_lists
 import pathlib
 from src.multical.board.board import Board
-
+from src.reprojection_error.error_calculation import *
+from src.Board_param_calculation.param_calc import *
 import numpy as np
 from src.multical.motion import StaticFrames, HandEye
 from multiprocessing import cpu_count
@@ -14,6 +15,7 @@ from multical import config
 from os import path
 from src.multical.io import export_json, try_load_detections, write_detections
 from src.multical.image.detect import common_image_size
+from src.multical.transform.rtvec import *
 
 from src.multical.optimization.calibration import Calibration, select_threshold
 from structs.struct import map_list, split_dict, struct, subset, to_dicts
@@ -28,6 +30,7 @@ from .display import color_sets
 
 import pickle
 import json
+import cv2
 
 def detect_boards_cached(boards, images, detections_file, cache_key, load_cache=True, j=cpu_count()):
   assert isinstance(boards, list)
@@ -218,6 +221,19 @@ class Workspace:
 
         self.calibrations["initialisation"] = calib
         return calib
+
+    def initialise_board(self):
+        self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras)
+
+        info("Pose counts:")
+        tables.table_info(self.pose_table.valid, self.names)
+
+        pose_init_board = tables.initialise_board(self)
+        # board_param(self)
+
+        error_board_param(self, pose_init_board)
+
+        pass
 
     def initialise_HandEye(self, motion_model=HandEye, camera_poses=None, isFisheye=False):
         assert self.cameras is not None, "initialise_poses: no cameras set, first use calibrate_single or set_cameras"

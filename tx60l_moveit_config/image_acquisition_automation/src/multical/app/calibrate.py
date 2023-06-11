@@ -24,6 +24,9 @@ class Calibrate:
         ws, boards = detection_new(self)
         return ws, boards
 
+    def execute_board(self):
+        calibrate_board(self)
+
 
 def calibrate(args): 
   np.set_printoptions(precision=4, suppress=True)
@@ -47,6 +50,25 @@ def calibrate(args):
 
   if args.vis:
     visualize_ws(ws)
+
+def calibrate_board(args):
+    np.set_printoptions(precision=4, suppress=True)
+
+    # Use image path if not explicity specified
+    output_path = args.paths.image_path or args.paths.output_path
+
+    ws = workspace.Workspace(output_path, args.paths.name)
+
+    setup_logging(args.runtime.log_level, [ws.log_handler], log_file=path.join(output_path, f"{args.paths.name}.txt"))
+
+    boards = find_board_config(args.paths.image_path, board_file=args.paths.boards)
+    camera_images = find_camera_images(args.paths.image_path,
+                                       args.paths.cameras, args.paths.camera_pattern, limit=args.paths.limit_images)
+    # print(ws)
+    initialise_with_images(ws, boards, camera_images, args.camera, args.runtime)
+
+    ws.export()
+    ws.dump()
 
 def detection_new(args):
     np.set_printoptions(precision=4, suppress=True)

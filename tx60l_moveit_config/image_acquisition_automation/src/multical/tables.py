@@ -695,6 +695,10 @@ def initialise_poses(pose_table, camera_poses=None):
 
   return struct(times=times, camera=camera, board=board)
 
+def initialise_board(ws, camera_poses=None):
+  board = estimate_relative_poses_inv(ws.pose_table, axis=2)
+  return board
+
 def initialise_HandEye(ws, camera_poses=None):
 
   # Find relative transforms between cameras and rig poses
