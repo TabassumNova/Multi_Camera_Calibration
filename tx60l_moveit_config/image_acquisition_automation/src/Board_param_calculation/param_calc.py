@@ -17,7 +17,13 @@ def board_param(ws):
 
     for parent, child in pairs:
         t = estimate_transform(table, parent, child, axis=2)
+        pose_dict[child] = t @ pose_dict[parent]
+
+    new_dict = {}
+    for keys in pose_dict:
+         new_dict[keys] = matrix.relative_to(pose_dict[keys], pose_dict[0])
     pass
+    return new_dict
 
 def estimate_transform(table, i, j, axis=0):
   table_i = table._index_select(i, axis=axis)

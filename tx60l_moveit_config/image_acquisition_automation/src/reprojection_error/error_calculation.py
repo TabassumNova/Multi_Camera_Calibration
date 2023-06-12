@@ -30,16 +30,32 @@ def error_board_param(ws, pose_init_board):
                 objectPoints = np.array([ws.boards[board1].adjusted_points[i] for i in ids], dtype='float64').reshape(
                     (-1, 3))
                 for board2 in detected_boards:
+                    '''
                     pose_cam_board2 = np.linalg.inv(image.poses[board2])  # cam wrto board2(base)
                     pose_board2_master = pose_init_board.poses[board2]
                     pose_master_board1 = np.linalg.inv(pose_init_board.poses[board1])
                     pose_board1_cam = np.linalg.inv(pose_cam_board2 @ pose_board2_master @ pose_master_board1)
+                    '''
+                    e = test_single_pose(image.poses[board1], image.poses[board2], objectPoints, corners, camera_matrix, camera_dist)
+                    # pose_board1_cam = image.poses[board2] @ np.linalg.inv(pose_init_board.poses[board2]) @ pose_init_board.poses[board2]
+                    pose_board1_cam = image.poses[board2] @ np.linalg.inv(pose_init_board[board2]) @ \
+                                      pose_init_board[board2]
                     rtvec = from_matrix(pose_board1_cam)
                     rvec, tvec = split(rtvec)
                     imagePoints, _ = cv2.projectPoints(objectPoints, rvec, tvec, camera_matrix, camera_dist)
                     error = imagePoints.reshape([-1, 2]) - corners
                     error_dict[pose] = error
                     pose += 1
+
+def test_single_pose(pose_board1, pose_board2, objPoint_board1, corners, cam_matrix, cam_dist):
+    board1_board2 = matrix.relative_to(np.linalg.inv(pose_board1), np.linalg.inv(pose_board2))
+    T = pose_board2 @ board1_board2
+    rtvec = from_matrix(T)
+    rvec, tvec = split(rtvec)
+    imagePoints, _ = cv2.projectPoints(objPoint_board1, rvec, tvec, cam_matrix, cam_dist)
+    error = imagePoints.reshape([-1, 2]) - corners
+    pass
+    return error
 
 def reprojection_error_calculation():
     # Reprojection error calculation :(

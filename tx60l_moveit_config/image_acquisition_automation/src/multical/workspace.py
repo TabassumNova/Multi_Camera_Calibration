@@ -228,8 +228,8 @@ class Workspace:
         info("Pose counts:")
         tables.table_info(self.pose_table.valid, self.names)
 
-        pose_init_board = tables.initialise_board(self)
-        # board_param(self)
+        pose_init_board1 = tables.initialise_board(self)
+        pose_init_board = board_param(self)
 
         error_board_param(self, pose_init_board)
 
