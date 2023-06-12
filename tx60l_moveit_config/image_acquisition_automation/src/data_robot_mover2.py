@@ -209,11 +209,14 @@ def get_calib_poses_new(box_attacher, initial_pose, offsetpoint=[0.0, 0.0, 0.0],
     # use default rotation angles if no angle lists are given
     if (angles == None):
         # euler rotations around each axis relative to the initial pose; 0.0 is automatically included
-        angle_x_list = [0, 10.0, 20, 30, 40, -10.0, -20, -30, -40]
-        angle_y_list = [0, 10.0, 20, 30, 40, -10.0, -20, -30, -40]  # , -10.0]
-        angle_z_list = [0, 10.0, 20, 30, 40, -10.0, -20, -30, -40]
-        # angle_x_list = [0]
-        # angle_y_list = [0]  # , -10.0]
+        # angle_x_list = [0, 10.0, 20, 30, 40, -10.0, -20, -30, -40]
+        # angle_y_list = [0, 10.0, 20, 30, 40, -10.0, -20, -30, -40]  # , -10.0]
+        # angle_z_list = [0, 10.0, 20, 30, 40, -10.0, -20, -30, -40]
+        angle_x_list = [0]
+        angle_y_list = [0]  # , -10.0]
+        z1 = np.arange(0, 290.0, 5)
+        z2 = np.arange(0, -290.0, -5)
+        angle_z_list = np.concatenate((z1, z2))
         # angle_z_list = [0, 20.0, 40.0, 60.0, 80.0, 100.0, 110.0, 120.0, 130.0, 140.0, 150.0, 160.0, 
         #                 170.0, 180.0, 190.0, 200.0, 210.0, 220.0, 230.0, 250.0, 260.0, 280.0, -20.0, 
         #                 -40.0, -60.0, -80.0, -100.0, -110.0, -120.0, -130.0, -140.0, -150.0, -160.0, 

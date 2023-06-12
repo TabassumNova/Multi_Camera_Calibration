@@ -113,6 +113,8 @@ class Box_Attacher_3(object):
         initial_pose = get_pose(self, euler=True)
         pose_list = get_calib_poses_new(self, initial_pose)
         pose = 1
+        json_dict = {}
+        file_name = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/board_param_poses.json"
         if enter == '':
             for i in range(len(pose_list)):
                 # Move to first point automatically
@@ -124,9 +126,25 @@ class Box_Attacher_3(object):
                     start_arv_image_acquisition(self, pose)
                     pass
                 print('Pose: ', pose)
+                json_dict = self.write_json(json_dict, pose, file_name)
                 motion_successful = move_robot(self, pose_list[i])
                 pose += 1
-                
+
+    def write_json(self, json_dict, pose, file_name):
+        json_dict[pose] = {}
+        current_pose = self.move_group.get_current_pose().pose.position
+        current_orientation = self.move_group.get_current_pose().pose.orientation
+        json_dict[pose]['position (x,y,z)'] = [str(current_pose.x), str(current_pose.y), str(current_pose.z)]
+        json_dict[pose]['orintation (w,x,y,z)'] = [str(current_orientation.w), str(current_orientation.x), str(current_orientation.y), str(current_orientation.z)]
+        json_dict[pose]['joint_goal'] = [str(a) for a in self.move_group.get_current_joint_values()]
+
+        # Serializing json
+        json_object = json.dumps(json_dict, indent=4)
+        # Writing to sample.json
+        with open(file_name, "w") as outfile:
+            outfile.write(json_object)
+
+        return json_dict          
 
     def plan_cluster_point_goal(self, plan_num=10, library = 'arv'):
         enter = input("Hit ENTER if you want to start planning: ")

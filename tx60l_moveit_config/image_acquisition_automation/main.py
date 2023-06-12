@@ -58,8 +58,8 @@ def main():
         # box_attacher.plan_xlxs_joint_goal(row_end=8, library = 'arv')
         # box_attacher.plan_cluster_point_goal(plan_num=10)
         # view_Plan(box_attacher)
-        # box_attacher.plan_box_param()
-        viewPlan_RL(box_attacher)
+        box_attacher.plan_box_param()
+        # viewPlan_RL(box_attacher)
         # viewPlanGeo(box_attacher)
 
         
