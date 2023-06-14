@@ -26,7 +26,7 @@ from structs.struct import split_list
 
 
 class Camera(Parameters):
-  def __init__(self, image_size, intrinsic, dist, model='standard', fix_aspect=False, has_skew=False, error_perview=None):
+  def __init__(self, image_size, intrinsic, dist, model='standard', fix_aspect=False, has_skew=False, error_perview=None, reprojection_error_limit=0.5):
 
     assert model in Camera.model,\
         f"unknown camera model {model} options are {list(self.model.keys())}"
@@ -39,6 +39,7 @@ class Camera(Parameters):
     self.fix_aspect = fix_aspect
     self.has_skew = has_skew
     self.error_perview = error_perview
+    self.reprojection_error_limit = reprojection_error_limit
 
   model = struct(
       standard=0,
@@ -67,7 +68,7 @@ class Camera(Parameters):
 
   @staticmethod
   def calibrate(boards, detections, image_size, max_iter=10, eps=1e-3,
-                model='standard', fix_aspect=False, has_skew=False, flags=0, max_images=None):
+                model='standard', fix_aspect=False, has_skew=False, flags=0, max_images=None, reprojection_error_limit=0.5):
 
     points = calibration_points(boards, detections)
     if max_images is not None:
@@ -80,7 +81,7 @@ class Camera(Parameters):
 
     ## new
     err = 1
-    while abs(err)>0.50:
+    while abs(err) > reprojection_error_limit:
       err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
                                                                             image_size, None, None, criteria=criteria,
                                                                             flags=flags)

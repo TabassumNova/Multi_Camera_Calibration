@@ -37,6 +37,7 @@ class CameraOpts:
   
   calibration: Optional[str] = None # Initialise from previous (or single camera) calibration
   limit_intrinsic: Optional[int] = 50   # Limit intrinsic images to enable faster initialisation
+  intrinsic_error_limit: Optional[float] = 0.5
 
 @dataclass 
 class RuntimeOpts:

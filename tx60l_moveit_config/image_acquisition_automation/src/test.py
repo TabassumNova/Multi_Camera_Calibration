@@ -1,8 +1,9 @@
 import json
-# Data to be written
-dictionary = {"name": "sathiyajith", "rollno": 56, "cgpa": 8.6, "phonenumber": "9976770500"}
-# Serializing json
-json_object = json.dumps(dictionary, indent=4)
-# Writing to sample.json
-with open("/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/poses.json", "w") as outfile:
-    outfile.write(json_object)
+import numpy as np
+
+x = np.arange(0, 280.0, 5)
+y = np.arange(0, -280, -5)
+z = np.concatenate((x,y))
+
+for i in z:
+    print(i)
