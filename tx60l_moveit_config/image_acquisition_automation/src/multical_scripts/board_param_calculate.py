@@ -4,8 +4,8 @@ import src.multical.config.workspace as workspace
 
 if __name__ == '__main__':
 
-    pathO = args.PathOpts(image_path="D:\MY_DRIVE_N\Masters_thesis\Dataset/board_param/board_param_final2")
-    cam = args.CameraOpts(motion_model="calibrate_board", calibration="D:\MY_DRIVE_N\Masters_thesis\Dataset/board_param/board_param_final2/all_camera_intrinsic.json")
+    pathO = args.PathOpts(image_path="D:\MY_DRIVE_N\Masters_thesis\Dataset/board_param/board_param_final3")
+    cam = args.CameraOpts(motion_model="calibrate_board", calibration="D:\MY_DRIVE_N\Masters_thesis\Dataset/board_param/board_param_final3/all_camera_intrinsic.json")
     # pathO = args.PathOpts(image_path="D:\MY_DRIVE_N\Masters_thesis\Dataset\V10_debug\data/train")
     # cam = args.CameraOpts()
     runt = args.RuntimeOpts()

@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import cv2, PIL, os
+import math
 from cv2 import aruco
 import operator
 from scipy.spatial.transform import Rotation as R
@@ -36,11 +37,19 @@ def board_pose(objpoints, corners, ids, board, camMatrix, camDist, image):
         print('Not enough points to calculate solvePnP')
         ret2, rvecs2, tvecs2 = 0, np.zeros((3,1)), np.zeros((3,1))
         euler_deg2 = np.zeros((3,1))
+        view_angle = 0
     else:
         ret2, rvecs2, tvecs2 = cv2.solvePnP(objpoints, corners, camMatrix, camDist, np.empty(1), np.empty(1))
         euler_deg2 = rotVec_to_euler(rvecs2)
+        view_angle = view_angle_calc(rvecs2)
 
-    return ret2, rvecs2.reshape(-1), tvecs2.reshape(-1), euler_deg2
+    return ret2, rvecs2.reshape(-1), tvecs2.reshape(-1), euler_deg2, view_angle
+
+def view_angle_calc(rvec):
+    r = R.from_rotvec(rvec.reshape(-1))
+    x,y,z,w = r.as_quat()
+    view_angle = math.degrees(np.arctan((2*(x*y - w*z)*w*w - x*x -y*y +z*z)))
+    return view_angle
 
 def rotVec_to_euler(rvecs):
     r = R.from_rotvec(rvecs.reshape(-1))
@@ -59,7 +68,7 @@ def draw_cube(img, corners, imgpts):
     img = cv2.drawContours(img, [imgpts[4:]],-1,(0,0,255),3)
     return img
 
-def draw(frame, board_num, euler_deg, tvecs, text_height):
+def draw(frame, board_num, euler_deg, vie_angle, tvecs, text_height):
     font = cv2.FONT_HERSHEY_SIMPLEX
 
     # Draw_cube
@@ -74,9 +83,10 @@ def draw(frame, board_num, euler_deg, tvecs, text_height):
     cv2.putText(frame, 'Board' + str(board_num), (10, text_height), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
     cv2.putText(frame, 'Euler_degree ' + str(euler_deg), (10, text_height + 100), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
     cv2.putText(frame, 'tvecs ' + str(tvecs), (10, text_height + 200), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
+    cv2.putText(frame, 'View_angle ' + str(view_angle), (10, text_height + 400), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
     # cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvecs, tvecs, 0.1)
-    start_height = text_height + 400
-    return frame, text_height
+    start_height = text_height + 600
+    return frame, start_height
 
 def get_base_gripper_transformation(end_effector_poses, filename):
     pose_name = filename[:-4]
@@ -91,13 +101,57 @@ def get_base_gripper_transformation(end_effector_poses, filename):
 
     return rot_matrix, position
 
+def draw_EF_axis(img, R, t, K, dist):
+    # unit is mm
+    rotV = R
+    points = np.float32([[3 * .013, 0, 0], [0, 3 * .013, 0], [0, 0, -3 * .013], [0, 0, 0]]).reshape(-1, 3)
+    # points = np.float32([[0.013, 0, 0], [0, 0.013, 0], [0, 0, 0.013], [0, 0, 0]]).reshape(-1, 3)
+    axisPoints, _ = cv2.projectPoints(points, rotV, np.array([0.0, 0.0, 0.0]), K, dist)
+    axisPoints = np.int_(np.floor((axisPoints.reshape((-1,2)))/3))
+    x0, x1 = line_extend(axisPoints[3], axisPoints[0])
+    y0, y1 = line_extend(axisPoints[3], axisPoints[1])
+    z0, z1 = line_extend(axisPoints[3], axisPoints[2])
+    img = cv2.line(img, x0, x1, (255,0,0), 10)
+    img = cv2.line(img, y0, y1, (0,255,0), 10)
+    img = cv2.line(img, z0, z1, (0,0,255), 10)
+    cv2.imwrite(image_path, img)
+    return img
+
+def line_extend(start, end):
+    slope = (end[1] - start[1])/ (end[0] - start[0])
+    e = end[0]*1.5*slope
+    end1 = abs(np.int_((end[0]*1.5, end[0]*1.5*slope)))
+    start1 = abs(np.int_(start))
+
+    return tuple(start1), tuple(end1)
+
+
+def write_base_gripper_pose(frame, end_effector_poses, filename, text_height):
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    pose_name = filename[:-4]
+    pose_num = pose_name[1:]
+    EF_file = open(end_effector_poses)
+    EF_poses = json.load(EF_file)
+    pose = EF_poses[pose_num]
+    position = np.array([float(p) for p in pose['position (x,y,z)']])
+    orientation = [float(o) for o in pose['orintation (w,x,y,z)']]
+    r = R.from_quat(orientation)
+    rvec = r.as_rotvec()
+    euler_degree = r.as_euler('xyz',degrees=True)
+    cv2.putText(frame, 'EF', (10, text_height), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
+    cv2.putText(frame, 'Euler_degree ' + str(euler_degree), (10, text_height + 100), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
+    cv2.putText(frame, 'tvecs ' + str(position), (10, text_height + 200), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
+    cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvec, np.array([0.0, 0.0, 0.0]), 3)
+    # frame = draw_EF_axis(frame, rvec, position, cam_matrix, cam_dist)
+
+    return frame
 
 if __name__ == '__main__':
-    directory = 'D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/08320218/'
-    new_directory = 'D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/08320217_angle/'
+    directory = 'D:\MY_DRIVE_N\Masters_thesis\Dataset\V23\debug/08320218/08320218/'
+    # new_directory = 'D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/08320217_angle/'
     board_yaml = "D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/boards.yaml"
     camera_intrinsic = "D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/all_camera_intrinsic.json"
-    end_effector_poses = "D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/poses_geo.json"
+    end_effector_poses = "D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/test\poses_V23.json"
     hand_eye = "D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/hand_eye.json"
 
     camera_file = open(camera_intrinsic)
@@ -124,8 +178,10 @@ if __name__ == '__main__':
             # b = boards.Boards(boards=board_yaml, detect=detect_img)
             detection = b.execute()
             detected_boards = [idx for idx,d in enumerate(detection) if len(d.ids)>0]
+
+            # base_gripper_R, base_gripper_T = get_base_gripper_transformation(end_effector_poses, filename)
+            # frame = write_base_gripper_pose(frame, end_effector_poses, filename, text_height=200)
             text_height = 200
-            base_gripper_R, base_gripper_T = get_base_gripper_transformation(end_effector_poses, filename)
             for idx,board_num in enumerate(detected_boards):
                 ids = detection[board_num].ids
                 corners = detection[board_num].corners
@@ -133,19 +189,21 @@ if __name__ == '__main__':
                 adjusted_points = detected_board.adjusted_points
                 objpoints = np.array([adjusted_points[a] for a in ids], dtype='float64').reshape((-1, 3))
                 detect_board_config = board_config(detected_board)
-                ret, rvecs, tvecs, euler_deg = board_pose(objpoints, corners, ids, detect_board_config, cam_matrix, cam_dist, frame)
+                ret, rvecs, tvecs, euler_deg, view_angle = board_pose(objpoints, corners, ids, detect_board_config, cam_matrix, cam_dist, frame)
                 if ret:
                     rtvecs = join(rvecs, tvecs)
                     rtmatrix = np.linalg.inv(to_matrix(rtvecs))
                     R_matrix, T = matrix.split(rtmatrix)
                     world_camera['R'].append(R_matrix)
                     world_camera['T'].append(T)
-                    base_gripper['R'].append(base_gripper_R)
-                    base_gripper['T'].append(base_gripper_T)
-                    # frame, text_height = draw(frame, board_num, euler_deg, tvecs, text_height)
+                    # base_gripper['R'].append(base_gripper_R)
+                    # base_gripper['T'].append(base_gripper_T)
+                    frame, text_height = draw(frame, board_num, euler_deg, view_angle, tvecs, text_height)
+            # frame = write_base_gripper_pose(frame, end_effector_poses, filename, text_height=text_height+400)
             pass
-            # cv2.imwrite(image_path, frame)
+            cv2.imwrite(image_path, frame)
             pass
+        '''
         gripper_world_r, gripper_world_t, base_cam_r, base_cam_t = \
             cv2.calibrateRobotWorldHandEye(
                 world_camera['R'], world_camera['T'],
@@ -201,5 +259,5 @@ if __name__ == '__main__':
                 error_dict[face] = error
                 face += 1
                 pass
-
+'''
     pass

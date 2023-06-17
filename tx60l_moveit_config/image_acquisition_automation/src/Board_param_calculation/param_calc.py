@@ -1,5 +1,6 @@
 from src.multical.tables import *
 from structs.struct import choose, struct
+from scipy.spatial.transform import Rotation as R
 
 def board_param(ws):
     name = 'board'
@@ -37,11 +38,20 @@ def estimate_transform(table, i, j, axis=0):
 
   T1 = matrix.align_transforms_mean(table_i, table_j)
 
-  transformation = 0
+  r_list = []
+  t = 0
   for pose in range(0, table_i.shape[0]):
-      T = matrix.relative_to(np.linalg.inv(table_j[pose]), np.linalg.inv(table_i[pose]))
-      transformation += T
-  final_T = transformation/len(table_i)
+      transformation = matrix.relative_to(np.linalg.inv(table_j[pose]), np.linalg.inv(table_i[pose]))
+      rt = rtvec.from_matrix(transformation)
+      rvec, tvec = rtvec.split(rt)
+      r = R.from_rotvec(rvec)
+      r_list.append(r.as_euler('xyz', degrees=True))
+      t += tvec
+  tvec_mean = t/len(table_i)
+  r = R.from_euler('xyz', r_list, degrees=True)
+  rvec_mean = r.mean().as_rotvec()
+  final_T = rtvec.to_matrix(rtvec.join(rvec_mean, tvec_mean))
+
 
 
   return final_T

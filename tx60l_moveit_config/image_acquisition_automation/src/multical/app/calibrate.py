@@ -21,8 +21,8 @@ class Calibrate:
         calibrate(self)
 
     def execute_new(self):
-        ws, boards = detection_new(self)
-        return ws, boards
+        ws = detection_new(self)
+        return ws
 
     def execute_board(self):
         calibrate_board(self)
@@ -85,8 +85,10 @@ def detection_new(args):
                                        args.paths.cameras, args.paths.camera_pattern, limit=args.paths.limit_images)
     ws.add_camera_images(camera_images, j=args.runtime.num_threads)
     ws.detect_boards(boards, load_cache=not args.runtime.no_cache, j=args.runtime.num_threads)
+    calib = map_none(load_calibration, args.camera.calibration)
+    ws.set_calibration(calib.cameras)
 
-    return ws, boards
+    return ws
 
 
 if __name__ == '__main__':
