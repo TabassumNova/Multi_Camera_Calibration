@@ -84,7 +84,7 @@ def hand_eye_robot_world(base_gripper_R, base_gripper_t, world_camera_R, world_c
 
 
 
-  return base_wrt_world, gripper_wrt_camera, np.linalg.norm(err, axis=(1, 2)), np.linalg.norm(error2, axis=(1, 2))
+  return base_wrt_world, gripper_wrt_camera, world_wrt_camera, base_wrt_gripper, np.linalg.norm(err, axis=(1, 2)), np.linalg.norm(error2, axis=(1, 2))
 
 
 def hand_eye_t(camera_wrt_world, gripper_wrt_base):

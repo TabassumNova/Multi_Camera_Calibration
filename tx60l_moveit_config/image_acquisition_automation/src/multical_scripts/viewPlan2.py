@@ -4,15 +4,15 @@ import random
 import src.multical.app.boards as boards
 import os
 
-from src.aravis_image_acquisition import *
+# from src.aravis_image_acquisition import *
 
-import rospy
-import moveit_commander
-import moveit_msgs.msg
-import geometry_msgs.msg
+# import rospy
+# import moveit_commander
+# import moveit_msgs.msg
+# import geometry_msgs.msg
 
-from src.data_robot_mover2 import *
-from src.aravis_image_acquisition import *
+# from src.data_robot_mover2 import *
+# from src.aravis_image_acquisition import *
 from src.multical.workspace import Workspace
 from src.multical.config.runtime import *
 import src.multical.app.calibrate as calibrate
@@ -28,21 +28,22 @@ board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/train/boards.yaml"
 intrinsic_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/train/all_camera_intrinsic.json"
 
 class viewPlan2():
-    def __init__(self, box_attacher, datasetPath, boardPath, poseJsonPath):
-        self.box_attacher = box_attacher
+    # def __init__(self, box_attacher, datasetPath, boardPath, intrinsic_path, poseJsonPath):
+    def __init__(self, datasetPath, boardPath, intrinsic_path, poseJsonPath):
+        # self.box_attacher = box_attacher
         self.datasetPath = datasetPath
         self.boardPath = boardPath
         self.poseJsonPath = poseJsonPath
         self.intrinsicPath = intrinsic_path
         self.workspace = None
-        self.initial_pose = get_pose(self.box_attacher, euler=True)
+        # self.initial_pose = get_pose(self.box_attacher, euler=True)
 
         enter = input("Hit ENTER if you want to start planning: ")
-        self.reset_position()
+        # self.reset_position()
 
         self.pose = 1
         self.detection_dict = {}
-        self.camera_serial = arv_get_image(path, self.pose)
+        # self.camera_serial = arv_get_image(path, self.pose)
         self.initiate_workspace()
         self.checkDataset()
 
@@ -67,11 +68,19 @@ class viewPlan2():
     def checkPose(self):
         for cam in range(0, self.workspace.sizes.camera):
             boards = self.select_valid_boards(cam)
-            best_board, view_angle = self.select_best_viewed_board(cam, boards)
+            best_board, view_angle, reprojectionError= self.select_best_viewed_board(cam, boards)
+            self.check_coverage_area(cam, best_board)
             if best_board != None:
                 self.moveBoard(best_board)
 
-
+    def check_coverage_area(self, cam, board):
+        points = self.workspace.point_table.points[cam][self.pose][board]
+        valid = self.workspace.point_table.points[cam][self.pose][board]
+        x_points = np.array([points._index_select(i, axis=0) for i in range(0, points.shape[0]) if valid[i] == True])
+        y_points = np.array([points._index_select(i, axis=1) for i in range(0, points.shape[0]) if valid[i] == True])
+        x_max, x_min = x_points.max(), x_points.min()
+        y_max, y_min = y_points.max(), y_points.min()
+        area = (x_max - x_min)*(y_max - y_min)
         pass
 
     def moveBoard(self, board):
@@ -87,19 +96,29 @@ class viewPlan2():
 
         rotation_step = 10
         if board == 0:
+            # Move around -x direction. Don't change x parameter in end effector
+            self.moveTranslation(axis='x')
+            self.moveRotation(axis='x')
             pass
         elif board == 1:
-            '''
-            Move around +y direction. Don't change y parameter in end effector
-            '''
+            # Move around +y direction. Don't change y parameter in end effector
             self.moveTranslation(axis='y')
             self.moveRotation(axis='y')
             pass
         elif board == 2:
+            # Move around +z direction. Don't change z parameter in end effector
+            self.moveTranslation(axis='z')
+            self.moveRotation(axis='z')
             pass
         elif board == 3:
+            # Move around -y direction. Don't change y parameter in end effector
+            self.moveTranslation(axis='y')
+            self.moveRotation(axis='y')
             pass
         elif board == 4:
+            # Move around +x direction. Don't change x parameter in end effector
+            self.moveTranslation(axis='x')
+            self.moveRotation(axis='x')
             pass
         pass
 
@@ -223,11 +242,12 @@ class viewPlan2():
         best_board = None
         for b in boards:
             angles = self.workspace.pose_table.view_angles[cam][self.pose-1][b]
+            reprojectionError = self.workspace.pose_table.reprojection_error[cam][self.pose-1][b]._max
             total_angle = abs(angles[0]) + abs(angles[1])
             if total_angle < view_angle:
                 best_board = b
                 view_angle = total_angle
-        return best_board, view_angle
+        return best_board, view_angle, reprojectionError
 
 
     def detection(self):
@@ -253,4 +273,4 @@ class poseQuality():
         self.num_corners = None
 
 if __name__ == '__main__':
-    v = viewPlan2(path, board_path, json_path)
+    v = viewPlan2(path, board_path, intrinsic_path, json_path)
