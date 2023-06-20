@@ -117,3 +117,7 @@ catkin_make
 *** Not all the views are taken for calculating intrinsic. The program iteratively rejects outliers that have greater reprojection erro and optimizes the intrinsic parameters. How many views are taken for calculation are written in calibration.txt file
 
 **** cam222 has only 28 views??
+
+# OpenCV Issues
+- for aruco, PyQT related issues
+    -> pip install opencv-contrib-python-headless==4.6.0.66
