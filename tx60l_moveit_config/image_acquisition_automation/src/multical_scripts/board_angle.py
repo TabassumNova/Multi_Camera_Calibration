@@ -7,6 +7,7 @@ import operator
 from scipy.spatial.transform import Rotation as R
 import math
 import src.multical.app.boards as boards
+
 import json
 import yaml
 from src.multical import board
@@ -147,10 +148,10 @@ def write_base_gripper_pose(frame, end_effector_poses, filename, text_height):
     return frame
 
 if __name__ == '__main__':
-    directory = 'D:\MY_DRIVE_N\Masters_thesis\Dataset\V23\debug/08320218/08320218/'
+    directory = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/view_plan/viewPlan2/data/08320218/'
     # new_directory = 'D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/08320217_angle/'
-    board_yaml = "D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/boards.yaml"
-    camera_intrinsic = "D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/all_camera_intrinsic.json"
+    board_yaml = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/view_plan/viewPlan2/boards.yaml'
+    camera_intrinsic = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/view_plan/viewPlan2/all_camera_intrinsic_V24.json'
     end_effector_poses = "D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/test\poses_V23.json"
     hand_eye = "D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/hand_eye.json"
 

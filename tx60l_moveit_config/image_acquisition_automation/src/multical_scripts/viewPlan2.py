@@ -22,10 +22,10 @@ from src.multical.tables import *
 import copy
 import json
 
-path = 'D:\MY_DRIVE_N\Masters_thesis\Dataset/train/'
-json_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/train\poses_geo.json"
-board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/train/boards.yaml"
-intrinsic_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/train/all_camera_intrinsic.json"
+# path = 'D:\MY_DRIVE_N\Masters_thesis\Dataset/train/'
+# json_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/train\poses_geo.json"
+# board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/train/boards.yaml"
+# intrinsic_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/train/all_camera_intrinsic.json"
 
 class viewPlan2():
     def __init__(self, box_attacher, datasetPath, boardPath, intrinsic_path, poseJsonPath):
@@ -43,7 +43,7 @@ class viewPlan2():
 
         self.pose = 1
         self.detection_dict = {}
-        self.camera_serial = arv_get_image(path, self.pose)
+        self.camera_serial = arv_get_image(self.datasetPath, self.pose)
         self.initiate_workspace()
         self.align_board_perCamera()
         # self.checkDataset()
@@ -305,7 +305,7 @@ class viewPlan2():
         best_board = None
         for b in boards:
             angles = self.get_view_angles(cam, self.pose, b)
-            reprojectionError = self.workspace.pose_table.reprojection_error[cam][self.pose-1][b]._max
+            reprojectionError = self.workspace.pose_table.reprojection_error[cam][self.pose-1][b]
             total_angle = abs(angles[0]) + abs(angles[1])
             if total_angle < view_angle:
                 best_board = b
@@ -339,5 +339,5 @@ class poseQuality():
         self.imagePath = imagePath
         self.num_corners = None
 
-if __name__ == '__main__':
-    v = viewPlan2(box_attacher, path, board_path, intrinsic_path, json_path)
+# if __name__ == '__main__':
+#     v = viewPlan2(box_attacher, path, board_path, intrinsic_path, json_path)

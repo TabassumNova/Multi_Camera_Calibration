@@ -4,8 +4,8 @@ import src.multical.config.workspace as workspace
 
 if __name__ == '__main__':
 
-    pathO = args.PathOpts(image_path="D:\MY_DRIVE_N\Masters_thesis\Dataset\V23\V23")
-    cam = args.CameraOpts(motion_model='hand_eye', calibration="D:\MY_DRIVE_N\Masters_thesis\Dataset\V23\V23/calibration.json")
+    pathO = args.PathOpts(image_path="/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/view_plan/viewPlan2/data/")
+    cam = args.CameraOpts(motion_model='hand_eye', calibration='/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/view_plan/viewPlan2/all_camera_intrinsic_V24.json')
     # pathO = args.PathOpts(image_path="D:\MY_DRIVE_N\Masters_thesis\Dataset\V10_debug\data/train")
     # cam = args.CameraOpts()
     runt = args.RuntimeOpts()
