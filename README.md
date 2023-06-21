@@ -119,5 +119,8 @@ catkin_make
 **** cam222 has only 28 views??
 
 # OpenCV Issues
-- for aruco, PyQT related issues
-    -> pip install opencv-contrib-python-headless==4.6.0.66
+- For aruco, PyQT related issues
+    - pip install opencv-contrib-python-headless==4.6.0.66
+- cv2.solvePnPGeneric sometimes show irrelevent results
+    - take 3/5 pictures of the same poses. Calculate pose. Take average of the poses
+
