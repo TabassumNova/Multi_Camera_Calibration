@@ -1,4 +1,3 @@
-
 import pathlib
 from typing import Optional
 
@@ -34,6 +33,7 @@ class Boards:
   
   detect : Optional[str] = None # Show detections from an example image
   write : Optional[str] = None # Directory to write board images
+  write_detect_image : Optional[str] = None # Directory to write board images
 
   pixels_mm : int = 1   # Pixels per mm of pattern
   margin_mm : int = 20  # Border width in mm
@@ -100,6 +100,12 @@ def show_boards(args):
       display(image)
     else:
       return detections
+
+    if args.write_detect_image is not None:
+      pathlib.Path(args.write_detect_image).mkdir(parents=True, exist_ok=True)
+      filename = path.join(args.write_detect_image, "detection.png")
+      cv2.imwrite(filename, image)
+      print(f"Wrote {filename}")
 
   elif args.write is not None:
     pathlib.Path(args.write).mkdir(parents=True, exist_ok=True)
