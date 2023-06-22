@@ -73,9 +73,10 @@ class viewPlan2():
     def moveBoard_iteratively(self, cam, board):
         # First adjust angles
         angles = self.get_view_angles(cam, self.pose, board)
-        print("Camera {}: Start adjusting Angles for board {} from pose {}".format(self.camera_serial[cam], board, self.pose+1))
+        print("Camera {}: Start adjusting Angles for board {} from pose {}".format(self.camera_serial[cam], board, self.pose))
         while (abs(angles[0]) > 2) & (abs(angles[1]) > 2):
             self.adjust_angles(board, angles)
+            self.initiate_workspace()
             angles = self.get_view_angles(cam, self.pose, board)
         print("Camera {}: Successfully adjusted Angles for board {} from pose {}".format(self.camera_serial[cam], board, self.pose))
 
@@ -96,10 +97,13 @@ class viewPlan2():
         elif board == 1:
             pass
         elif board == 2:
-            transformation = get_orientation(self.box_attacher, self.initial_pose, [angles[1]*(-1), angles[0]*(-1), 0])
+            transformation = get_orientation(self.box_attacher, self.initial_pose, [angles[1]*(-1), 0, 0])
+            motion_successful = move_robot(self.box_attacher, transformation)
+            current_pose = get_pose(self.box_attacher, euler=True)
+            transformation = get_orientation(self.box_attacher, self.initial_pose, [0, angles[0]*(-1), 0])
             motion_successful = move_robot(self.box_attacher, transformation)
             self.pose += 1
-            self.camera_serial = arv_get_image(path, self.pose)
+            self.camera_serial = arv_get_image(self.datasetPath, self.pose)
             pass
         elif board == 3:
             pass
@@ -116,7 +120,7 @@ class viewPlan2():
             translation = get_position(self.box_attacher, self.initial_pose, position_change)
             motion_successful = move_robot(self.box_attacher, translation)
             self.pose += 1
-            self.camera_serial = arv_get_image(path, self.pose)
+            self.camera_serial = arv_get_image(self.datasetPath, self.pose)
             pass
         elif board == 3:
             pass
@@ -294,7 +298,7 @@ class viewPlan2():
         for translation in translation_list:
             motion_successful = move_robot(self.box_attacher, translation)
             self.pose += 1
-            self.camera_serial = arv_get_image(path, self.pose)
+            self.camera_serial = arv_get_image(self.datasetPath, self.pose)
 
 
     def select_valid_boards(self, cam):
