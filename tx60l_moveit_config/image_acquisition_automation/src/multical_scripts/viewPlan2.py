@@ -295,6 +295,7 @@ class viewPlan2():
             motion_successful = move_robot(self.box_attacher, translation)
             self.pose += 1
             self.camera_serial = arv_get_image(path, self.pose)
+            self.add_json()
 
 
     def select_valid_boards(self, cam):
