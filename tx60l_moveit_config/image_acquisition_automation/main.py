@@ -40,11 +40,11 @@ def main():
 
         box_attacher = Box_Attacher_3()
         box_attacher.replace_box(stl, size, stl_file_name)
-        # box_attacher.add_obstacle("camera_wall_1")
-        # box_attacher.add_obstacle("camera_wall_2")
-        # box_attacher.add_obstacle("glass_wall")
-        # # box_attacher.add_obstacle("left_wall")
-        # box_attacher.add_obstacle("base")
+        box_attacher.add_obstacle("camera_wall_1")
+        box_attacher.add_obstacle("camera_wall_2")
+        box_attacher.add_obstacle("glass_wall")
+        # box_attacher.add_obstacle("left_wall")
+        box_attacher.add_obstacle("base")
 
 
         debug = False

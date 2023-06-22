@@ -11,8 +11,8 @@ from rl.policy import BoltzmannQPolicy
 from rl.memory import SequentialMemory
 
 def viewPlan_RL(box_attacher):
-    common_focus = [-61, -19, 117, 112, 5, -247]
-    plan = box_attacher.move_robot_joints(np.array(common_focus))
+    # common_focus = [-61, -19, 117, 112, 5, -247]
+    # plan = box_attacher.move_robot_joints(np.array(common_focus))
     env = ViewPlanEnv()
     print(env.action_space.sample())
     print(env.observation_space.sample())

@@ -23,7 +23,7 @@ import copy
 import json
 
 # path = 'D:\MY_DRIVE_N\Masters_thesis\Dataset/train/'
-# json_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/train\poses_geo.json"
+# json_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/train\poses_viewPlan2.json"
 # board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/train/boards.yaml"
 # intrinsic_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset/train/all_camera_intrinsic.json"
 
@@ -36,6 +36,7 @@ class viewPlan2():
         self.poseJsonPath = poseJsonPath
         self.intrinsicPath = intrinsic_path
         self.workspace = None
+        self.json_dict = {}
 
         enter = input("Hit ENTER if you want to start planning: ")
         self.reset_position()
@@ -45,8 +46,8 @@ class viewPlan2():
         self.detection_dict = {}
         self.camera_serial = arv_get_image(self.datasetPath, self.pose)
         self.initiate_workspace()
-        self.align_board_perCamera()
-        # self.checkDataset()
+        # self.align_board_perCamera()
+        self.checkDataset()
 
     def initiate_workspace(self):
         pathO = args.PathOpts(image_path=self.datasetPath)
@@ -68,6 +69,7 @@ class viewPlan2():
             best_board, view_angles, reprojectionError= self.select_best_viewed_board(cam, boards)
             if best_board != None:
                 self.moveBoard_iteratively(cam, best_board)
+            self.reset_position()
         pass
 
     def moveBoard_iteratively(self, cam, board):
@@ -134,8 +136,8 @@ class viewPlan2():
     def checkPose(self):
         for cam in range(0, self.workspace.sizes.camera):
             boards = self.select_valid_boards(cam)
-            best_board, view_angles, reprojectionError= self.select_best_viewed_board(cam, boards)
-            area = self.check_coverage_area(cam, best_board)
+            best_board, view_angles, reprojectionError= self.select_best_viewed_board(cam, boards, pose=1)
+            # area = self.check_coverage_area(cam, best_board)
             if best_board != None:
                 self.moveBoard(best_board)
 
@@ -216,13 +218,20 @@ class viewPlan2():
             pass
         elif axis == 'z':
             translation_list = []
-            x = [10, 20, -10, -20]
-            y = [10, 20, -10, -20]
+            x = [10, 20, 30, 40, -10, -20, -30, -40]
+            y = [10, 20, 30, 40, -10, -20, -30, -40]
+            z = [10, 20, 30, 40, -10, -20, -30, -40]
+            for i in x:
+                transformation = get_orientation(self.box_attacher, self.initial_pose, [i, i, 0])
+                translation_list.append(transformation)
             for i in x:
                 transformation = get_orientation(self.box_attacher, self.initial_pose, [i, 0, 0])
                 translation_list.append(transformation)
             for i in y:
                 transformation = get_orientation(self.box_attacher, self.initial_pose, [0, i, 0])
+                translation_list.append(transformation)
+            for i in z:
+                transformation = get_orientation(self.box_attacher, self.initial_pose, [0, 0, i])
                 translation_list.append(transformation)
             self.moveRobot(translation_list)
             pass
@@ -296,20 +305,34 @@ class viewPlan2():
 
     def moveRobot(self, translation_list):
         for translation in translation_list:
+            self.write_json()
             motion_successful = move_robot(self.box_attacher, translation)
             self.pose += 1
             self.camera_serial = arv_get_image(self.datasetPath, self.pose)
 
+    def write_json(self):
+        self.json_dict[self.pose] = {}
+        current_pose = self.box_attacher.move_group.get_current_pose().pose.position
+        current_orientation = self.box_attacher.move_group.get_current_pose().pose.orientation
+        self.json_dict[self.pose]['position (x,y,z)'] = [str(current_pose.x), str(current_pose.y), str(current_pose.z)]
+        self.json_dict[self.pose]['orintation (w,x,y,z)'] = [str(current_orientation.w), str(current_orientation.x), str(current_orientation.y), str(current_orientation.z)]
+        self.json_dict[self.pose]['joint_goal'] = [str(a) for a in self.box_attacher.move_group.get_current_joint_values()]
+
+        # Serializing json
+        json_object = json.dumps(self.json_dict, indent=4)
+        # Writing to sample.json
+        with open(self.poseJsonPath, "w") as outfile:
+            outfile.write(json_object)
 
     def select_valid_boards(self, cam):
         return [idx for idx, value in enumerate(self.workspace.pose_table.valid[cam][self.pose-1]) if value==True]
 
-    def select_best_viewed_board(self, cam, boards):
+    def select_best_viewed_board(self, cam, boards, pose=self.pose):
         view_angle = 500
         best_board = None
         for b in boards:
-            angles = self.get_view_angles(cam, self.pose, b)
-            reprojectionError = self.workspace.pose_table.reprojection_error[cam][self.pose-1][b]
+            angles = self.get_view_angles(cam, pose, b)
+            reprojectionError = self.workspace.pose_table.reprojection_error[cam][pose-1][b]
             total_angle = abs(angles[0]) + abs(angles[1])
             if total_angle < view_angle:
                 best_board = b
