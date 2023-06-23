@@ -35,23 +35,25 @@ def start_streaming(path):
         for cam_idx in range(num_cams):
             cam = arv_camera[cam_idx]
             cam.start_acquisition_continuous()
-            cv2.namedWindow('capture', flags=0)
+            # cv2.namedWindow('capture', flags=0)
             pose = 0
             while True:
+                cam.start_acquisition_continuous()
                 saved_path = new_path[cam_idx] + '/p' + str(pose) + '.png'
                 frame = cam.pop_frame()
-                if not 0 in frame.shape:
-                    cv2.imshow("capture", frame)
-                    cv2.waitKey(10)
+                # if not 0 in frame.shape:
+                #     cv2.imshow("capture", frame)
+                #     cv2.waitKey(10)
                 cv2.imwrite(saved_path, frame)
+                print('Pose: ', pose)
                 pose += 1
-                time.sleep(10)
-            cam.stop_acquisition()
+                time.sleep(15)
+                cam.stop_acquisition()
 
     finally:
         cam.stop_acquisition()
 
 
 
-if __name__ == "__main__":
-    start_streaming(path)
+# if __name__ == "__main__":
+#     start_streaming(path)

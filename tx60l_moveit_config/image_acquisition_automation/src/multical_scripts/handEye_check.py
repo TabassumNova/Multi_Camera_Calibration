@@ -9,10 +9,10 @@ from structs.numpy import shape_info, struct, Table, shape
 import copy
 import json
 
-path = 'D:\MY_DRIVE_N\Masters_thesis\Dataset\V26_viewPlan2/viewPlan2\data/'
-poseJsonPath = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V26_viewPlan2/viewPlan2\pose_viewPlan2.json"
-board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V26_viewPlan2/viewPlan2/boards.yaml"
-intrinsic_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V26_viewPlan2/viewPlan2/all_camera_intrinsic_V24.json"
+path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/08320220/test_viewPlan2"
+poseJsonPath = "/home/raptor//tx60_moveit/src/tx60l_moveit_config/python_program/image/08320220/test_viewPlan2/V26_pose_viewPlan2.json"
+board_path = "/home/raptor//tx60_moveit/src/tx60l_moveit_config/python_program/image/08320220/test_viewPlan2/boards.yaml"
+intrinsic_path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/08320220/calibration.json"
 
 class handEye():
     def __init__(self, datasetPath, boardPath, intrinsic_path, poseJsonPath):
@@ -173,6 +173,6 @@ if __name__ == '__main__':
     h = handEye(path, board_path, intrinsic_path, poseJsonPath)
     h.initiate_workspace()
     h.set_gripper_pose()
-    h.handEye_gripper(camera=1, board=1)
+    h.handEye_gripper(camera=0, board=1)
     # h.estimate_camera_board_poses()
     pass
