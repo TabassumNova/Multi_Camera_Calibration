@@ -49,20 +49,12 @@ class handEye():
             if camBoard_valid:
                 board_to_cam = board_cam_pose.poses[p]
                 R_cam2world, t_cam2world = matrix.split(np.linalg.inv(board_to_cam))
-                R_base2gripper, t_base2gripper = matrix.split((self.gripper_pose[grip_pose]))
+                R_base2gripper, t_base2gripper = matrix.split(np.linalg.inv(self.gripper_pose[grip_pose]))
                 R_cam2world_list.append(R_cam2world)
                 t_cam2world_list.append(t_cam2world)
                 R_base2gripper_list.append(R_base2gripper)
                 t_base2gripper_list.append(t_base2gripper)
 
-        # board_wrt_boardM, slave_wrt_master, world_wrt_camera, \
-        #                     base_wrt_gripper, err, err2
-        # base_wrt_world, gripper_wrt_camera, world_wrt_camera, base_wrt_gripper
-        # base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper
-        base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, err, err2 = hand_eye.hand_eye_robot_world(np.array(R_cam2world_list),
-                                            np.array(t_cam2world_list), np.array(R_base2gripper_list), np.array(t_base2gripper_list))
-        b = np.linalg.inv(base_wrt_cam)
-        g = np.linalg.inv(gripper_wrt_world)
 
         base_cam_r, base_cam_t, gripper_world_r, gripper_world_t = self.hand_eye_robot_world(np.array(R_cam2world_list),
                                             np.array(t_cam2world_list), np.array(R_base2gripper_list), np.array(t_base2gripper_list))
@@ -79,7 +71,7 @@ class handEye():
 
         err = matrix.transform(base_wrt_cam, camera_wrt_world) - matrix.transform(base_wrt_gripper, gripper_wrt_world)
         ZB = matrix.transform(base_wrt_cam, camera_wrt_world)
-        error2 = base_wrt_gripper - matrix.transform(np.linalg.inv(gripper_wrt_world), ZB)
+        error2 = base_wrt_gripper - matrix.transform(ZB, np.linalg.inv(gripper_wrt_world))
 
         return base_cam_r, base_cam_t, gripper_world_r, gripper_world_t
 
