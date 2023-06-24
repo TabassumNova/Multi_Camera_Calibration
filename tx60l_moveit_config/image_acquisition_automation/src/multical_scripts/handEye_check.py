@@ -9,10 +9,10 @@ from structs.numpy import shape_info, struct, Table, shape
 import copy
 import json
 
-path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/08320220/test_viewPlan2"
-poseJsonPath = "/home/raptor//tx60_moveit/src/tx60l_moveit_config/python_program/image/08320220/test_viewPlan2/V26_pose_viewPlan2.json"
-board_path = "/home/raptor//tx60_moveit/src/tx60l_moveit_config/python_program/image/08320220/test_viewPlan2/boards.yaml"
-intrinsic_path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/08320220/calibration.json"
+path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220"
+poseJsonPath = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/stream_220.json"
+board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/boards.yaml"
+intrinsic_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/calibration.json"
 
 class handEye():
     def __init__(self, datasetPath, boardPath, intrinsic_path, poseJsonPath):
@@ -41,12 +41,15 @@ class handEye():
         t_cam2world_list = []
         R_base2gripper_list = []
         t_base2gripper_list = []
-        for p in range(0, len(self.gripper_pose)):
+        image_name = self.workspace.names.image
+        for img in image_name:
+            p = image_name.index(img)
+            grip_pose = img[:-4][1:]
             camBoard_valid = board_cam_pose.valid[p]
             if camBoard_valid:
                 board_to_cam = board_cam_pose.poses[p]
                 R_cam2world, t_cam2world = matrix.split(np.linalg.inv(board_to_cam))
-                R_base2gripper, t_base2gripper = matrix.split(self.gripper_pose[p])
+                R_base2gripper, t_base2gripper = matrix.split((self.gripper_pose[grip_pose]))
                 R_cam2world_list.append(R_cam2world)
                 t_cam2world_list.append(t_cam2world)
                 R_base2gripper_list.append(R_base2gripper)
@@ -58,24 +61,44 @@ class handEye():
         # base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper
         base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, err, err2 = hand_eye.hand_eye_robot_world(np.array(R_cam2world_list),
                                             np.array(t_cam2world_list), np.array(R_base2gripper_list), np.array(t_base2gripper_list))
+        b = np.linalg.inv(base_wrt_cam)
+        g = np.linalg.inv(gripper_wrt_world)
 
+        base_cam_r, base_cam_t, gripper_world_r, gripper_world_t = self.hand_eye_robot_world(np.array(R_cam2world_list),
+                                            np.array(t_cam2world_list), np.array(R_base2gripper_list), np.array(t_base2gripper_list))
         pass
 
+    def hand_eye_robot_world(self, cam_world_R, cam_world_t, base_gripper_R, base_gripper_t):
+        base_cam_r, base_cam_t, gripper_world_r, gripper_world_t = \
+            cv2.calibrateRobotWorldHandEye(cam_world_R, cam_world_t, base_gripper_R, base_gripper_t, method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH)
+
+        base_wrt_cam = matrix.join(base_cam_r, base_cam_t.reshape(-1))
+        gripper_wrt_world = matrix.join(gripper_world_r, gripper_world_t.reshape(-1))
+        camera_wrt_world = matrix.join(cam_world_R, cam_world_t)
+        base_wrt_gripper = matrix.join(base_gripper_R, base_gripper_t)
+
+        err = matrix.transform(base_wrt_cam, camera_wrt_world) - matrix.transform(base_wrt_gripper, gripper_wrt_world)
+        ZB = matrix.transform(base_wrt_cam, camera_wrt_world)
+        error2 = base_wrt_gripper - matrix.transform(np.linalg.inv(gripper_wrt_world), ZB)
+
+        return base_cam_r, base_cam_t, gripper_world_r, gripper_world_t
 
     def set_gripper_pose(self):
         file = open(self.poseJsonPath)
         data = json.load(file)
         num_pose = self.workspace.sizes.image
 
-        for i in range(1, num_pose):
-            if str(i) in data:
+        image_name = self.workspace.names.image
+        for img in image_name:
+            i = img[:-4][1:]
+            if i in data:
                 position = [float(j) for j in data[str(i)]["position (x,y,z)"]]
                 orientation = [float(j) for j in data[str(i)]["orintation (w,x,y,z)"]]
-                r = R.from_quat(orientation)
+                r = R.from_quat([orientation[1], orientation[2], orientation[3], orientation[0]])
                 rvec = r.as_rotvec()
                 tvec = np.array(position)
                 rt_matrix = rtvec.to_matrix(rtvec.join(rvec, tvec))
-                self.gripper_pose[i-1] = rt_matrix
+                self.gripper_pose[i] = rt_matrix
         pass
 
 
