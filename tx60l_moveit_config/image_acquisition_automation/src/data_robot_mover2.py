@@ -291,6 +291,10 @@ def get_calib_poses_new(box_attacher, initial_pose, offsetpoint=[0.0, 0.0, 0.0],
 
     return T_b_f_rot_list
 
+def reset_position(box_attacher, joint_goal=[-61, -19, 117, 112, 5, -247]):
+    common_focus = joint_goal
+    plan = box_attacher.move_robot_joints(np.array(common_focus))
+
 def move_robot(box_attacher, pose, extrinsic_euler=True): #TODO save_motionplan=None, load_motionplan=None
     """"
     TODO relative movements (get current position and move relative to it). 
