@@ -13,6 +13,7 @@ path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220"
 poseJsonPath = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/stream_220.json"
 board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/boards.yaml"
 intrinsic_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/calibration.json"
+boardGripper_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/boardGripper.json"
 
 class handEye():
     def __init__(self, datasetPath, boardPath, intrinsic_path, poseJsonPath):
@@ -55,9 +56,10 @@ class handEye():
                 R_base2gripper_list.append(R_base2gripper)
                 t_base2gripper_list.append(t_base2gripper)
 
-
-        base_cam_r, base_cam_t, gripper_world_r, gripper_world_t = self.hand_eye_robot_world(np.array(R_cam2world_list),
+        base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper = self.hand_eye_robot_world(np.array(R_cam2world_list),
                                             np.array(t_cam2world_list), np.array(R_base2gripper_list), np.array(t_base2gripper_list))
+
+        self.test_robotMove(camera, board, gripper_wrt_world, camera_wrt_world, base_wrt_gripper)
         pass
 
     def hand_eye_robot_world(self, cam_world_R, cam_world_t, base_gripper_R, base_gripper_t):
@@ -73,7 +75,21 @@ class handEye():
         ZB = matrix.transform(base_wrt_cam, camera_wrt_world)
         error2 = base_wrt_gripper - matrix.transform(ZB, np.linalg.inv(gripper_wrt_world))
 
-        return base_cam_r, base_cam_t, gripper_world_r, gripper_world_t
+        return base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper
+
+    def test_robotMove(self, camera, board, gripper_wrt_world, camera_wrt_world, base_wrt_gripper):
+        for idx1, p1 in enumerate(camera_wrt_world):
+            cam_gripper1 = rtvec.from_matrix(matrix.transform(p1, np.linalg.inv(gripper_wrt_world)))
+            base_gripper1 = base_wrt_gripper[idx1]
+            for idx2, p2 in enumerate(camera_wrt_world):
+                cam_gripper2 = rtvec.from_matrix(matrix.transform(p2, np.linalg.inv(gripper_wrt_world)))
+                diff = cam_gripper1 - cam_gripper2
+                base_gripper2 = base_wrt_gripper[idx2]
+                cam_gripper_diff = rtvec.to_matrix(diff)
+                estimated_base_gripper = rtvec.from_matrix(base_gripper1) + rtvec.from_matrix(np.linalg.inv(cam_gripper_diff))
+                error = base_gripper2 - rtvec.to_matrix(estimated_base_gripper)
+
+        pass
 
     def set_gripper_pose(self):
         file = open(self.poseJsonPath)
