@@ -29,7 +29,7 @@ def set_gripper_pose(poseJsonPath):
         tvec = np.array(position)
         rt_matrix = rtvec.to_matrix(rtvec.join(rvec, tvec))
         gripper_pose[pose] = rt_matrix
-    pass
+    return gripper_pose
 
 def main():
     rospy.init_node('box_attacher_3_node', anonymous=True)
@@ -78,11 +78,14 @@ def main():
             rospy.spin()
 
         # start
+        reset_position(box_attacher)
+        poseJsonPath = '/home/raptor//tx60_moveit/src/tx60l_moveit_config/python_program/image/board270/gripper_pose.json'
+        image_path = '/home/raptor//tx60_moveit/src/tx60l_moveit_config/python_program/image/board270/'
         gripper_pose = set_gripper_pose(poseJsonPath)
-        for key, pose in gripper_pose:
+        for key, pose in gripper_pose.items():
             move_robot(box_attacher, pose)
             print('Pose: ', key)
-            arv_get_image(image_path, key)
+            arv_get_image(image_path, int(key))
         # end
 
         print('To prevent initialisation errors please press plan and then execute without moving the robot.')

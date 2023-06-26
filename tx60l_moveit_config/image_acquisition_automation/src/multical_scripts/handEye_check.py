@@ -94,11 +94,12 @@ class handEye():
             cam_gripper2 = rtvec.from_matrix(matrix.transform(p2, np.linalg.inv(handEye_struct.gripper_wrt_world)))
             angle2 = rtvec.euler_angle(cam_gripper2[:3])
             diff = cam_gripper1 - cam_gripper2
+            angle_diff = rtvec.euler_angle(diff[:3])
             base_gripper2 = handEye_struct.base_wrt_gripper[idx2]
             cam_gripper_diff = rtvec.to_matrix(diff)
             estimated_base_gripper = rtvec.from_matrix(base_gripper1) + rtvec.from_matrix(np.linalg.inv(cam_gripper_diff))
             error = base_gripper2 - rtvec.to_matrix(estimated_base_gripper)
-            estimated_gripper_base_list.append(np.linalg.inv(estimated_base_gripper))
+            estimated_gripper_base_list.append(np.linalg.inv(rtvec.to_matrix(estimated_base_gripper)))
         return estimated_gripper_base_list
 
 

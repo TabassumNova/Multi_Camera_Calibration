@@ -56,3 +56,12 @@ def euler_angle(rvec, degree=True):
   r = R.from_rotvec(rvec.reshape(-1))
   euler_deg = r.as_euler('xyz', degrees=degree)
   return euler_deg
+
+def euler_to_rvec(angles):
+  '''
+  input:
+    angles = [x,y,z]  # euler angles
+  '''
+  r = R.from_euler('xyz', angles, degrees=True)
+  rvec = r.as_rotvec()
+  return rvec
