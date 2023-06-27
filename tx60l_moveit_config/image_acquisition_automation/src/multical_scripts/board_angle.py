@@ -1,15 +1,15 @@
-import numpy as np
-import os
+
 import cv2, PIL, os
-import math
-from cv2 import aruco
-import operator
-from scipy.spatial.transform import Rotation as R
-import math
+
 import src.multical.app.boards as boards
+import numpy as np
+
+import src.multical.app.calibrate as calibrate
+import src.multical.config.arguments as args
+from src.multical.tables import *
 
 import json
-import yaml
+
 from src.multical import board
 
 from src.multical.transform.matrix import *
@@ -29,22 +29,39 @@ def board_config(detected_board):
     return board
 
 
-def board_pose(objpoints, corners, ids, board, camMatrix, camDist, image):
+def board_pose(objpoints, corners, ids, board, camMatrix, camDist, image, method="solvePnP"):
     # ret, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(corners, ids, board, camMatrix, camDist, np.empty(1), np.empty(1))
     # euler_deg = rotVec_to_euler(rvecs)
     # print(image + ' angle = ', euler_deg )
 
     if ids.shape[0]<6:
         print('Not enough points to calculate solvePnP')
-        ret2, rvecs2, tvecs2 = 0, np.zeros((3,1)), np.zeros((3,1))
-        euler_deg2 = np.zeros((3,1))
+        ret, rvecs, tvecs = 0, np.zeros((3,1)), np.zeros((3,1))
+        euler_deg = np.zeros((3,1))
         view_angle = 0
-    else:
-        ret2, rvecs2, tvecs2 = cv2.solvePnP(objpoints, corners, camMatrix, camDist, np.empty(1), np.empty(1))
-        euler_deg2 = rotVec_to_euler(rvecs2)
-        view_angle = view_angle_calc(rvecs2)
+    elif method == "solvePnP":
+        ret, rvecs, tvecs = cv2.solvePnP(objpoints, corners, camMatrix, camDist, np.empty(1), np.empty(1))
+        euler_deg = rotVec_to_euler(rvecs)
+        view_angle = view_angle_calc(rvecs)
+    elif method == "solvePnPGeneric":
+        ret, rvecs, tvecs, error = cv2.solvePnPGeneric(objpoints, corners, camMatrix, camDist)
+        rvecs = rvecs[0]
+        tvecs = tvecs[0]
+        euler_deg = rotVec_to_euler(rvecs)
+        view_angle = view_angle_calc(rvecs)
+    elif method == "solvePnP_P3P":
+        ret, rvecs, tvecs = cv2.solveP3P(objpoints[0:3,:], corners[0:3,:], camMatrix, camDist, flags=cv2.SOLVEPNP_P3P)
+        if ret:
+            rvecs = rvecs[0]
+            tvecs = tvecs[0]
+            euler_deg = rotVec_to_euler(rvecs)
+            view_angle = view_angle_calc(rvecs)
+        else:
+            ret, rvecs, tvecs = 0, np.zeros((3, 1)), np.zeros((3, 1))
+            euler_deg = np.zeros((3, 1))
+            view_angle = 0
 
-    return ret2, rvecs2.reshape(-1), tvecs2.reshape(-1), euler_deg2, view_angle
+    return ret, rvecs.reshape(-1), tvecs.reshape(-1), euler_deg, view_angle
 
 def view_angle_calc(rvec):
     r = R.from_rotvec(rvec.reshape(-1))
@@ -57,11 +74,11 @@ def rotVec_to_euler(rvecs):
     euler_deg = r.as_euler('xyz', degrees=True)
     return euler_deg
 
-def draw_cube(img, corners, imgpts):
+def draw_cube(img, imgpts):
     img = np.float64(img)
     imgpts = np.int32(imgpts).reshape(-1,2)
     # draw ground floor in green
-    img = cv2.drawContours(img, [imgpts[:4]],-1,(0,255,0),-3)
+    # img = cv2.drawContours(img, [imgpts[:4]],-1,(0,255,0),-3)
     # draw pillars in blue color
     for i,j in zip(range(4),range(4,8)):
         img = cv2.line(img, tuple(imgpts[i]), tuple(imgpts[j]),(255),3)
@@ -69,7 +86,7 @@ def draw_cube(img, corners, imgpts):
     img = cv2.drawContours(img, [imgpts[4:]],-1,(0,0,255),3)
     return img
 
-def draw(frame, board_num, euler_deg, vie_angle, tvecs, text_height):
+def draw(frame, board_num, euler_deg, rvecs, tvecs, cam_matrix, cam_dist, text_height):
     font = cv2.FONT_HERSHEY_SIMPLEX
 
     # Draw_cube
@@ -79,15 +96,29 @@ def draw(frame, board_num, euler_deg, vie_angle, tvecs, text_height):
                             [0, 0, -3 * 0.013], [0, 3 * 0.013, -3 * 0.013], [3 * 0.013, 3 * 0.013, -3 * 0.013],
                             [3 * 0.013, 0, -3 * 0.013]])
     imgpts, jac = cv2.projectPoints(axis_cube, rvecs, tvecs, cam_matrix, cam_dist)
-    frame = draw_cube(frame, np.int_(np.floor(corners)), np.int_(np.floor(imgpts)))
+    # frame = draw_cube(frame, np.int_(np.floor(imgpts)))
 
     cv2.putText(frame, 'Board' + str(board_num), (10, text_height), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
     cv2.putText(frame, 'Euler_degree ' + str(euler_deg), (10, text_height + 100), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
     cv2.putText(frame, 'tvecs ' + str(tvecs), (10, text_height + 200), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
-    cv2.putText(frame, 'View_angle ' + str(view_angle), (10, text_height + 400), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
-    # cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvecs, tvecs, 0.1)
+    cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvecs, tvecs, 0.1)
     start_height = text_height + 600
     return frame, start_height
+
+def draw_marker_pose(frame, ids, corners, marker_length, cam_matrix, cam_dist):
+
+    if len(corners) > 0:
+        for i in range(0, len(ids)):
+            x = (corners[i]).astype('float32')
+            # Estimate pose of each marker and return the values rvec and tvec---(different from those of camera coefficients)
+            rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(x, marker_length, cam_matrix, cam_dist)
+            # Draw a square around the markers
+            cv2.aruco.drawDetectedMarkers(frame, corners)
+
+            # Draw Axis
+            cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvec, tvec, 0.01, thickness=10)
+
+    return frame
 
 def get_base_gripper_transformation(end_effector_poses, filename):
     pose_name = filename[:-4]
@@ -147,118 +178,106 @@ def write_base_gripper_pose(frame, end_effector_poses, filename, text_height):
 
     return frame
 
-if __name__ == '__main__':
-    directory = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/view_plan/viewPlan2/data/08320218/'
-    # new_directory = 'D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/08320217_angle/'
-    board_yaml = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/view_plan/viewPlan2/boards.yaml'
-    camera_intrinsic = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/view_plan/viewPlan2/all_camera_intrinsic_V24.json'
-    end_effector_poses = "D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/test\poses_V23.json"
-    hand_eye = "D:\MY_DRIVE_N\Masters_thesis\Dataset\geometrical_method/hand_eye.json"
+def collect_files(path):
+    for path, subdirs, files in os.walk(path):
+        for name in files:
+            if name == 'boards.yaml':
+                board_path = os.path.join(path, name)
+            elif name == 'calibration.json':
+                intrinsic_path = os.path.join(path, name)
 
-    camera_file = open(camera_intrinsic)
-    cameras = json.load(camera_file)
-    cam_name = directory[-9:-1]
-    cam_matrix = np.array(cameras['cameras'][cam_name]['K'])
-    cam_dist = np.array(cameras['cameras'][cam_name]['dist'])
+    return path, board_path, intrinsic_path
 
-    board_config_file = board.load_config(board_yaml)
-    base_gripper = {}
-    world_camera = {}
-    base_gripper['R'] = []
-    base_gripper['T'] = []
-    world_camera['R'] = []
-    world_camera['T'] = []
-    json_dict = {}
-    load_hande_eye = False
-    if load_hande_eye == False:
-        for filename in os.listdir(directory):
-            print(filename)
-            image_path = os.path.join(directory, filename)
-            frame = cv2.imread(image_path)
-            b = boards.Boards(boards=board_yaml, detect=image_path, pixels_mm=10, show_image=False)
-            # b = boards.Boards(boards=board_yaml, detect=detect_img)
-            detection = b.execute()
-            detected_boards = [idx for idx,d in enumerate(detection) if len(d.ids)>0]
+def initiate_workspace(datasetPath, intrinsicPath):
+    pathO = args.PathOpts(image_path=datasetPath)
+    cam = args.CameraOpts(motion_model="calibrate_board",
+                          calibration=intrinsicPath)
+    runt = args.RuntimeOpts()
+    opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True)
+    c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
+    workspace = c.execute_new()
+    workspace.pose_table = make_pose_table(workspace.point_table, workspace.boards,
+                                                workspace.cameras, method="solvePnP")
+    return workspace
 
-            # base_gripper_R, base_gripper_T = get_base_gripper_transformation(end_effector_poses, filename)
-            # frame = write_base_gripper_pose(frame, end_effector_poses, filename, text_height=200)
-            text_height = 200
-            for idx,board_num in enumerate(detected_boards):
-                ids = detection[board_num].ids
-                corners = detection[board_num].corners
-                detected_board = board_config_file[list(board_config_file)[board_num]]
-                adjusted_points = detected_board.adjusted_points
-                objpoints = np.array([adjusted_points[a] for a in ids], dtype='float64').reshape((-1, 3))
-                detect_board_config = board_config(detected_board)
-                ret, rvecs, tvecs, euler_deg, view_angle = board_pose(objpoints, corners, ids, detect_board_config, cam_matrix, cam_dist, frame)
-                if ret:
-                    rtvecs = join(rvecs, tvecs)
-                    rtmatrix = np.linalg.inv(to_matrix(rtvecs))
-                    R_matrix, T = matrix.split(rtmatrix)
-                    world_camera['R'].append(R_matrix)
-                    world_camera['T'].append(T)
-                    # base_gripper['R'].append(base_gripper_R)
-                    # base_gripper['T'].append(base_gripper_T)
-                    frame, text_height = draw(frame, board_num, euler_deg, view_angle, tvecs, text_height)
-            # frame = write_base_gripper_pose(frame, end_effector_poses, filename, text_height=text_height+400)
-            pass
-            cv2.imwrite(image_path, frame)
-            pass
-        '''
-        gripper_world_r, gripper_world_t, base_cam_r, base_cam_t = \
-            cv2.calibrateRobotWorldHandEye(
-                world_camera['R'], world_camera['T'],
-                base_gripper['R'], base_gripper['T'])
+def main():
+    directory = 'D:\MY_DRIVE_N\Masters_thesis\Dataset/board270/angle_check'
+    path, board_path, intrinsic_path = collect_files(directory)
 
-        gripper_world_matrix = matrix.join(gripper_world_r, gripper_world_t.reshape(-1))
-        base_cam_matrix = matrix.join(base_cam_r, base_cam_t.reshape(-1))
-        json_dict['gripper_world_matrix'] = gripper_world_matrix.tolist()
-        json_dict['base_cam_matrix'] = base_cam_matrix.tolist()
-        json_object = json.dumps(json_dict, indent=4)
-        # Writing to sample.json
-        with open(hand_eye, "w") as outfile:
-            outfile.write(json_object)
-
-    else:
-        hand_eye_json_file = open(hand_eye)
-        hand_eye_json = json.load(hand_eye_json_file)
-        gripper_world_matrix = hand_eye_json['gripper_world_matrix']
-        base_cam_matrix = hand_eye_json['base_cam_matrix']
-
-    ## Reprojection_error (Repeatative_change this part)
-    error_dict = {}
-    face = 1
-    for filename in os.listdir(directory):
-        print(filename)
-        image_path = os.path.join(directory, filename)
+    workspace = initiate_workspace(directory, intrinsic_path)
+    cam_matrix, cam_dist = workspace.cameras[0].intrinsic, workspace.cameras[0].dist
+    for idx,img in enumerate(workspace.names.image):
+        image_path = os.path.join(path, img)
         frame = cv2.imread(image_path)
-        b = boards.Boards(boards=board_yaml, detect=image_path, pixels_mm=10, show_image=False)
-        # b = boards.Boards(boards=board_yaml, detect=detect_img)
-        detection = b.execute()
-        detected_boards = [idx for idx, d in enumerate(detection) if len(d.ids) > 0]
+        boards = [b for b,v in enumerate(workspace.pose_table.valid[0][idx]) if v==True]
         text_height = 200
-        base_gripper_R, base_gripper_T = get_base_gripper_transformation(end_effector_poses, filename)
-        base_gripper_matrix = matrix.join(base_gripper_R, base_gripper_T)
-        for idx, board_num in enumerate(detected_boards):
-            ids = detection[board_num].ids
-            corners = detection[board_num].corners
-            detected_board = board_config_file[list(board_config_file)[board_num]]
-            adjusted_points = detected_board.adjusted_points
-            objpoints = np.array([adjusted_points[a] for a in ids], dtype='float64').reshape((-1, 3))
-            detect_board_config = board_config(detected_board)
-            ret, rvecs, tvecs, euler_deg = board_pose(objpoints, corners, ids, detect_board_config, cam_matrix,
-                                                      cam_dist, frame)
-            if ret:
-                rtvecs = join(rvecs, tvecs)
-                rtmatrix = to_matrix(rtvecs)
-                # R_matrix, T = matrix.split(rtmatrix)
-                final_transformation = (base_cam_matrix) @ base_gripper_matrix @ np.linalg.inv(gripper_world_matrix)
-                r_final, t_final = split(from_matrix(final_transformation))
-                imagePoints, _ = cv2.projectPoints(objpoints, r_final, t_final, cam_matrix, cam_dist)
-                error = imagePoints.reshape([-1, 2]) - corners
+        for b in boards:
+            x= workspace.pose_table.poses[0][idx][b]
+            rvecs, tvecs = rtvec.split(rtvec.from_matrix(workspace.pose_table.poses[0][idx][b]))
+            euler_deg = rtvec.euler_angle(rvecs)
+            # frame, text_height = draw(frame, b, euler_deg, rvecs, tvecs, cam_matrix, cam_dist, text_height)
 
-                error_dict[face] = error
-                face += 1
-                pass
-'''
-    pass
+            corners, ids, _ = cv2.aruco.detectMarkers(frame[:,:,0], workspace.boards[b].board.dictionary, parameters=cv2.aruco.DetectorParameters_create())
+            marker_length = workspace.boards[b].marker_length
+            frame = draw_marker_pose(frame, ids, corners, marker_length, cam_matrix, cam_dist)
+            frame, text_height = draw(frame, b, euler_deg, rvecs, tvecs, cam_matrix, cam_dist, text_height)
+        cv2.imwrite(image_path, frame)
+
+
+if __name__ == '__main__':
+    main()
+    # directory = 'D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/angle_check_pnp_p3p'
+    # path, board_yaml, camera_intrinsic = collect_files(directory)
+    #
+    # camera_file = open(camera_intrinsic)
+    # cameras = json.load(camera_file)
+    # cam_name = [k for k,v in cameras['cameras'].items()][0]
+    # cam_matrix = np.array(cameras['cameras'][cam_name]['K'])
+    # cam_dist = np.array(cameras['cameras'][cam_name]['dist'])
+    #
+    # board_config_file = board.load_config(board_yaml)
+    # base_gripper = {}
+    # world_camera = {}
+    # base_gripper['R'] = []
+    # base_gripper['T'] = []
+    # world_camera['R'] = []
+    # world_camera['T'] = []
+    # json_dict = {}
+    # load_hande_eye = False
+    # if load_hande_eye == False:
+    #     for filename in os.listdir(path):
+    #         print(filename)
+    #         image_path = os.path.join(path, filename)
+    #         frame = cv2.imread(image_path)
+    #         b = boards.Boards(boards=board_yaml, detect=image_path, pixels_mm=10, show_image=False)
+    #         # b = boards.Boards(boards=board_yaml, detect=detect_img)
+    #         detection = b.execute()
+    #         detected_boards = [idx for idx,d in enumerate(detection) if len(d.ids)>0]
+    #
+    #         # base_gripper_R, base_gripper_T = get_base_gripper_transformation(end_effector_poses, filename)
+    #         # frame = write_base_gripper_pose(frame, end_effector_poses, filename, text_height=200)
+    #         text_height = 200
+    #         for idx,board_num in enumerate(detected_boards):
+    #             ids = detection[board_num].ids
+    #             corners = detection[board_num].corners
+    #             detected_board = board_config_file[list(board_config_file)[board_num]]
+    #             adjusted_points = detected_board.adjusted_points
+    #             objpoints = np.array([adjusted_points[a] for a in ids], dtype='float64').reshape((-1, 3))
+    #             detect_board_config = board_config(detected_board)
+    #             ret, rvecs, tvecs, euler_deg, view_angle = board_pose(objpoints,
+    #                                     corners, ids, detect_board_config, cam_matrix, cam_dist, frame, method="solvePnP_P3P")
+    #             if ret:
+    #                 rtvecs = join(rvecs, tvecs)
+    #                 rtmatrix = np.linalg.inv(to_matrix(rtvecs))
+    #                 R_matrix, T = matrix.split(rtmatrix)
+    #                 world_camera['R'].append(R_matrix)
+    #                 world_camera['T'].append(T)
+    #                 # base_gripper['R'].append(base_gripper_R)
+    #                 # base_gripper['T'].append(base_gripper_T)
+    #                 frame, text_height = draw(frame, board_num, euler_deg, view_angle, tvecs, text_height)
+    #         # frame = write_base_gripper_pose(frame, end_effector_poses, filename, text_height=text_height+400)
+    #         pass
+    #         cv2.imwrite(image_path, frame)
+    #         pass
+    #
+    # pass

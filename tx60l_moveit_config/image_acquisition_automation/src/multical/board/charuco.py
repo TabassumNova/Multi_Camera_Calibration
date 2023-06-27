@@ -106,8 +106,8 @@ class CharucoBoard(Parameters, Board):
     return has_min_detections_grid(self.size, detections.ids, 
       min_points=self.min_points, min_rows=self.min_rows)
 
-  def estimate_pose_points(self, camera, detections):
-    poses, error = estimate_pose_points(self, camera, detections)
+  def estimate_pose_points(self, camera, detections, method="solvePnPGeneric"):
+    poses, error = estimate_pose_points(self, camera, detections, method="solvePnPGeneric")
     return poses, error
 
 

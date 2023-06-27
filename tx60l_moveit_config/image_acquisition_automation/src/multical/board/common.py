@@ -34,7 +34,7 @@ def has_min_detections_grid(grid_size, ids, min_points, min_rows):
   has_rows = [np.unique(d).size >= min_rows for d in dims]
   return ids.size >= min_points and all(has_rows)
 
-def estimate_pose_points(board, camera, detections):
+def estimate_pose_points(board, camera, detections, method="solvePnPGeneric"):
     if not board.has_min_detections(detections):
         return None, 0
 
@@ -42,9 +42,19 @@ def estimate_pose_points(board, camera, detections):
     # valid, rvec, tvec = cv2.solvePnP(board.points[detections.ids],
     #   undistorted, camera.intrinsic, np.zeros(0))
     # error = np.zeros((2,1))
-    objPoints = board.points[detections.ids].astype('float32')
-    valid, rvec, tvec, error = cv2.solvePnPGeneric(objPoints,
-      undistorted, camera.intrinsic, camera.dist)
+    if method == "solvePnPGeneric":
+        objPoints = board.points[detections.ids].astype('float32')
+        valid, rvec, tvec, error = cv2.solvePnPGeneric(objPoints, undistorted, camera.intrinsic, camera.dist)
+
+    elif method == "solvePnP":
+        valid, rvec, tvec = cv2.solvePnP(board.points[detections.ids], undistorted, camera.intrinsic, camera.dist)
+        error = np.zeros((2, 1))
+
+    elif method == "solvePnP_P3P":
+        objPoints = board.points[detections.ids].astype('float32')
+        ret, rvecs, tvecs = cv2.solveP3P(objPoints[0:3,:], undistorted[0:3,:], camera.intrinsic, camera.dist, flags=cv2.SOLVEPNP_P3P)
+        error = np.zeros((2, 1))
+
 
     if not valid:
       return None, 0
