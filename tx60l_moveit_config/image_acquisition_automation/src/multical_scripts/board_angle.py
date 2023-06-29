@@ -201,7 +201,7 @@ def initiate_workspace(datasetPath, intrinsicPath):
     return workspace
 
 def main():
-    directory = 'D:\MY_DRIVE_N\Masters_thesis\Dataset/board270/angle_check'
+    directory = 'D:\MY_DRIVE_N\Masters_thesis\Dataset\intrinsic_26June\cam222'
     path, board_path, intrinsic_path = collect_files(directory)
 
     workspace = initiate_workspace(directory, intrinsic_path)

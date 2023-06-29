@@ -38,11 +38,14 @@ class handEye():
 
     def handEye_gripper(self, camera, board):
         board_cam_pose = self.workspace.pose_table._index_select(camera, axis=0)._index_select(board, axis=1)
+        objPoints = self.workspace.boards[board].adjusted_points
 
         R_cam2world_list = []
         t_cam2world_list = []
         R_base2gripper_list = []
         t_base2gripper_list = []
+        corner_list = []
+        point3D_list = []
         image_name = self.workspace.names.image
         image_list = []
         for img in image_name:
@@ -58,12 +61,20 @@ class handEye():
                 R_base2gripper_list.append(R_base2gripper)
                 t_base2gripper_list.append(t_base2gripper)
                 image_list.append(img)
-
+                corners = self.workspace.detected_points[0][p][board].corners
+                ids = self.workspace.detected_points[0][p][board].ids
+                point3D = [objPoints[x] for x in ids]
+                corner_list.append(corners)
+                point3D_list.append(point3D)
         base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper = self.hand_eye_robot_world(np.array(R_cam2world_list),
                                             np.array(t_cam2world_list), np.array(R_base2gripper_list), np.array(t_base2gripper_list))
 
         handEye_struct = struct(camera=self.workspace.names.camera[camera], board=self.workspace.names.board[board], base_wrt_cam=base_wrt_cam, gripper_wrt_world=gripper_wrt_world,
-                                camera_wrt_world=camera_wrt_world, base_wrt_gripper=base_wrt_gripper, images=image_list)
+                                camera_wrt_world=camera_wrt_world, base_wrt_gripper=base_wrt_gripper, images=image_list,
+                                corners=corner_list, objPoints=point3D_list)
+
+        self.reprojectionError_Calculation_new(handEye_struct)
+        self.test_robotMove(handEye_struct)
 
         return handEye_struct
 
@@ -82,6 +93,22 @@ class handEye():
 
         return base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper
 
+    def reprojectionError_Calculation_new(self, handEye_struct):
+        error_dict = {}
+        reprojection_error_dict = {}
+        for pose in range(0, len(handEye_struct.images)):
+            # t1 = matrix.transform(handEye_struct.gripper_wrt_world, handEye_struct.base_wrt_gripper[pose])
+            # transform = matrix.transform(t1, np.linalg.inv(handEye_struct.base_wrt_cam))
+            t1 = matrix.transform(np.linalg.inv(handEye_struct.base_wrt_cam), handEye_struct.base_wrt_gripper[pose])
+            transform = matrix.transform(t1, (handEye_struct.gripper_wrt_world))
+            error_dict[pose] = handEye_struct.camera_wrt_world[pose] - transform
+            camera_matrix, camera_dist = self.workspace.cameras[0].intrinsic, self.workspace.cameras[0].dist
+            rvec, tvec = rtvec.split(rtvec.from_matrix(np.linalg.inv(transform)))
+            imagePoints, _ = cv2.projectPoints(np.array(handEye_struct.objPoints[pose]),
+                                               rvec, tvec, camera_matrix, camera_dist)
+            reprojection_error_dict[pose] = imagePoints.reshape([-1, 2]) - handEye_struct.corners[pose]
+        pass
+
     def test_robotMove(self, handEye_struct):
         estimated_gripper_base_list = []
         p1 = handEye_struct.camera_wrt_world[0]
@@ -97,6 +124,11 @@ class handEye():
             angle_diff = rtvec.euler_angle(diff[:3])
             base_gripper2 = handEye_struct.base_wrt_gripper[idx2]
             cam_gripper_diff = rtvec.to_matrix(diff)
+            # new
+            # estimated_base_gripper = matrix.transform((base_gripper1), (np.linalg.inv(cam_gripper_diff)))
+            # error = base_gripper2 - (estimated_base_gripper)
+            # estimated_gripper_base_list.append(np.linalg.inv(estimated_base_gripper))
+            # new
             estimated_base_gripper = rtvec.from_matrix(base_gripper1) + rtvec.from_matrix(np.linalg.inv(cam_gripper_diff))
             error = base_gripper2 - rtvec.to_matrix(estimated_base_gripper)
             estimated_gripper_base_list.append(np.linalg.inv(rtvec.to_matrix(estimated_base_gripper)))
