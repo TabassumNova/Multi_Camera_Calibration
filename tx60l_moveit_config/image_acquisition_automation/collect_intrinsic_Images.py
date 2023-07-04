@@ -79,8 +79,8 @@ def main():
 
         # start
         reset_position(box_attacher)
-        poseJsonPath = '/home/raptor//tx60_moveit/src/tx60l_moveit_config/python_program/image/board270/gripper_pose.json'
-        image_path = '/home/raptor//tx60_moveit/src/tx60l_moveit_config/python_program/image/board270/'
+        poseJsonPath = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/Intrinsic_26June/cam217/gripper_pose.json'
+        image_path = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/Intrinsic_26June/cam217/'
         gripper_pose = set_gripper_pose(poseJsonPath)
         for key, pose in gripper_pose.items():
             move_robot(box_attacher, pose)

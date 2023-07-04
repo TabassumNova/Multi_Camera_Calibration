@@ -66,11 +66,11 @@ class handEye():
                 point3D = [objPoints[x] for x in ids]
                 corner_list.append(corners)
                 point3D_list.append(point3D)
-        base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper = self.hand_eye_robot_world(np.array(R_cam2world_list),
+        base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, estimated_gripper_base = self.hand_eye_robot_world(np.array(R_cam2world_list),
                                             np.array(t_cam2world_list), np.array(R_base2gripper_list), np.array(t_base2gripper_list))
 
         handEye_struct = struct(camera=self.workspace.names.camera[camera], board=self.workspace.names.board[board], base_wrt_cam=base_wrt_cam, gripper_wrt_world=gripper_wrt_world,
-                                camera_wrt_world=camera_wrt_world, base_wrt_gripper=base_wrt_gripper, images=image_list,
+                                camera_wrt_world=camera_wrt_world, base_wrt_gripper=base_wrt_gripper, estimated_gripper_base=estimated_gripper_base, images=image_list,
                                 corners=corner_list, objPoints=point3D_list)
 
         self.reprojectionError_Calculation_new(handEye_struct)
@@ -90,8 +90,9 @@ class handEye():
         err = matrix.transform(base_wrt_cam, camera_wrt_world) - matrix.transform(base_wrt_gripper, gripper_wrt_world)
         ZB = matrix.transform(base_wrt_cam, camera_wrt_world)
         error2 = base_wrt_gripper - matrix.transform(ZB, np.linalg.inv(gripper_wrt_world))
+        estimated_gripper_base = np.linalg.inv(matrix.transform(ZB, np.linalg.inv(gripper_wrt_world)))
 
-        return base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper
+        return base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, estimated_gripper_base
 
     def reprojectionError_Calculation_new(self, handEye_struct):
         error_dict = {}
