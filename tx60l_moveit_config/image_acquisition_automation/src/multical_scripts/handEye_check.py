@@ -9,21 +9,41 @@ from structs.numpy import shape_info, struct, Table, shape
 
 import copy
 import json
+import os
 
-path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220"
-poseJsonPath = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/stream_220.json"
-board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/boards.yaml"
-intrinsic_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/calibration.json"
-boardGripper_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/boardGripper.json"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220"
+# poseJsonPath = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/stream_220.json"
+# board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/boards.yaml"
+# intrinsic_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/calibration.json"
+# boardGripper_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/boardGripper.json"
 
 class handEye():
-    def __init__(self, datasetPath, boardPath, intrinsic_path, poseJsonPath):
-        self.datasetPath = datasetPath
-        self.boardPath = boardPath
-        self.poseJsonPath = poseJsonPath
-        self.intrinsicPath = intrinsic_path
+    def __init__(self, base_path):
+        self.base_path = base_path
+        self.datasetPath = None
+        self.boardPath = None
+        self.poseJsonPath = None
+        self.intrinsicPath = None
         self.workspace = None
         self.gripper_pose = {}
+        self.collect_files()
+
+    def collect_files(self):
+        """
+        It takes folder containing only one camera, board.yaml, calibration.json, gripper_pose.json
+        :return:
+        """
+        for path, subdirs, files in os.walk(self.base_path):
+            for name in files:
+                if name == 'boards.yaml':
+                    self.boardPath = os.path.join(self.base_path, name)
+                elif name == 'calibration.json':
+                    self.intrinsicPath = os.path.join(self.base_path, name)
+                elif name == 'gripper_pose.json':
+                    self.poseJsonPath = os.path.join(self.base_path, name)
+            for name in subdirs:
+                self.datasetPath = os.path.join(self.base_path,name)
+
 
     def initiate_workspace(self):
         pathO = args.PathOpts(image_path=self.datasetPath)
@@ -246,7 +266,7 @@ class handEye():
         return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list), image_list
 
 if __name__ == '__main__':
-    h = handEye(path, board_path, intrinsic_path, poseJsonPath)
+    h = handEye(base_path)
     h.initiate_workspace()
     h.set_gripper_pose()
     h.handEye_gripper(camera=0, board=1)
