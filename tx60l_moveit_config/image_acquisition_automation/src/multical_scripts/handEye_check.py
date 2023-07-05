@@ -11,7 +11,7 @@ import copy
 import json
 import os
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320218"
 # poseJsonPath = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/stream_220.json"
 # board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/boards.yaml"
 # intrinsic_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/calibration.json"
@@ -20,7 +20,7 @@ base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320
 class handEye():
     def __init__(self, base_path):
         self.base_path = base_path
-        self.datasetPath = None
+        self.datasetPath = base_path
         self.boardPath = None
         self.poseJsonPath = None
         self.intrinsicPath = None
@@ -41,8 +41,6 @@ class handEye():
                     self.intrinsicPath = os.path.join(self.base_path, name)
                 elif name == 'gripper_pose.json':
                     self.poseJsonPath = os.path.join(self.base_path, name)
-            for name in subdirs:
-                self.datasetPath = os.path.join(self.base_path,name)
 
 
     def initiate_workspace(self):
@@ -269,6 +267,6 @@ if __name__ == '__main__':
     h = handEye(base_path)
     h.initiate_workspace()
     h.set_gripper_pose()
-    h.handEye_gripper(camera=0, board=1)
+    h.handEye_gripper(camera=0, board=3)
     # h.estimate_camera_board_poses()
     pass
