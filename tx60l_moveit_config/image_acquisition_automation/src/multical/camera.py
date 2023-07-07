@@ -82,7 +82,7 @@ class Camera(Parameters):
                 cv2.TERM_CRITERIA_MAX_ITER, max_iter, eps)
     flags = Camera.flags(model, fix_aspect) | flags
 
-    ## new
+    ## new: intrinsic_debug
     # err, K, dist, error_perView = Camera.adjust_outliers(points, image_size, criteria)
     ## new
     ## new
