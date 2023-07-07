@@ -83,23 +83,23 @@ class Camera(Parameters):
     flags = Camera.flags(model, fix_aspect) | flags
 
     ## new
-    err, K, dist, error_perView = Camera.adjust_outliers(points, image_size, criteria)
+    # err, K, dist, error_perView = Camera.adjust_outliers(points, image_size, criteria)
     ## new
     ## new
-    # err = 1
-    # while abs(err) > reprojection_error_limit:
-    #   # err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
-    #   #                                                                       image_size, None, None)
-    #
-    #   err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
-    #                                                                         image_size, None, None, criteria=criteria,
-    #                                                                         flags=flags)
-    #   err = float("{:.2f}".format(err))
-    #   threshold = np.quantile(error_perView, 0.95)
-    #   inliers = [(i) for i in range(0, len(error_perView)) if error_perView[i]<threshold]
-    #   points.object_points = np.array([points.object_points[i] for i in inliers], dtype=object)
-    #   points.corners = np.array([points.corners[i] for i in inliers], dtype=object)
-    #   info(f"RMS={err:.2f}, Number of views={len(error_perView)}")
+    err = 1
+    while abs(err) > reprojection_error_limit:
+      # err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
+      #                                                                       image_size, None, None)
+
+      err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
+                                                                            image_size, None, None, criteria=criteria,
+                                                                            flags=flags)
+      err = float("{:.2f}".format(err))
+      threshold = np.quantile(error_perView, 0.95)
+      inliers = [(i) for i in range(0, len(error_perView)) if error_perView[i]<threshold]
+      points.object_points = np.array([points.object_points[i] for i in inliers], dtype=object)
+      points.corners = np.array([points.corners[i] for i in inliers], dtype=object)
+      info(f"RMS={err:.2f}, Number of views={len(error_perView)}")
     ## new
     # err, K, dist, r, t,_,_,error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners, image_size, None, None, criteria=criteria, flags=flags)
 
