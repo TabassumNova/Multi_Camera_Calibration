@@ -40,7 +40,7 @@ def sparse_points(points):
 
 invalid_pose = struct(poses=np.eye(4), num_points=0, valid=False, reprojection_error=0, view_angles=[0, 0, 0])
 
-def valid_pose(t, error, angles):
+def valid_pose(t, error=0, angles=[0, 0, 0]):
   return struct(poses=t, valid=True, reprojection_error=error, view_angles=angles)
 
 

@@ -1,3 +1,4 @@
+import copy
 from functools import partial, reduce
 import operator
 from cached_property import cached_property
@@ -14,9 +15,11 @@ from .transform import rtvec, matrix
 
 from structs.struct import struct
 from .optimization.parameters import Parameters
+from multical.optimization.calibration import select_threshold
 
 from multiprocessing.pool import ThreadPool
 from src.multical.threading import cpu_count
+
 
 import cv2
 from tqdm import tqdm
@@ -80,22 +83,73 @@ class Camera(Parameters):
     flags = Camera.flags(model, fix_aspect) | flags
 
     ## new
-    err = 1
-    while abs(err) > reprojection_error_limit:
-      err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
-                                                                            image_size, None, None, criteria=criteria,
-                                                                            flags=flags)
-      err = float("{:.2f}".format(err))
-      threshold = np.quantile(error_perView, 0.95)
-      inliers = [(i) for i in range(0, len(error_perView)) if error_perView[i]<threshold]
-      points.object_points = np.array([points.object_points[i] for i in inliers], dtype=object)
-      points.corners = np.array([points.corners[i] for i in inliers], dtype=object)
-      info(f"RMS={err:.2f}, Number of views={len(error_perView)}")
+    err, K, dist, error_perView = Camera.adjust_outliers(points, image_size, criteria)
+    ## new
+    ## new
+    # err = 1
+    # while abs(err) > reprojection_error_limit:
+    #   # err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
+    #   #                                                                       image_size, None, None)
+    #
+    #   err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
+    #                                                                         image_size, None, None, criteria=criteria,
+    #                                                                         flags=flags)
+    #   err = float("{:.2f}".format(err))
+    #   threshold = np.quantile(error_perView, 0.95)
+    #   inliers = [(i) for i in range(0, len(error_perView)) if error_perView[i]<threshold]
+    #   points.object_points = np.array([points.object_points[i] for i in inliers], dtype=object)
+    #   points.corners = np.array([points.corners[i] for i in inliers], dtype=object)
+    #   info(f"RMS={err:.2f}, Number of views={len(error_perView)}")
     ## new
     # err, K, dist, r, t,_,_,error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners, image_size, None, None, criteria=criteria, flags=flags)
 
     return Camera(intrinsic=K, dist=dist, image_size=image_size,
                   model=model, fix_aspect=fix_aspect, has_skew=has_skew, error_perview=error_perView), err
+
+  @staticmethod
+  def cam_calibrate(points, image_size, criteria, flags, cam_matrix=None, cam_dist=None):
+    err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
+                                                                          image_size, cam_matrix, cam_dist, criteria=criteria,
+                                                                          flags=flags)
+    return err, K, dist, error_perView
+
+  @staticmethod
+  def adjust_outliers(points, image_size, criteria, num_adjustments=5, quantile=0.75, outlier_threshold=1.2):
+    flags = 0
+    cam_matrix = None
+    cam_dist = None
+    for i in range(num_adjustments):
+      info(f"Adjust_outliers {i}:")
+      err, _, _, error_perView = Camera.cam_calibrate(points, image_size, criteria, flags, cam_matrix, cam_dist)
+      info(f"RMS={err:.2f}, Number of views={len(error_perView)}")
+      # select_outliers = select_threshold(quantile=quantile, factor=outlier_threshold)
+      threshold = np.quantile(error_perView, 0.75)
+      inliers = np.array(error_perView < threshold).flatten()
+      experiment_points = copy.deepcopy(points)
+      experiment_points.object_points = np.array([experiment_points.object_points[idx]
+                                       for idx, valid in enumerate(inliers) if valid==True], dtype=object)
+      experiment_points.corners = np.array([experiment_points.corners[idx]
+                                       for idx, valid in enumerate(inliers) if valid == True], dtype=object)
+      flags = 0
+      err, K, dist, error_perView = Camera.cam_calibrate(experiment_points, image_size, criteria, flags)
+      cam_matrix = K
+      cam_dist = dist
+      flags = cv2.CALIB_USE_INTRINSIC_GUESS
+
+      # x = Camera.reject_outliers(threshold)
+
+      # self = self.bundle_adjust(f_scale=f_scale, **kwargs)
+    return err, K, dist, error_perView
+
+  @staticmethod
+  def reject_outliers(threshold):
+    # errors, valid = tables.reprojection_error(self.reprojected, self.point_table)
+    # inliers = (errors < threshold) & valid
+    #
+    # num_outliers = valid.sum() - inliers.sum()
+    # inlier_percent = 100.0 * inliers.sum() / valid.sum()
+
+    return 0
 
   def scale_image(self, factor):
     intrinsic = self.intrinsic.copy()
