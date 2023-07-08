@@ -50,7 +50,9 @@ def initialise_with_images(ws : Workspace, boards, camera_images,
     else:
         ws.initialise_poses(
             motion_model=get_motion_model(camera_opts.motion_model),
-            camera_poses=calib.camera_poses if calib is not None else None
+            camera_poses=calib.camera_poses if calib is not None else None,
+            method = runtime.pose_estimation,
+            show_all_poses = runtime.show_all_poses
           )
     return ws
 

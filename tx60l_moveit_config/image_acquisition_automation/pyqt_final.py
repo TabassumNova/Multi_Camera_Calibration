@@ -13,9 +13,9 @@ from QtImageViewer import *
 from pathlib import Path
 from multiprocessing import Process, Manager
 
-import rospy
+# import rospy
 import sys
-from src.aravis_show_image import find_cameras, show_image
+# from src.aravis_show_image import find_cameras, show_image
 
 import pyvistaqt
 from PIL import Image

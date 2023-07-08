@@ -44,11 +44,11 @@ def valid_pose(t, error=0, angles=[0, 0, 0]):
   return struct(poses=t, valid=True, reprojection_error=error, view_angles=angles)
 
 
-def extract_pose(points, board, camera, method="solvePnPGeneric"):
+def extract_pose(points, board, camera, method="solvePnPGeneric", show_all_poses=False):
   detections = sparse_points(points)
-  poses, error = board.estimate_pose_points(camera, detections, method="solvePnPGeneric")
-  if error>1.0:
-    poses = None
+  poses, error = board.estimate_pose_points(camera, detections, method=method)
+  if show_all_poses == False and error>1.0:
+      poses = None
   if poses is not None:
     angles = analyze_view_angle(rtvec.to_matrix(poses))
     # if abs(angles[0])>45 or abs(angles[1])>45:
@@ -59,14 +59,14 @@ def extract_pose(points, board, camera, method="solvePnPGeneric"):
   return valid_pose(rtvec.to_matrix(poses), error, list(angles))._extend(num_points=len(detections.ids))\
       if poses is not None else invalid_pose
 
-def map_table(f, point_table, boards, cameras, method="solvePnPGeneric"):
-  return [[[f(points, board, camera, method)
+def map_table(f, point_table, boards, cameras, method="solvePnPGeneric", show_all_poses=False):
+  return [[[f(points, board, camera, method, show_all_poses)
            for points, board in zip(frame_points._sequence(), boards)]  
              for frame_points in points_camera._sequence()]
                for points_camera, camera in zip(point_table._sequence(), cameras)]
 
-def make_pose_table(point_table, boards, cameras, method="solvePnPGeneric"):
-  poses = map_table(extract_pose, point_table, boards, cameras, method="solvePnPGeneric")
+def make_pose_table(point_table, boards, cameras, method="solvePnPGeneric", show_all_poses=False):
+  poses = map_table(extract_pose, point_table, boards, cameras, method=method, show_all_poses=show_all_poses)
   return make_nd_table(poses, n = 3)
 
 def make_point_table(detections, boards):

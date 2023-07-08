@@ -83,10 +83,11 @@ def detection_new(args):
     boards = find_board_config(args.paths.image_path, board_file=args.paths.boards)
     camera_images = find_camera_images(args.paths.image_path,
                                        args.paths.cameras, args.paths.camera_pattern, limit=args.paths.limit_images)
-    ws.add_camera_images(camera_images, j=args.runtime.num_threads)
-    ws.detect_boards(boards, load_cache=not args.runtime.no_cache, j=args.runtime.num_threads)
-    calib = map_none(load_calibration, args.camera.calibration)
-    ws.set_calibration(calib.cameras)
+    # ws.add_camera_images(camera_images, j=args.runtime.num_threads)
+    # ws.detect_boards(boards, load_cache=not args.runtime.no_cache, j=args.runtime.num_threads)
+    initialise_with_images(ws, boards, camera_images, args.camera, args.runtime)
+    # calib = map_none(load_calibration, args.camera.calibration)
+    # ws.set_calibration(calib.cameras)
 
     return ws
 

@@ -107,7 +107,7 @@ class CharucoBoard(Parameters, Board):
       min_points=self.min_points, min_rows=self.min_rows)
 
   def estimate_pose_points(self, camera, detections, method="solvePnPGeneric"):
-    poses, error = estimate_pose_points(self, camera, detections, method="solvePnPGeneric")
+    poses, error = estimate_pose_points(self, camera, detections, method=method)
     return poses, error
 
 

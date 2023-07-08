@@ -11,7 +11,7 @@ import copy
 import json
 import os
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320218"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30\move_board_test"
 # poseJsonPath = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/stream_220.json"
 # board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/boards.yaml"
 # intrinsic_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/calibration.json"
@@ -25,6 +25,7 @@ class handEye():
         self.poseJsonPath = None
         self.intrinsicPath = None
         self.workspace = None
+        self.handEyeGripper = None
         self.gripper_pose = {}
         self.collect_files()
 
@@ -41,6 +42,9 @@ class handEye():
                     self.intrinsicPath = os.path.join(self.base_path, name)
                 elif name == 'gripper_pose.json':
                     self.poseJsonPath = os.path.join(self.base_path, name)
+                elif name == "handEyeGripper.json":
+                    self.handEyeGripper = os.path.join(self.base_path, name)
+                self.handEyeGripper = os.path.join(self.base_path, "handEyeGripper.json")
 
 
     def initiate_workspace(self):
@@ -172,6 +176,17 @@ class handEye():
                 self.gripper_pose[i] = rt_matrix
         pass
 
+    def export_handEyeGripper(self, handEye_struct):
+        json_dict = {}
+        json_dict['camera'] = handEye_struct.camera
+        json_dict['board'] = handEye_struct.board
+        json_dict["base_wrt_cam"] = handEye_struct.base_wrt_cam.tolist()
+        json_dict["gripper_wrt_world"] = handEye_struct.gripper_wrt_world.tolist()
+        json_object = json.dumps(json_dict, indent=4)
+        # Writing to sample.json
+        with open(self.handEyeGripper, "w") as outfile:
+            outfile.write(json_object)
+        pass
 
     def estimate_camera_board_poses(self):
         '''
@@ -263,10 +278,65 @@ class handEye():
 
         return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list), image_list
 
-if __name__ == '__main__':
+def main1(base_path, cam, board):
+    '''
+    Input->  base_path : It takes folder containing only 1 camera, board.yaml, calibration.json, gripper_pose.json
+             cam : int (choice 0)
+             board : int (choice 0,1,2,3,4)
+    Output->  Create handEyeGripper.json file containing relation between that camera and one board
+    '''
     h = handEye(base_path)
     h.initiate_workspace()
     h.set_gripper_pose()
-    h.handEye_gripper(camera=0, board=3)
+    handEye_struct = h.handEye_gripper(camera=cam, board=board)
+    h.export_handEyeGripper(handEye_struct)
     # h.estimate_camera_board_poses()
+
+def main2(base_path, master="cam218"):
+    """
+    Input-> base_path: folder with 2 Cameras
+    :return:
+    """
+    handEye_dict = {}
+    for path, subdirs, files in os.walk(base_path):
+        if path == base_path:
+            for dir in subdirs:
+                cam_path = os.path.join(base_path, dir)
+                h = handEye(cam_path)
+                h.initiate_workspace()
+                h.set_gripper_pose()
+                handEye_dict[dir] = h
+
+    for key in handEye_dict:
+        if key == master:
+            handEyeGripper = json.load(open(handEye_dict[key].handEyeGripper))
+            masterCam = handEyeGripper['camera']
+            masterBoard = int(handEyeGripper['board'][-1])
+            base_wrt_masterCam = handEyeGripper['base_wrt_cam']
+        else:
+            handEyeGripper = json.load(open(handEye_dict[key].handEyeGripper))
+            slaveCam = handEyeGripper['camera']
+            slaveBoard = int(handEyeGripper['board'][-1])
+            gripper_wrt_slaveBoard = handEyeGripper['gripper_wrt_world']
+
+    slaveBoard_masterCam_pose = handEye_dict[master].workspace.pose_table._index_select(0, axis=0)._index_select(slaveBoard, axis=1)
+    images = handEye_dict[master].workspace.names.image
+    gripper_pose = handEye_dict[master].gripper_pose
+
+    valid_poses = [idx for idx, valid in enumerate(slaveBoard_masterCam_pose.valid) if valid == True]
+
+    error_dict = {}
+    for p in valid_poses:
+        img_name = images[p]
+        grip_pose = img_name[:-4][1:]
+        gripper_wrt_base = gripper_pose[grip_pose]
+        board_wrt_cam = slaveBoard_masterCam_pose.poses[p]
+        masterCam_wrt_slaveBoard = np.linalg.inv(board_wrt_cam)
+        ZB = matrix.transform(base_wrt_masterCam, masterCam_wrt_slaveBoard)
+        error_dict[p] = np.linalg.inv(gripper_wrt_base) - matrix.transform(ZB, np.linalg.inv(gripper_wrt_slaveBoard))
+    pass
+
+if __name__ == '__main__':
+    # main1(base_path, cam=0, board=3)
+    main2(base_path)
     pass
