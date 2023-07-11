@@ -104,6 +104,25 @@ catkin_make
 ## Qt Designer
 - For loading image-> label > in Pixmap, load image > scaledContents check
 
+## Aruco board Create
+- https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/printing%20board/write_board2.py
+- Parameters 
+```
+--rows
+9
+--columns
+12
+-T
+charuco_board
+--square_size
+13
+--marker_size
+8
+-f
+DICT_6X6_1000.json
+```
+
+
 # Directory description
 ## [tx60_moveit_config](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config)
 - Contains robot motion for image acquisition
