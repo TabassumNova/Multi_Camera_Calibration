@@ -186,7 +186,7 @@ class PatternMaker:
         yspacing = (self.height - self.rows * self.square_size) / 2.0
 
         ch_ar_border = (self.square_size - self.aruco_marker_size)/2
-        marker_id = 324
+        marker_id = 950
         for y in range(0, self.rows):
             for x in range(0, self.cols):
 
