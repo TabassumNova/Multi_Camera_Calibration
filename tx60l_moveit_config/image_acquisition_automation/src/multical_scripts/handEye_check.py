@@ -5,17 +5,13 @@ import src.multical.config.arguments as args
 from src.multical.tables import *
 from structs.struct import transpose_structs, invert_keys
 from structs.numpy import shape_info, struct, Table, shape
-
+from structs.struct import struct, to_dicts, transpose_lists
 
 import copy
 import json
 import os
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30\move_board_test"
-# poseJsonPath = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/stream_220.json"
-# board_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/boards.yaml"
-# intrinsic_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/calibration.json"
-# boardGripper_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\handEye_gripper/08320220/08320220/boardGripper.json"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
 
 class handEye():
     def __init__(self, base_path):
@@ -49,8 +45,7 @@ class handEye():
 
     def initiate_workspace(self):
         pathO = args.PathOpts(image_path=self.datasetPath)
-        cam = args.CameraOpts(motion_model="calibrate_board",
-                              calibration=self.intrinsicPath)
+        cam = args.CameraOpts(calibration=self.intrinsicPath)
         runt = args.RuntimeOpts()
         opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True)
         c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
@@ -88,7 +83,7 @@ class handEye():
                 point3D = [objPoints[x] for x in ids]
                 corner_list.append(corners)
                 point3D_list.append(point3D)
-        base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, estimated_gripper_base = self.hand_eye_robot_world(np.array(R_cam2world_list),
+        base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, estimated_gripper_base, _, _ = self.hand_eye_robot_world(np.array(R_cam2world_list),
                                             np.array(t_cam2world_list), np.array(R_base2gripper_list), np.array(t_base2gripper_list))
 
         handEye_struct = struct(camera=self.workspace.names.camera[camera], board=self.workspace.names.board[board], base_wrt_cam=base_wrt_cam, gripper_wrt_world=gripper_wrt_world,
@@ -114,7 +109,7 @@ class handEye():
         error2 = base_wrt_gripper - matrix.transform(ZB, np.linalg.inv(gripper_wrt_world))
         estimated_gripper_base = np.linalg.inv(matrix.transform(ZB, np.linalg.inv(gripper_wrt_world)))
 
-        return base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, estimated_gripper_base
+        return base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, estimated_gripper_base, err, error2
 
     def reprojectionError_Calculation_new(self, handEye_struct):
         error_dict = {}
@@ -209,8 +204,6 @@ class handEye():
 
         handEye_dict = {}
         serial = 0
-        handEye_dict['slave_wrt_master'] = {}
-        handEye_dict['board_wrt_boardM'] = {}
         master_boards = [b for b in range(0, num_boards) if self.workspace.pose_table.valid[master_cam][:, b].sum() > 20]
         for slave_cam in range(0, num_cameras):
             slave_boards = [b for b in range(0, num_boards) if self.workspace.pose_table.valid[slave_cam][:, b].sum() > 20]
@@ -219,42 +212,58 @@ class handEye():
                 for boardS in slave_boards:
                     masterR, masterT, slaveR, slaveT, image_list = self.master_slave_pose(master_cam, boardM,
                                                                                      slave_cam, boardS)
-                    board_wrt_boardM, slave_wrt_master, world_wrt_camera, \
-                    base_wrt_gripper, err, err2 = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
-                    reprojection_error = self.reprojectionError_calculation(board_wrt_boardM, slave_wrt_master, world_wrt_camera,
-                                                                            base_wrt_gripper, slave_cam, boardS, image_list)
-                    handEye_dict[serial] = struct(master_cam=master_cam, master_board=boardM, slave_cam = slave_cam, slave_board=boardS,
-                                                  boardS_wrto_boardM=board_wrt_boardM, slaveCam_wrto_masterCam=slave_wrt_master, reprojection_error=reprojection_error)
-                    serial += 1
+
+                    if len(image_list)>4:
+                        # board_wrt_boardM, slave_wrt_master, world_wrt_camera, \
+                        # base_wrt_gripper, err, err2 = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
+                        slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, \
+                        estimated_slaveB_slaveCam, err, err2 = self.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
+                        reprojection_error = self.reprojectionError_calculation(slave_cam, boardS, estimated_slaveB_slaveCam, image_list)
+
+                        error = sum(reprojection_error.values())/len(reprojection_error)
+                        handEye_dict[serial] = to_dicts(struct(master_cam=self.workspace.names.camera[master_cam],
+                                                    master_board=self.workspace.names.board[boardM],
+                                                    slave_cam = self.workspace.names.camera[slave_cam],
+                                                    slave_board=self.workspace.names.board[boardS],
+                                                    boardS_wrto_boardM=slaveB_wrt_masterB.tolist(),
+                                                    slaveCam_wrto_masterCam=slaveCam_wrt_masterCam.tolist(),
+                                                    reprojection_error=error, image_list=image_list))
+                        serial += 1
 
         return handEye_dict
 
-    def reprojectionError_calculation(self, board_wrt_boardM, slave_wrt_master, world_wrt_camera, base_wrt_gripper, slave_cam, boardS, image_list):
+    def reprojectionError_calculation(self, slaveCam, slaveBoard, estimated_slaveBoard_slaveCam, image_list):
         '''
         for Master_cam to Slave_cam
         '''
         error_dict = {}
-        T1 = matrix.transform(base_wrt_gripper, board_wrt_boardM)
-        T2 = matrix.transform(np.linalg.inv(slave_wrt_master), T1)
-        cameraMatrix = self.workspace.cameras[slave_cam].intrinsic
-        distortion = self.workspace.cameras[slave_cam].dist
-        for i in range(0, T2.shape[0]):
-            imagePoints = self.workspace.detected_points[slave_cam][image_list[i]][boardS]['corners']
-            point_ids = self.workspace.detected_points[slave_cam][image_list[i]][boardS]['ids']
-            objectPoints = np.array([self.workspace.boards[boardS].adjusted_points[i] for i in point_ids])
-            rmatrix = T2[i][0:3, 0:3]
-            tmatrix = T2[i][0:3, 3]
+        # T1 = matrix.transform(base_wrt_gripper, board_wrt_boardM)
+        # T2 = matrix.transform(np.linalg.inv(slave_wrt_master), T1)
+        cameraMatrix = self.workspace.cameras[slaveCam].intrinsic
+        images = self.workspace.names.image
+        distortion = self.workspace.cameras[slaveCam].dist
+        for i in range(0, estimated_slaveBoard_slaveCam.shape[0]):
+            imagePoints = self.workspace.detected_points[slaveCam][images.index(image_list[i])][slaveBoard]['corners']
+            point_ids = self.workspace.detected_points[slaveCam][images.index(image_list[i])][slaveBoard]['ids']
+            objectPoints = np.array([self.workspace.boards[slaveBoard].adjusted_points[i] for i in point_ids])
+            rmatrix = estimated_slaveBoard_slaveCam[i][0:3, 0:3]
+            tmatrix = estimated_slaveBoard_slaveCam[i][0:3, 3]
             rvec = (R.from_matrix([rmatrix]).as_rotvec())
             tvec = (tmatrix.T)
             imP, _ = cv2.projectPoints(np.copy(objectPoints), rvec, tvec, cameraMatrix, distortion)
-            error = imagePoints - imP.reshape([-1, 2])
-            error_dict[i] = error
+            error = np.linalg.norm(imagePoints - imP.reshape([-1, 2]), axis=-1)
+            mse = np.square(error).mean()
+            rms = np.sqrt(mse)
+            error_dict[i] = rms
         return error_dict
 
     def master_slave_pose(self, master_cam, master_board, slave_cam, slave_board):
         num_images = len(self.workspace.names.image)
         '''
         For Master_cam to Slave_cam
+        :return -> Rt of MasterCam_to_MasterBoard
+                   Rt of SlaveCam_to_SlaveBoard
+                   image_list
         '''
         masterR_list = []
         masterT_list = []
@@ -262,13 +271,13 @@ class handEye():
         slaveT_list = []
         image_list = []
 
-        for img in range(0, num_images):
-            master_valid = self.workspace.pose_table.valid[master_cam][img][master_board]
-            slave_valid = self.workspace.pose_table.valid[slave_cam][img][slave_board]
+        for idx, img in enumerate(self.workspace.names.image):
+            master_valid = self.workspace.pose_table.valid[master_cam][idx][master_board]
+            slave_valid = self.workspace.pose_table.valid[slave_cam][idx][slave_board]
             if master_valid and slave_valid:
-                master_pose = self.workspace.pose_table.poses[master_cam][img][master_board]
+                master_pose = np.linalg.inv(self.workspace.pose_table.poses[master_cam][idx][master_board])
                 master_R, master_t = matrix.split(master_pose)
-                slave_pose = self.workspace.pose_table.poses[slave_cam][img][slave_board]
+                slave_pose = np.linalg.inv(self.workspace.pose_table.poses[slave_cam][idx][slave_board])
                 slave_R, slave_t = matrix.split(slave_pose)
                 masterR_list.append(master_R)
                 masterT_list.append(master_t)
@@ -277,6 +286,14 @@ class handEye():
                 image_list.append(img)
 
         return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list), image_list
+
+    def export_handEye_Camera(self, handEye):
+        filename = os.path.join(base_path, "handEyeCamera.json")
+        json_object = json.dumps((handEye), indent=4)
+        # Writing to sample.json
+        with open(filename, "w") as outfile:
+            outfile.write(json_object)
+        pass
 
 def main1(base_path, cam, board):
     '''
@@ -336,7 +353,18 @@ def main2(base_path, master="cam218"):
         error_dict[p] = np.linalg.inv(gripper_wrt_base) - matrix.transform(ZB, np.linalg.inv(gripper_wrt_slaveBoard))
     pass
 
+def main3(base_path, master_cam):
+    """
+    For Camera to Camera handEye
+    :return:
+    """
+    h = handEye(base_path)
+    h.initiate_workspace()
+    handEye_dict = h.handEye_table(master_cam=master_cam)
+    h.export_handEye_Camera(handEye_dict)
+    pass
+
 if __name__ == '__main__':
     # main1(base_path, cam=0, board=3)
-    main2(base_path)
+    main3(base_path, master_cam=0)
     pass

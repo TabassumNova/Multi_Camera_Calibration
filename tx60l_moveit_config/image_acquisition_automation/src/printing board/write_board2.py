@@ -186,7 +186,8 @@ class PatternMaker:
         yspacing = (self.height - self.rows * self.square_size) / 2.0
 
         ch_ar_border = (self.square_size - self.aruco_marker_size)/2
-        marker_id = 950
+        marker_id = 100
+        marker_id_org = marker_id
         for y in range(0, self.rows):
             for x in range(0, self.cols):
 
@@ -195,7 +196,12 @@ class PatternMaker:
                                  height=spacing, fill="black", stroke="none")
                     self.g.append(square)
                 else:
+                    # # new
+                    # if marker_id> 999:
+                    #     marker_id = marker_id_org
+                    # # new
                     img_mark = self._create_marker_bits(markerSize_bits, dictionary["marker_"+str(marker_id)])
+                    print(marker_id)
                     marker_id +=1
                     x_pos = x * spacing + xspacing
                     y_pos = y * spacing + yspacing

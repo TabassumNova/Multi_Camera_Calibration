@@ -86,7 +86,7 @@ def show_boards(args):
 
     return board_image    
 
-  images = {k:draw_board(board) for k, board in boards.items()}
+  # images = {k:draw_board(board) for k, board in boards.items()}
 
   if args.detect is not None:
     image = load_image(args.detect)
