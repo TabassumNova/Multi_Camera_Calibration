@@ -1,9 +1,5 @@
-import json
-import numpy as np
+import pickle
 
-x = np.arange(0, 280.0, 5)
-y = np.arange(0, -280, -5)
-z = np.concatenate((x,y))
-
-for i in z:
-    print(i)
+workspace = pickle.load(open('D:\MY_DRIVE_N\Masters_thesis\Dataset\V30\workspace.pkl', "rb"))
+print(workspace.pose_table)
+pass

@@ -11,9 +11,23 @@ import src.multical.workspace as ws
 
 
 def export_workspace(workspace, path):
+    # workspace.__delattr__("calibrations")
+    # workspace.__delattr__("detections")
+    # # workspace.__delattr__("detections_file")
+    # # workspace.__delattr__("filenames")
+    # # workspace.__delattr__("initialisation")
+    # # workspace.__delattr__("latest_calibration")
+    # workspace.__delattr__("log_handler")
+    boards = [workspace.boards[0].adjusted_points,
+              workspace.boards[1].adjusted_points,
+              workspace.boards[2].adjusted_points,
+              workspace.boards[3].adjusted_points,
+              workspace.boards[4].adjusted_points]
+    new_workspace = struct(boards = boards, detected_points = workspace.detected_points,
+                           pose_table = workspace.pose_table)
     workspace_pickle = os.path.join(path, "workspace.pkl")
     with open(workspace_pickle, "wb") as file:
-        pickle.dump(workspace, file)
+        pickle.dump(new_workspace, file)
     # pickle.dump(workspace, open("workspace.pkl", "wb"))
     json_dict = {}
     # json_dict['cameras'] = workspace.cameras
@@ -32,10 +46,10 @@ def export_workspace(workspace, path):
 
 if __name__ == '__main__':
 
-    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30"
     workspace_path = os.path.join(base_path, 'workspace.json')
     pathO = args.PathOpts(image_path=base_path)
-    cam = args.CameraOpts()
+    cam = args.CameraOpts(calibration="D:\MY_DRIVE_N\Masters_thesis\Dataset\V30\intrinsic_26June.json")
     runt = args.RuntimeOpts(show_all_poses=True)
     # opt = args.OptimizerOpts()
     opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=False)
