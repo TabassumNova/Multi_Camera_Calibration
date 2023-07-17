@@ -224,6 +224,7 @@ class Calibration(parameters.Parameters):
     def evaluate(param_vec):
       calib = self.with_param_vec(param_vec)
       t = (calib.reprojected.points - calib.point_table.points)[self.inliers]
+      # info(f"num_inliers: { len(self.inliers)}")
       return (calib.reprojected.points - calib.point_table.points)[self.inliers].ravel()
 
     # with contextlib.redirect_stdout(LogWriter.info()):
