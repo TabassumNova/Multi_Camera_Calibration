@@ -372,6 +372,8 @@ class MyTabWidget(QWidget):
 
 
     def selectionchange(self, group, poseCount=0):
+        if poseCount == 0:
+            self.calibrationTab_poseCount = 0
         self.group = group
         handEye_Cam = self.tab1_handEyeCamera[str(self.group)]
         self.calibrationTab_LastposeCount = len(handEye_Cam["image_list"])
@@ -391,7 +393,7 @@ class MyTabWidget(QWidget):
         self.tab2_gridLayout1.addWidget(imageLabel2, 0, 1)
 
         self.calibrationTab_Table()
-        print(self.group)
+        # print(self.group)
         pass
 
     def image_load(self, path, cam, board, image):
@@ -416,7 +418,7 @@ class MyTabWidget(QWidget):
         p = convert_to_Qt_format.scaled(700, 700, Qt.KeepAspectRatio)
         imageLabel = QLabel()
         x = QPixmap.fromImage(p)
-        print(h, w, ch)
+        # print(h, w, ch)
         imageLabel.setPixmap(x)
         return imageLabel
 
@@ -427,29 +429,32 @@ class MyTabWidget(QWidget):
         return frame
 
     def calibrationTab_Table(self):
-        self.tab2_table.setRowCount(6)
+        self.tab2_table.setRowCount(7)
         self.tab2_table.setColumnCount(1)
         self.tab2_table.setHorizontalHeaderLabels(["Values"])
         self.tab2_table.setVerticalHeaderLabels(["Master Cam", "Master Board", "Slave Cam",
-                                                 "Slave Board", "Num_poses", "Reprojection Error"])
+                                                 "Slave Board", "Num_poses", "Initial_Reprojection_Error", "Final_Reprojection_Error"])
         item1 = QTableWidgetItem()
         item2 = QTableWidgetItem()
         item3 = QTableWidgetItem()
         item4 = QTableWidgetItem()
         item5 = QTableWidgetItem()
         item6 = QTableWidgetItem()
+        item7 = QTableWidgetItem()
         item1.setText(str(self.tab1_handEyeCamera[str(self.group)]["master_cam"]))
         item2.setText(str(self.tab1_handEyeCamera[str(self.group)]["master_board"]))
         item3.setText(str(self.tab1_handEyeCamera[str(self.group)]["slave_cam"]))
         item4.setText(str(self.tab1_handEyeCamera[str(self.group)]["slave_board"]))
         item5.setText(str(len(self.tab1_handEyeCamera[str(self.group)]["image_list"])))
-        item6.setText(str("{:.2f}".format(self.tab1_handEyeCamera[str(self.group)]["reprojection_error"])))
+        item6.setText(str("{:.2f}".format(self.tab1_handEyeCamera[str(self.group)]["initial_reprojection_error"])))
+        item7.setText(str("{:.2f}".format(self.tab1_handEyeCamera[str(self.group)]["final_reprojection_error"])))
         self.tab2_table.setItem(0, 0, item1)
         self.tab2_table.setItem(1, 0, item2)
         self.tab2_table.setItem(2, 0, item3)
         self.tab2_table.setItem(3, 0, item4)
         self.tab2_table.setItem(4, 0, item5)
         self.tab2_table.setItem(5, 0, item6)
+        self.tab2_table.setItem(6, 0, item7)
 
     # def image_load(self, path):
     #     frame = cv2.imread(path)
@@ -466,7 +471,7 @@ class MyTabWidget(QWidget):
     def open_dir_dialog(self):
         dialog = QFileDialog()
         self.folder_path = dialog.getExistingDirectory(None, "Select Folder")
-        print(self.folder_path)
+        # print(self.folder_path)
         self.workspace_load()
         self.calibration_tab()
         self.set_viewer(gridLayout=self.gridLayout1)

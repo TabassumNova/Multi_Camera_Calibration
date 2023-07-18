@@ -221,50 +221,80 @@ class handEye():
                         _, reprojection_error = self.reprojectionError_calculation(slave_cam, boardS, estimated_slaveB_slaveCam, image_list)
                         error = sum(reprojection_error.values())/len(reprojection_error)
                         print("initial reprojection error: ", error)
-                        self.optimization(slave_cam, boardS, image_list, slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB)
+                        final_error = self.optimization(slave_cam, boardS, image_list, slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB)
                         handEye_dict[serial] = to_dicts(struct(master_cam=self.workspace.names.camera[master_cam],
                                                     master_board=self.workspace.names.board[boardM],
                                                     slave_cam = self.workspace.names.camera[slave_cam],
                                                     slave_board=self.workspace.names.board[boardS],
                                                     boardS_wrto_boardM=slaveB_wrt_masterB.tolist(),
                                                     slaveCam_wrto_masterCam=slaveCam_wrt_masterCam.tolist(),
-                                                    initial_reprojection_error=error, image_list=image_list))
+                                                    initial_reprojection_error=error, final_reprojection_error=final_error,
+                                                               image_list=image_list))
                         serial += 1
 
         return handEye_dict
 
     def optimization(self, slave_cam, boardS, image_list,
-                     init_slaveCam_wrt_masterCam, init_slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB):
+                     init_slaveCam_wrt_masterCam, init_slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, num_adjustments=5):
         def fun(param_vec):
             slaveCam_wrt_masterCam = rtvec.to_matrix(param_vec[0:6])
             slaveB_wrt_masterB = rtvec.to_matrix(param_vec[6:12])
             ZB = matrix.transform(slaveCam_wrt_masterCam, masterCam_wrt_masterB)
             estimated_slaveB_slaveCam = np.linalg.inv(matrix.transform(ZB, np.linalg.inv(slaveB_wrt_masterB)))
             return estimated_slaveB_slaveCam
+        def find_threshold(point_errors):
+            error = []
+            for idx, x in enumerate(point_errors):
+                error.extend(list(x))
+            threshold = np.quantile(error, 0.75)
+            return threshold
+
         def evaluation(param_vec):
             estimated_slaveB_slaveCam = fun(param_vec)
             point_errors, reprojection_error = self.reprojectionError_calculation(slave_cam, boardS, estimated_slaveB_slaveCam, image_list)
+
             mean_error = sum(reprojection_error.values()) / len(reprojection_error)
             # print("reprojection_error: ", mean_error)
-            return np.array(point_errors).ravel()
+
+            errors = np.array([point_errors[i] for i, v in enumerate(inliers) if v == True ])
+            # x = point_errors[inliers]
+            return errors
         def calculate_meanError(param_vec):
             estimated_slaveB_slaveCam = fun(param_vec)
             point_errors, reprojection_error = self.reprojectionError_calculation(slave_cam, boardS,
                                                                                   estimated_slaveB_slaveCam, image_list)
             mean_error = sum(reprojection_error.values()) / len(reprojection_error)
-            return mean_error
+            return point_errors, mean_error
 
+        # slaveCam_vec = rtvec.from_matrix(init_slaveCam_wrt_masterCam)
+        # slaveB_vec = rtvec.from_matrix(init_slaveB_wrt_masterB)
+        # param_vec = np.concatenate((slaveCam_vec, slaveB_vec))
+        # init_error = evaluation(param_vec)
+        # res = least_squares(evaluation, param_vec,
+        #                              verbose=2, x_scale='jac', f_scale=1.0, ftol=1e-4, max_nfev=100,
+        #                              method='trf', loss='linear')
+        # error = evaluation(res.x)
+        # mean_error = calculate_meanError(res.x)
+        # print("Mean Reprojection error after optimization: ", mean_error)
+        ### new
         slaveCam_vec = rtvec.from_matrix(init_slaveCam_wrt_masterCam)
         slaveB_vec = rtvec.from_matrix(init_slaveB_wrt_masterB)
         param_vec = np.concatenate((slaveCam_vec, slaveB_vec))
-        init_error = evaluation(param_vec)
-        res = least_squares(evaluation, param_vec,
-                                     verbose=2, x_scale='jac', f_scale=1.0, ftol=1e-4, max_nfev=100,
-                                     method='trf', loss='linear')
-        error = evaluation(res.x)
-        mean_error = calculate_meanError(res.x)
-        print("Mean Reprojection error after optimization: ", mean_error)
-        pass
+        point_errors, _ = calculate_meanError(param_vec)
+        inliers = np.ones(point_errors.shape)
+
+        for i in range(num_adjustments):
+            info(f"Adjust_outliers {i}:")
+            res = least_squares(evaluation, param_vec,
+                                verbose=2, x_scale='jac', f_scale=1.0, ftol=1e-4, max_nfev=100,
+                                method='trf', loss='linear')
+            point_errors, _ = calculate_meanError(res.x)
+            threshold = np.quantile(point_errors, 0.75)
+            inliers = np.array(point_errors < threshold).flatten()
+            # experiment_points = copy.deepcopy(points)
+        ### new
+        _, mean_error = calculate_meanError(res.x)
+        return mean_error
 
     def reprojectionError_calculation(self, slaveCam, slaveBoard, estimated_slaveBoard_slaveCam, image_list):
         '''
@@ -291,7 +321,7 @@ class handEye():
             mse = np.square(error).mean()
             rms = np.sqrt(mse)
             error_dict[i] = rms
-        return point_errors, error_dict
+        return np.array(point_errors).ravel(), error_dict
 
     def master_slave_pose(self, master_cam, master_board, slave_cam, slave_board):
         num_images = len(self.workspace.names.image)
@@ -397,7 +427,7 @@ def main3(base_path, master_cam):
     h = handEye(base_path)
     h.initiate_workspace()
     handEye_dict = h.handEye_table(master_cam=master_cam)
-    # h.export_handEye_Camera(handEye_dict)
+    h.export_handEye_Camera(handEye_dict)
     pass
 
 if __name__ == '__main__':
