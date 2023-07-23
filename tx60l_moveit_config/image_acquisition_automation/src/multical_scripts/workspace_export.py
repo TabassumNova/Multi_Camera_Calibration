@@ -46,7 +46,7 @@ def export_workspace(workspace, path):
 
 if __name__ == '__main__':
 
-    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30"
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V33"
     workspace_path = os.path.join(base_path, 'workspace.json')
     pathO = args.PathOpts(image_path=base_path)
     cam = args.CameraOpts()

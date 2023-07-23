@@ -213,7 +213,7 @@ class handEye():
                     masterR, masterT, slaveR, slaveT, image_list = self.master_slave_pose(master_cam, boardM,
                                                                                      slave_cam, boardS)
 
-                    if len(image_list)>4:
+                    if len(image_list)>2:
                         # board_wrt_boardM, slave_wrt_master, world_wrt_camera, \
                         # base_wrt_gripper, err, err2 = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
                         slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, \
@@ -426,8 +426,12 @@ def main3(base_path, master_cam):
     """
     h = handEye(base_path)
     h.initiate_workspace()
-    handEye_dict = h.handEye_table(master_cam=master_cam)
-    h.export_handEye_Camera(handEye_dict)
+    all_handEye = {}
+    for idx, master_cam in enumerate(h.workspace.names.camera):
+        handEye_dict = h.handEye_table(master_cam=idx)
+        all_handEye[master_cam] = handEye_dict
+    # handEye_dict = h.handEye_table(master_cam=master_cam)
+    h.export_handEye_Camera(all_handEye)
     pass
 
 if __name__ == '__main__':
