@@ -37,42 +37,64 @@ class Interactive_Extrinsic():
         all_fig = []
         visualizer = CameraPoseVisualizer([-2000, 2000], [-2000, 2000], [-2000, 2000])
         final_layout = go.Figure()
-        final_layout.layout.update(
-            updatemenus=[
-                go.layout.Updatemenu(
-                    direction="down", buttons=list(
-                        [
-                            dict(args=["type", "Group1"], label="Group1", method="update"),
-                        ]
-                    )
-                ),
-            ]
-        )
+
         # final_layout = self.layout(show_legend=True, w=1500, h=1500)
-        for key, group in self.groups.items():
-            all_fig = []
-            for key2, value in group.items():
-                master_cam = value['master_cam']
-                slave_cam = value['slave_cam']
-                master_extrinsic = np.eye(4)
-                slave_extrinsic = np.array(value['slaveCam_wrto_masterCam'])
-                name = key + "_" + key2
-                data = visualizer.extrinsic2pyramid(master_extrinsic, color=self.camera_color[master_cam],
-                                                    focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False, hover_template=master_cam)
-                data1 = visualizer.extrinsic2pyramid(slave_extrinsic, color=self.camera_color[slave_cam],
-                                                     focal_len_scaled=0.1, aspect_ratio=0.3, hover_template=slave_cam, name=name)
-                all_fig.append(data)
-                all_fig.append(data1)
-                final_layout.add_trace(data)
-                final_layout.add_trace(data1)
-            pass
+        # cam_list = []
+        # for cam_name, cam_value in self.groups.items():
+        #     cam_list.append(dict(args=["type", cam_name], label=cam_name, method="update"))
+        #     # all_fig = []
+        # final_layout.layout.update(
+        #     updatemenus=[
+        #         go.layout.Updatemenu(
+        #             direction="down", buttons=list(cam_list)), ])
+
+        # final_layout.add_annotation(dict(font=dict(color='black', size=50),
+        #                                  x=0,
+        #                                  y=-0.12,
+        #                                  showarrow=False,
+        #                                  text="A very clear explanation",
+        #                                  textangle=0,
+        #                                  xanchor='left',
+        #                                  xref="paper",
+        #                                  yref="paper"))
+        for cam_name, cam_value in self.groups.items():
+            # # all_fig = []
+            # add annotation
+            final_layout = go.Figure()
+            final_layout.add_annotation(dict(font=dict(color='black', size=20),
+                                    x=0,
+                                    y=0.12,
+                                    showarrow=False,
+                                    text=cam_name,
+                                    textangle=0,
+                                    xanchor='left',
+                                    xref="paper",
+                                    yref="paper"))
+            for key, group in cam_value.items():
+                # all_fig = []
+                for key2, value in group.items():
+                    master_cam = value['master_cam']
+                    slave_cam = value['slave_cam']
+                    master_extrinsic = np.eye(4)
+                    slave_extrinsic = np.array(value['slaveCam_wrto_masterCam'])
+                    name = key + "_" + key2
+                    data = visualizer.extrinsic2pyramid(master_extrinsic, color=self.camera_color[master_cam],
+                                                        focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False, hover_template=master_cam)
+                    data1 = visualizer.extrinsic2pyramid(slave_extrinsic, color=self.camera_color[slave_cam],
+                                                         focal_len_scaled=0.1, aspect_ratio=0.3, hover_template=slave_cam, name=name)
+                    all_fig.append(data)
+                    all_fig.append(data1)
+                    final_layout.add_trace(data)
+                    final_layout.add_trace(data1)
+                pass
+            # fig = go.Figure(data=all_fig, layout=final_layout)
 
         # final_layout = go.Figure(data=all_fig)
 
         # fig = go.Figure(data=all_fig, layout=final_layout)
         # self.write_html(fig)
 
-        final_layout.show()
+            final_layout.show()
         pass
 
     def write_html(self, figure):
@@ -119,15 +141,17 @@ class Interactive_Extrinsic():
 
     def select_group(self):
         all_fig = []
-        for key, value in self.handEye_group.items():
-            masterCam = value['master_cam']
-            slaveCam = value['slave_cam']
-            name = "M" + masterCam + '_S' + slaveCam
-            if name not in self.groups:
-                self.groups[name] = {}
-                self.groups[name][key] = value
-            else:
-                self.groups[name][key] = value
+        for cam_name, camera in self.handEye_group.items():
+            self.groups[cam_name] = {}
+            for group_num, value in camera.items():
+                masterCam = value['master_cam']
+                slaveCam = value['slave_cam']
+                name = "M" + masterCam + '_S' + slaveCam
+                if name not in self.groups[cam_name]:
+                    self.groups[cam_name][name] = {}
+                    self.groups[cam_name][name][group_num] = value
+                else:
+                    self.groups[cam_name][name][group_num] = value
         pass
 
     def load_files(self):

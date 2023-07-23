@@ -213,33 +213,26 @@ class MyTabWidget(QWidget):
         # MyTabWidget.cb.addItem("No Selection")
         if self.tab1_handEyeCamera != None:
             items = len(self.tab1_handEyeCamera)
-            for k in self.tab1_handEyeCamera.keys():
-                text = "Group-" + str(k)
-                self.cb.addItem(text)
-        self.cb.setGeometry(QRect(0, 0, 93, 28))
+            for cam_num, cam_value in self.tab1_handEyeCamera.items():
+                for k in cam_value.keys():
+                    text = "Cam"+ cam_num+ " Group-" + str(k)
+                    self.cb.addItem(text)
+        self.cb.setGeometry(QRect(0, 0, 400, 28))
         self.cb.currentIndexChanged.connect(self.selectionchange)
-
-        # self.master_num = QLabel(self.tab2)
-        # self.master_num.setGeometry(QRect(100, 0, 93, 28))
-        # self.master_num.setText("Master")
-        #
-        # self.slave_num = QLabel(self.tab2)
-        # self.slave_num.setGeometry(QRect(200, 0, 93, 28))
-        # self.slave_num.setText("Slave")
 
         self.btnLoad8 = QPushButton(self.tab2)
         self.btnLoad8.setObjectName('<')
         self.btnLoad8.setText('<')
         # self.btnLoad5.setStyleSheet("background-color : cyan;")
         self.btnLoad8.clicked.connect(self.calibrationTab_loadPrevious)
-        self.btnLoad8.setGeometry(QRect(100, 0, 30, 28))
+        self.btnLoad8.setGeometry(QRect(410, 0, 30, 28))
 
         self.btnLoad9 = QPushButton(self.tab2)
         self.btnLoad9.setObjectName('>')
         self.btnLoad9.setText('>')
         # self.btnLoad6.setStyleSheet("background-color : cyan;")
         self.btnLoad9.clicked.connect(self.calibrationTab_loadNext)
-        self.btnLoad9.setGeometry(QRect(223, 0, 30, 28))
+        self.btnLoad9.setGeometry(QRect(533, 0, 30, 28))
 
         self.labelLoad10 = QLabel(self.tab2)
         self.labelLoad10.setObjectName('Pose')
@@ -247,7 +240,7 @@ class MyTabWidget(QWidget):
         # self.btnLoad7.setStyleSheet("background-color : cyan;")
         self.labelLoad10.setStyleSheet("border: 1px solid black;")
         # self.labelLoad10.clicked.connect(self.calibrationTab_Load)
-        self.labelLoad10.setGeometry(QRect(130, 0, 93, 28))
+        self.labelLoad10.setGeometry(QRect(440, 0, 93, 28))
 
         # Grid for images
         self.tab2_gridLayoutWidget1 = QWidget(self.tab2)
@@ -370,12 +363,23 @@ class MyTabWidget(QWidget):
             header.setSectionResizeMode(camera_id, QHeaderView.ResizeMode.ResizeToContents)
             # header.setStretchLastSection(True)
 
+    def group_decode(self, group):
+        group_num = {}
+        total = 0
+        for cam_num, cam_group in self.tab1_handEyeCamera.items():
+            group_num[cam_num] = np.arange(total, total+len(self.tab1_handEyeCamera[cam_num]))
+            total += len(self.tab1_handEyeCamera[cam_num])
+            if group in group_num[cam_num]:
+                return cam_num, np.where(group_num[cam_num]==group)[0][0]
+        pass
 
     def selectionchange(self, group, poseCount=0):
         if poseCount == 0:
             self.calibrationTab_poseCount = 0
+        self.cam_num, self.cam_group = self.group_decode(group)
+
         self.group = group
-        handEye_Cam = self.tab1_handEyeCamera[str(self.group)]
+        handEye_Cam = self.tab1_handEyeCamera[self.cam_num][str(self.cam_group)]
         self.calibrationTab_LastposeCount = len(handEye_Cam["image_list"])
         master_cam = handEye_Cam["master_cam"]
         master_board = handEye_Cam["master_board"]
@@ -441,13 +445,14 @@ class MyTabWidget(QWidget):
         item5 = QTableWidgetItem()
         item6 = QTableWidgetItem()
         item7 = QTableWidgetItem()
-        item1.setText(str(self.tab1_handEyeCamera[str(self.group)]["master_cam"]))
-        item2.setText(str(self.tab1_handEyeCamera[str(self.group)]["master_board"]))
-        item3.setText(str(self.tab1_handEyeCamera[str(self.group)]["slave_cam"]))
-        item4.setText(str(self.tab1_handEyeCamera[str(self.group)]["slave_board"]))
-        item5.setText(str(len(self.tab1_handEyeCamera[str(self.group)]["image_list"])))
-        item6.setText(str("{:.2f}".format(self.tab1_handEyeCamera[str(self.group)]["initial_reprojection_error"])))
-        item7.setText(str("{:.2f}".format(self.tab1_handEyeCamera[str(self.group)]["final_reprojection_error"])))
+        handEye_Cam = self.tab1_handEyeCamera[self.cam_num][str(self.cam_group)]
+        item1.setText(str(handEye_Cam["master_cam"]))
+        item2.setText(str(handEye_Cam["master_board"]))
+        item3.setText(str(handEye_Cam["slave_cam"]))
+        item4.setText(str(handEye_Cam["slave_board"]))
+        item5.setText(str(len(handEye_Cam["image_list"])))
+        item6.setText(str("{:.2f}".format(handEye_Cam["initial_reprojection_error"])))
+        item7.setText(str("{:.2f}".format(handEye_Cam["final_reprojection_error"])))
         self.tab2_table.setItem(0, 0, item1)
         self.tab2_table.setItem(1, 0, item2)
         self.tab2_table.setItem(2, 0, item3)
