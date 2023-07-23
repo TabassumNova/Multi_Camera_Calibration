@@ -95,7 +95,7 @@ class AnotherWindow(QWidget):
             self.tabs.addTab(self.tab_num[cam], cam)
             self.tab_num[cam].layout = QGridLayout(self)
 
-            # self.current_camera = cam
+            self.current_camera = cam
             self.folder_path[cam] = os.path.join(self.base_path, cam)
             # self.pose_count[cam] = 0
             # self.last_pose_count[cam] = 0
@@ -126,7 +126,7 @@ class AnotherWindow(QWidget):
 
             # Grid for Pose num
             self.gridLayoutWidget2[cam] = QWidget(self.tab_num[cam])
-            self.gridLayoutWidget2[cam].setGeometry(QRect(1130, 50, 100, 30))
+            self.gridLayoutWidget2[cam].setGeometry(QRect(1130, 50, 600, 30))
             self.gridLayoutWidget2[cam].setObjectName("gridLayoutWidget")
             self.gridLayout2[cam] = QGridLayout(self.gridLayoutWidget2[cam])
             self.gridLayout2[cam].setContentsMargins(0, 0, 0, 0)
@@ -215,8 +215,30 @@ class AnotherWindow(QWidget):
         label.setText(self.images[self.pose_count])
         label.setAlignment(Qt.AlignCenter)
         label_Layout.addWidget(label, 2, 1)
+
+        label2 = QLabel()
+        label2.setText('Search pose')
+        label2.setFont(QFont("Times", 10, QFont.Bold))
+        label2.setAlignment(Qt.AlignCenter)
+        label_Layout.addWidget(label2, 2, 2)
+
+        self.label3 = QLineEdit(self)
+        self.label3.textChanged.connect(self.textchanged)
+        self.label3.setAlignment(Qt.AlignCenter)
+        label_Layout.addWidget(self.label3, 2, 3)
+
+        # label4 = QPushButton()
+        # label4.setText('Ok')
+        # label4.clicked.connect(partial(self.clickMethod, self.label3.text()))
+        # label_Layout.addWidget(label4, 2, 4)
         pass
 
+    def textchanged(self, text):
+        pass
+        # self.pose_count = int(text)-1
+        # self.set_viewer(self.current_camera, self.gridLayout1[self.current_camera], self.folder_path[self.current_camera], self.images[self.pose_count],
+        #                 self.table[self.current_camera], self.gridLayout3[self.current_camera], self.gridLayout2[self.current_camera])
+        pass
 
     def set_viewer(self, cam, imageLayout, folder_path, image_name, table, tableLayout, label_Layout):
         # self.viewer[self.current_camera] = self.create_ImageViewer()
