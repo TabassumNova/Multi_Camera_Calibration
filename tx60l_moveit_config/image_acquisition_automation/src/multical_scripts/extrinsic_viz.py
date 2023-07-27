@@ -1,5 +1,5 @@
 import numpy as np
-from src.extrinsic2pyramid.util.camera_pose_visualizer import CameraPoseVisualizer
+from src.extrinsic2pyramid.camera_pose_visualizer import CameraPoseVisualizer
 import plotly.graph_objects as go
 import json
 import os
