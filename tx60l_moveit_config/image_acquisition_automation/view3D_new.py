@@ -33,9 +33,9 @@ def view3D():
     )
     all_fig.append(fig2)
 
-    camx = np.array((0, -1.2, -0.53, 0.34, 0.32, -0.96))
-    camy = np.array((0, -0.22, 0.5, 0.22, 0.79, -0.23))
-    camz = np.array((0, 0.25, -0.27, 0.69, 0.73, 0.34))
+    camx = np.array((0, 0.59, 0.22, 0.72, -0.06, 0.34))
+    camy = np.array((0, 0.99, 1.13, 0.63, 1.13, 1.23))
+    camz = np.array((0, 1.67, 0.62, 0.57, 1.81, 1.01))
     fig3 = go.Scatter3d(
         x=camx,
         y=camy,
@@ -45,7 +45,7 @@ def view3D():
             size=6,
             color='rgb(0,255,0)'  
         ),
-        text= ['Cam241', 'Cam218', 'Cam233', 'Cam237', 'Cam642', 'Cam643']
+        text= ['Cam217', 'Cam218', 'Cam220', 'Cam221', 'Cam222', 'Cam113']
     )
     all_fig.append(fig3)
 

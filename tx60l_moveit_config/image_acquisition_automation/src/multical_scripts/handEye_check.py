@@ -10,8 +10,9 @@ from scipy.optimize import least_squares
 import copy
 import json
 import os
+from src.multical.transform import common, rtvec
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V33"
 
 class handEye():
     def __init__(self, base_path):
@@ -24,6 +25,9 @@ class handEye():
         self.handEyeGripper = None
         self.gripper_pose = {}
         self.collect_files()
+        self.board_pose = {}
+        self.cam_pose = None
+        self.all_handEye = {}
 
     def collect_files(self):
         """
@@ -193,7 +197,7 @@ class handEye():
         for cam in range(0, num_cameras):
             handEye_dict[cam] = self.handEye_table(master_cam=cam)
 
-    def handEye_table(self, master_cam=0):
+    def handEye_table(self, master_cam=0, limit_image=2, num_adjustments=5):
         '''
         handEye for Master_cam to Slave_cam
         :param master_cam:
@@ -209,19 +213,28 @@ class handEye():
             slave_boards = [b for b in range(0, num_boards) if self.workspace.pose_table.valid[slave_cam][:, b].sum() > 20]
 
             for boardM in master_boards:
+                if boardM not in self.board_pose:
+                    self.board_pose[boardM] = {}
+
                 for boardS in slave_boards:
                     masterR, masterT, slaveR, slaveT, image_list = self.master_slave_pose(master_cam, boardM,
                                                                                      slave_cam, boardS)
 
-                    if len(image_list)>2:
+                    if len(image_list)>limit_image:
                         # board_wrt_boardM, slave_wrt_master, world_wrt_camera, \
                         # base_wrt_gripper, err, err2 = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
                         slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, \
                         estimated_slaveB_slaveCam, err, err2 = self.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
+
+                        if boardS not in self.board_pose[boardM]:
+                            self.board_pose[boardM][boardS] = slaveB_wrt_masterB.tolist()
+
                         _, reprojection_error = self.reprojectionError_calculation(slave_cam, boardS, estimated_slaveB_slaveCam, image_list)
-                        error = sum(reprojection_error.values())/len(reprojection_error)
+                        error = sum(reprojection_error)/len(reprojection_error)
                         print("initial reprojection error: ", error)
-                        final_error = self.optimization(slave_cam, boardS, image_list, slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB)
+                        final_error = self.optimization(slave_cam, boardS, image_list,
+                                                    slaveCam_wrt_masterCam, slaveB_wrt_masterB,
+                                                    masterCam_wrt_masterB, slaveCam_wrt_slaveB, num_adjustments=num_adjustments)
                         handEye_dict[serial] = to_dicts(struct(master_cam=self.workspace.names.camera[master_cam],
                                                     master_board=self.workspace.names.board[boardM],
                                                     slave_cam = self.workspace.names.camera[slave_cam],
@@ -229,53 +242,103 @@ class handEye():
                                                     boardS_wrto_boardM=slaveB_wrt_masterB.tolist(),
                                                     slaveCam_wrto_masterCam=slaveCam_wrt_masterCam.tolist(),
                                                     initial_reprojection_error=error, final_reprojection_error=final_error,
-                                                               image_list=image_list))
+                                                               image_list=image_list, masterCam_wrt_masterB=masterCam_wrt_masterB))
                         serial += 1
 
         return handEye_dict
 
+    def show_cluster_mean(self, mean_calculation):
+        mean_group_dict = {}
+        for cam1, cam_value1 in mean_calculation.items():
+            mean_group_dict[cam1] = {}
+            mean_group_dict[cam1][cam1] = {}
+            mean_group_dict[cam1][cam1]['extrinsic'] = np.eye(4).tolist()
+            mean_group_dict[cam1][cam1]['group'] = [0]
+            for cam2, cam_value2 in cam_value1.items():
+                if cam2 != cam1:
+                    g = common.cluster(cam_value2['extrinsic'])
+                    group = np.array(cam_value2['group'])[common.cluster(cam_value2['extrinsic'])]
+                    x = rtvec.to_matrix(common.mean_robust(cam_value2['extrinsic']))
+                    mean_group_dict[cam1][cam2] = {}
+                    mean_group_dict[cam1][cam2]['extrinsic'] = x.tolist()
+                    mean_group_dict[cam1][cam2]['group'] = group.tolist()
+        return mean_group_dict
+
+    def calc_camPose_param(self, limit_images, num_adjustments):
+        for idx, master_cam in enumerate(self.workspace.names.camera):
+            handEye_dict = self.handEye_table(master_cam=idx, limit_image=limit_images, num_adjustments=num_adjustments)
+            self.all_handEye[master_cam] = handEye_dict
+
+        mean_calculation = {}
+        for cam_name, cam_group in self.all_handEye.items():
+            mean_calculation[cam_name] = {}
+            for group, value in cam_group.items():
+                master_cam = value['master_cam']
+                slave_cam = value['slave_cam']
+                master_extrinsic = np.eye(4)
+                slave_extrinsic = np.array(value['slaveCam_wrto_masterCam'])
+
+                # meanGroup = "M" + master_cam + '_S' + slave_cam
+                if slave_cam not in mean_calculation[cam_name]:
+                    mean_calculation[cam_name][slave_cam] = {}
+                    mean_calculation[cam_name][slave_cam]['extrinsic'] = from_matrix(slave_extrinsic).reshape((1, -1))
+                    mean_calculation[cam_name][slave_cam]['group'] = [group]
+                else:
+                    mean_calculation[cam_name][slave_cam]['group'].extend([group])
+                    mean_calculation[cam_name][slave_cam]['extrinsic'] = np.concatenate((mean_calculation[cam_name][slave_cam]['extrinsic'],
+                                                                            from_matrix(slave_extrinsic).reshape(
+                                                                                (1, -1))), axis=0)
+        self.cam_pose = self.show_cluster_mean(mean_calculation)
+        pass
+
+    def check_cluster_reprojectionerr(self):
+        cluster_error = {}
+        for idxM, master_cam in enumerate(self.workspace.names.camera):
+            cluster_error[master_cam] = {}
+            for idxS, slave_cam in enumerate(self.workspace.names.camera):
+                error = []
+                if master_cam != slave_cam:
+                    slaveCam_wrt_masterCam = self.cam_pose[master_cam][slave_cam]['extrinsic']
+                    groups = self.cam_pose[master_cam][slave_cam]['group']
+                    for g in groups:
+                        images = self.all_handEye[master_cam][g]['image_list']
+                        masterCam_wrt_masterB = self.all_handEye[master_cam][g]['masterCam_wrt_masterB']
+
+                        ZB = matrix.transform(slaveCam_wrt_masterCam, masterCam_wrt_masterB)
+                        slaveB_wrt_masterB = self.all_handEye[master_cam][g]['boardS_wrto_boardM']
+                        estimated_slaveB_slaveCam = np.linalg.inv(matrix.transform(ZB, np.linalg.inv(slaveB_wrt_masterB)))
+                        slave_board = self.workspace.names.board.index(self.all_handEye[master_cam][g]['slave_board'])
+                        _, reprojection_error = self.reprojectionError_calculation(idxS, slave_board,
+                                                                                   estimated_slaveB_slaveCam,
+                                                                                   images)
+                        error.extend(reprojection_error)
+                    cluster_error[master_cam][slave_cam] = sum(error)/len(error)
+
+        pass
+
     def optimization(self, slave_cam, boardS, image_list,
-                     init_slaveCam_wrt_masterCam, init_slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, num_adjustments=5):
+                     init_slaveCam_wrt_masterCam, init_slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, num_adjustments):
         def fun(param_vec):
             slaveCam_wrt_masterCam = rtvec.to_matrix(param_vec[0:6])
             slaveB_wrt_masterB = rtvec.to_matrix(param_vec[6:12])
             ZB = matrix.transform(slaveCam_wrt_masterCam, masterCam_wrt_masterB)
             estimated_slaveB_slaveCam = np.linalg.inv(matrix.transform(ZB, np.linalg.inv(slaveB_wrt_masterB)))
             return estimated_slaveB_slaveCam
-        def find_threshold(point_errors):
-            error = []
-            for idx, x in enumerate(point_errors):
-                error.extend(list(x))
-            threshold = np.quantile(error, 0.75)
-            return threshold
 
         def evaluation(param_vec):
             estimated_slaveB_slaveCam = fun(param_vec)
             point_errors, reprojection_error = self.reprojectionError_calculation(slave_cam, boardS, estimated_slaveB_slaveCam, image_list)
-
-            mean_error = sum(reprojection_error.values()) / len(reprojection_error)
-            # print("reprojection_error: ", mean_error)
-
             errors = np.array([point_errors[i] for i, v in enumerate(inliers) if v == True ])
-            # x = point_errors[inliers]
             return errors
+
         def calculate_meanError(param_vec):
             estimated_slaveB_slaveCam = fun(param_vec)
             point_errors, reprojection_error = self.reprojectionError_calculation(slave_cam, boardS,
                                                                                   estimated_slaveB_slaveCam, image_list)
-            mean_error = sum(reprojection_error.values()) / len(reprojection_error)
+            mean_error = sum(reprojection_error) / len(reprojection_error)
             return point_errors, mean_error
 
-        # slaveCam_vec = rtvec.from_matrix(init_slaveCam_wrt_masterCam)
-        # slaveB_vec = rtvec.from_matrix(init_slaveB_wrt_masterB)
-        # param_vec = np.concatenate((slaveCam_vec, slaveB_vec))
-        # init_error = evaluation(param_vec)
-        # res = least_squares(evaluation, param_vec,
-        #                              verbose=2, x_scale='jac', f_scale=1.0, ftol=1e-4, max_nfev=100,
-        #                              method='trf', loss='linear')
-        # error = evaluation(res.x)
-        # mean_error = calculate_meanError(res.x)
-        # print("Mean Reprojection error after optimization: ", mean_error)
+
         ### new
         slaveCam_vec = rtvec.from_matrix(init_slaveCam_wrt_masterCam)
         slaveB_vec = rtvec.from_matrix(init_slaveB_wrt_masterB)
@@ -283,6 +346,8 @@ class handEye():
         point_errors, _ = calculate_meanError(param_vec)
         inliers = np.ones(point_errors.shape)
 
+        if num_adjustments ==0:
+            return 0
         for i in range(num_adjustments):
             info(f"Adjust_outliers {i}:")
             res = least_squares(evaluation, param_vec,
@@ -291,7 +356,7 @@ class handEye():
             point_errors, _ = calculate_meanError(res.x)
             threshold = np.quantile(point_errors, 0.75)
             inliers = np.array(point_errors < threshold).flatten()
-            # experiment_points = copy.deepcopy(points)
+
         ### new
         _, mean_error = calculate_meanError(res.x)
         return mean_error
@@ -300,7 +365,7 @@ class handEye():
         '''
         for Master_cam to Slave_cam
         '''
-        error_dict = {}
+        error_list = []
         # T1 = matrix.transform(base_wrt_gripper, board_wrt_boardM)
         # T2 = matrix.transform(np.linalg.inv(slave_wrt_master), T1)
         cameraMatrix = self.workspace.cameras[slaveCam].intrinsic
@@ -320,8 +385,8 @@ class handEye():
             point_errors.extend(imagePoints - imP.reshape([-1, 2]))
             mse = np.square(error).mean()
             rms = np.sqrt(mse)
-            error_dict[i] = rms
-        return np.array(point_errors).ravel(), error_dict
+            error_list.append(rms)
+        return np.array(point_errors).ravel(), error_list
 
     def master_slave_pose(self, master_cam, master_board, slave_cam, slave_board):
         num_images = len(self.workspace.names.image)
@@ -353,9 +418,20 @@ class handEye():
 
         return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list), image_list
 
-    def export_handEye_Camera(self, handEye):
+    def export_handEye_Camera(self):
         filename = os.path.join(base_path, "handEyeCamera.json")
-        json_object = json.dumps((handEye), indent=4)
+        json_object = json.dumps((self.all_handEye), indent=4)
+        # Writing to sample.json
+        with open(filename, "w") as outfile:
+            outfile.write(json_object)
+        pass
+
+    def export_camera_board_param(self):
+        param = {}
+        param['camera_pose'] = self.cam_pose
+        param['board_pose'] = self.board_pose
+        filename = os.path.join(base_path, "CameraBoard_param.json")
+        json_object = json.dumps((param), indent=4)
         # Writing to sample.json
         with open(filename, "w") as outfile:
             outfile.write(json_object)
@@ -419,7 +495,7 @@ def main2(base_path, master="cam218"):
         error_dict[p] = np.linalg.inv(gripper_wrt_base) - matrix.transform(ZB, np.linalg.inv(gripper_wrt_slaveBoard))
     pass
 
-def main3(base_path, master_cam):
+def main3(base_path, limit_images, num_adjustments):
     """
     For Camera to Camera handEye
     :return:
@@ -428,13 +504,24 @@ def main3(base_path, master_cam):
     h.initiate_workspace()
     all_handEye = {}
     for idx, master_cam in enumerate(h.workspace.names.camera):
-        handEye_dict = h.handEye_table(master_cam=idx)
+        handEye_dict = h.handEye_table(master_cam=idx, limit_image=limit_images, num_adjustments=num_adjustments)
         all_handEye[master_cam] = handEye_dict
     # handEye_dict = h.handEye_table(master_cam=master_cam)
-    h.export_handEye_Camera(all_handEye)
+    h.export_handEye_Camera()
+    pass
+
+def main4(base_path, limit_images, num_adjustments):
+
+    h = handEye(base_path)
+    h.initiate_workspace()
+    h.calc_camPose_param(limit_images, num_adjustments)
+    h.check_cluster_reprojectionerr()
+    h.export_handEye_Camera()
+    h.export_camera_board_param()
     pass
 
 if __name__ == '__main__':
     # main1(base_path, cam=0, board=3)
-    main3(base_path, master_cam=0)
+    # main3(base_path, limit_images=10, num_adjustments=2)
+    main4(base_path, limit_images=10, num_adjustments=0)
     pass
