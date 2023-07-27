@@ -7,14 +7,15 @@ from dash import Dash, dcc, html, Input, Output,callback
 import plotly.io as pio
 import io
 from base64 import b64encode
-
+from src.multical.transform.rtvec import *
 from jupyter_dash import JupyterDash
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 import pickle
+from src.multical.transform import common, rtvec
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30"
 
 class Interactive_Extrinsic():
     def __init__(self, base_path):
@@ -38,25 +39,6 @@ class Interactive_Extrinsic():
         visualizer = CameraPoseVisualizer([-2000, 2000], [-2000, 2000], [-2000, 2000])
         final_layout = go.Figure()
 
-        # final_layout = self.layout(show_legend=True, w=1500, h=1500)
-        # cam_list = []
-        # for cam_name, cam_value in self.groups.items():
-        #     cam_list.append(dict(args=["type", cam_name], label=cam_name, method="update"))
-        #     # all_fig = []
-        # final_layout.layout.update(
-        #     updatemenus=[
-        #         go.layout.Updatemenu(
-        #             direction="down", buttons=list(cam_list)), ])
-
-        # final_layout.add_annotation(dict(font=dict(color='black', size=50),
-        #                                  x=0,
-        #                                  y=-0.12,
-        #                                  showarrow=False,
-        #                                  text="A very clear explanation",
-        #                                  textangle=0,
-        #                                  xanchor='left',
-        #                                  xref="paper",
-        #                                  yref="paper"))
         for cam_name, cam_value in self.groups.items():
             # # all_fig = []
             # add annotation
@@ -70,6 +52,7 @@ class Interactive_Extrinsic():
                                     xanchor='left',
                                     xref="paper",
                                     yref="paper"))
+            mean_calculation = {}
             for key, group in cam_value.items():
                 # all_fig = []
                 for key2, value in group.items():
@@ -77,25 +60,43 @@ class Interactive_Extrinsic():
                     slave_cam = value['slave_cam']
                     master_extrinsic = np.eye(4)
                     slave_extrinsic = np.array(value['slaveCam_wrto_masterCam'])
-                    name = key + "_" + key2
+                    rvec, tvec = split(as_rtvec(slave_extrinsic))
+                    # name = key + "_" + key2
+                    name = "Master : " + master_cam + "\n" + "Slave: " + slave_cam + "\n" + "Group: " + "\n" + key2
+
                     data = visualizer.extrinsic2pyramid(master_extrinsic, color=self.camera_color[master_cam],
                                                         focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False, hover_template=master_cam)
                     data1 = visualizer.extrinsic2pyramid(slave_extrinsic, color=self.camera_color[slave_cam],
-                                                         focal_len_scaled=0.1, aspect_ratio=0.3, hover_template=slave_cam, name=name)
-                    all_fig.append(data)
-                    all_fig.append(data1)
+                                                         focal_len_scaled=0.1, aspect_ratio=0.3,
+                                                         hover_template=slave_cam+ "_" + str(tvec), name=name)
+                    # all_fig.append(data)
+                    # all_fig.append(data1)
                     final_layout.add_trace(data)
                     final_layout.add_trace(data1)
+
+                    meanGroup = "M"+master_cam+'_S'+slave_cam
+                    if meanGroup not in mean_calculation:
+                        mean_calculation[meanGroup] = from_matrix(slave_extrinsic).reshape((1,-1))
+                    else:
+                        mean_calculation[meanGroup] = np.concatenate((mean_calculation[meanGroup],
+                                                                      from_matrix(slave_extrinsic).reshape((1,-1))), axis=0)
                 pass
-            # fig = go.Figure(data=all_fig, layout=final_layout)
-
-        # final_layout = go.Figure(data=all_fig)
-
-        # fig = go.Figure(data=all_fig, layout=final_layout)
-        # self.write_html(fig)
-
+            mean_group_dict = self.show_cluster_mean(mean_calculation)
+            for g in mean_group_dict:
+                d = visualizer.extrinsic2pyramid(mean_group_dict[g], color='black',
+                                                         focal_len_scaled=0.1, aspect_ratio=0.3,
+                                                         hover_template="mean", name=g)
+                final_layout.add_trace(d)
             final_layout.show()
         pass
+
+    def show_cluster_mean(self, mean_calculation):
+        mean_group_dict = {}
+        for key, value in mean_calculation.items():
+            x = rtvec.to_matrix(common.mean_robust(value))
+            mean_group_dict[key] = x
+
+        return mean_group_dict
 
     def write_html(self, figure):
         buffer = io.StringIO()
