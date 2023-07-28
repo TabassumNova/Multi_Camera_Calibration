@@ -15,12 +15,12 @@ from dash.dependencies import Input, Output
 import pickle
 from src.multical.transform import common, rtvec
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
 
 class Interactive_Extrinsic():
     def __init__(self, base_path):
         self.base_path = base_path
-        self.workspace, self.handEye_group = self.load_files()
+        self.workspace, self.handEye_group, self.campose2 = self.load_files()
         self.camera_color = {}
         self.set_Cam_color()
         # self.num_group = len(self.handEye)
@@ -86,6 +86,12 @@ class Interactive_Extrinsic():
                 d = visualizer.extrinsic2pyramid(mean_group_dict[g], color='black',
                                                          focal_len_scaled=0.1, aspect_ratio=0.3,
                                                          hover_template="mean", name=g)
+                final_layout.add_trace(d)
+            for cam in self.workspace.names.camera:
+                x = np.array(self.campose2['camera_pose'][cam_name][cam])
+                d = visualizer.extrinsic2pyramid(x, color='darkviolet',
+                                                 focal_len_scaled=0.1, aspect_ratio=0.3,
+                                                 hover_template="handEye_opt", name=cam)
                 final_layout.add_trace(d)
             final_layout.show()
         pass
@@ -164,7 +170,10 @@ class Interactive_Extrinsic():
                     if file == "handEyeCamera.json":
                         handEye_path = os.path.join(self.base_path, "handEyeCamera.json")
                         handEye = json.load(open(handEye_path))
-        return workspace, handEye
+                    if file == "campose2.json":
+                        campose2_path = os.path.join(self.base_path, "campose2.json")
+                        campose2 = json.load(open(campose2_path))
+        return workspace, handEye, campose2
 
 
 

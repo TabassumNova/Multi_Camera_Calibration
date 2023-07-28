@@ -46,10 +46,10 @@ def export_workspace(workspace, path):
 
 if __name__ == '__main__':
 
-    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V33"
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
     workspace_path = os.path.join(base_path, 'workspace.json')
     pathO = args.PathOpts(image_path=base_path)
-    cam = args.CameraOpts()
+    cam = args.CameraOpts(calibration="D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31\calibration.json")
     runt = args.RuntimeOpts(show_all_poses=True)
     # opt = args.OptimizerOpts()
     opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=False)

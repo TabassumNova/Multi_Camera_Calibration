@@ -92,6 +92,7 @@ class Workspace:
         self.detections = None
         self.boards = None
         self.board_colors = None
+        self.board_poses = None
 
         self.filenames = None
         self.image_path = None
@@ -228,12 +229,12 @@ class Workspace:
         info("Pose counts:")
         tables.table_info(self.pose_table.valid, self.names)
 
-        pose_init_board1 = tables.initialise_board(self)
-        pose_init_board = board_param(self)
+        self.board_poses = tables.initialise_board(self)
+        # pose_init_board = board_param(self)
 
-        error_board_param(self, pose_init_board)
+        # error_board_param(self, pose_init_board)
 
-        pass
+        # return pose_init_board
 
     def initialise_HandEye(self, motion_model=HandEye, camera_poses=None, isFisheye=False):
         assert self.cameras is not None, "initialise_poses: no cameras set, first use calibrate_single or set_cameras"

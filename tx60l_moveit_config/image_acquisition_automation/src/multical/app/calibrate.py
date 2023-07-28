@@ -25,7 +25,8 @@ class Calibrate:
         return ws
 
     def execute_board(self):
-        calibrate_board(self)
+        workspace = calibrate_board(self)
+        return workspace
 
 
 def calibrate(args): 
@@ -67,8 +68,9 @@ def calibrate_board(args):
     # print(ws)
     initialise_with_images(ws, boards, camera_images, args.camera, args.runtime)
 
-    ws.export()
-    ws.dump()
+    # ws.export()
+    # ws.dump()
+    return ws
 
 def detection_new(args):
     np.set_printoptions(precision=4, suppress=True)
