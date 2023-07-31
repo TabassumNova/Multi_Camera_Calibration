@@ -6,6 +6,7 @@
 - **intrinsic_26June.json** : Contains Intrinsic Parameters for all the cameras
 - **poses_29June_1.json** : Robot poses
 - **workspace.pkl** : Workspace
+- **workspace.json** : Workspace
 
 ## workspace.pkl file
 - **detected_points** : Contains all the detected points in pixel
@@ -15,5 +16,9 @@
 ## How to open pickel file?
 ```
 import pickle
+import json
 workspace = pickle.load(open('workspace.pkl_path', "rb"))
+
+file = open(JsonPath)
+data = json.load(file)
 ```
