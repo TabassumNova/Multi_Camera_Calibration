@@ -70,8 +70,8 @@ class Camera(Parameters):
     return Camera.model[model] | cv2.CALIB_FIX_ASPECT_RATIO * fix_aspect
 
   @staticmethod
-  def calibrate(boards, detections, image_size, max_iter=10, eps=1e-3,
-                model='standard', fix_aspect=False, has_skew=False, flags=0, max_images=None, reprojection_error_limit=0.5):
+  def calibrate(boards, reprojection_error_limit, detections, image_size, max_iter=10, eps=1e-3,
+                model='standard', fix_aspect=False, has_skew=False, flags=0, max_images=None):
 
     points = calibration_points(boards, detections)
     if max_images is not None:
@@ -87,7 +87,7 @@ class Camera(Parameters):
     ## new
     ## new
     err = 1
-    while abs(err) > reprojection_error_limit:
+    while abs(err) >= reprojection_error_limit:
       # err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
       #                                                                       image_size, None, None)
 
@@ -282,10 +282,10 @@ def calibration_points(boards, detections):
   return reduce(operator.add, board_points)
 
 
-def calibrate_cameras(boards, points, image_sizes, **kwargs):
+def calibrate_cameras(boards, points, image_sizes, reprojection_error_limit, **kwargs):
 
   with ThreadPool() as pool:
-    f = partial(Camera.calibrate, boards, **kwargs)
+    f = partial(Camera.calibrate, boards, reprojection_error_limit, **kwargs)
     return transpose_lists(pool.starmap(f, zip(points, image_sizes)))
 
 

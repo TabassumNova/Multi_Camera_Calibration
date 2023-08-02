@@ -12,7 +12,7 @@ from .transform import rtvec, matrix, hand_eye
 from . import graph
 # from multical.motion import HandEye
 from src.multical.transform.rtvec import *
-
+import copy
 
 
 def fill_sparse(n, values, ids):
@@ -38,26 +38,32 @@ def sparse_points(points):
   ids = np.flatnonzero(points.valid)
   return struct(corners=points.points[ids], ids=ids)
 
-invalid_pose = struct(poses=np.eye(4), num_points=0, valid=False, reprojection_error=0, view_angles=[0, 0, 0])
+# invalid_pose = struct(poses=np.eye(4), num_points=0, valid=False, reprojection_error=0, view_angles=[0, 0, 0], inliers=[None])
 
-def valid_pose(t, error=0, angles=[0, 0, 0]):
-  return struct(poses=t, valid=True, reprojection_error=error, view_angles=angles)
+def valid_pose(t, inliers, error=0, angles=[0, 0, 0]):
+  return struct(poses=t, valid=True, reprojection_error=error, view_angles=angles, inliers=inliers)
 
+def invalid_pose(inliers):
+  return struct(poses=np.eye(4), num_points=0, valid=False, reprojection_error=0, view_angles=[0, 0, 0], inliers=inliers)
 
 def extract_pose(points, board, camera, method="solvePnPGeneric", show_all_poses=False):
   detections = sparse_points(points)
-  poses, error = board.estimate_pose_points(camera, detections, method=method)
+  poses, error, inliers0 = board.estimate_pose_points(camera, detections, method=method)
+  inliers = np.zeros((points.valid.shape), dtype=bool)
+  if inliers0[0] != None:
+    x = [detections.ids[i] for i in inliers0]
+    inliers[x] = True
+  else:
+    poses = None
   if show_all_poses == False and error>1.0:
       poses = None
   if poses is not None:
     angles = analyze_view_angle(rtvec.to_matrix(poses))
-    # if abs(angles[0])>45 or abs(angles[1])>45:
-    #   poses = None
   else:
     angles = [0, 0, 0]
 
-  return valid_pose(rtvec.to_matrix(poses), error, list(angles))._extend(num_points=len(detections.ids))\
-      if poses is not None else invalid_pose
+  return valid_pose(rtvec.to_matrix(poses), inliers, error, list(angles))._extend(num_points=len(np.flatnonzero(inliers)))\
+      if poses is not None else invalid_pose(inliers)
 
 def map_table(f, point_table, boards, cameras, method="solvePnPGeneric", show_all_poses=False):
   return [[[f(points, board, camera, method, show_all_poses)

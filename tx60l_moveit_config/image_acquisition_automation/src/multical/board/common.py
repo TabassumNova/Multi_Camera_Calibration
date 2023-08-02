@@ -36,30 +36,48 @@ def has_min_detections_grid(grid_size, ids, min_points, min_rows):
 
 def estimate_pose_points(board, camera, detections, method="solvePnPGeneric"):
     if not board.has_min_detections(detections):
-        return None, 0
+        return None, 0, [None]
 
-    undistorted = camera.undistort_points(detections.corners).astype('float32')      
-    # valid, rvec, tvec = cv2.solvePnP(board.points[detections.ids],
-    #   undistorted, camera.intrinsic, np.zeros(0))
-    # error = np.zeros((2,1))
+    undistorted = camera.undistort_points(detections.corners).astype('float32')
+    # undistorted = (detections.corners).astype('float32')
+
     if method == "solvePnPGeneric":
         objPoints = board.points[detections.ids].astype('float32')
         valid, rvec, tvec, error = cv2.solvePnPGeneric(objPoints, undistorted, camera.intrinsic, camera.dist)
+        inliers = np.arange(len(objPoints)).reshape((1,-1))[0].tolist()
+
+    if method == "solvePnPRansac":
+        objPoints = board.points[detections.ids].astype('float32')
+        valid0, rvec0, tvec0, error0 = cv2.solvePnPGeneric(objPoints, undistorted, camera.intrinsic, camera.dist)
+        valid1, rvec1, tvec1, inliers1 = cv2.solvePnPRansac(objPoints, undistorted, camera.intrinsic, camera.dist, reprojectionError = 1.0)
+        if valid1 == False:
+            valid, rvec, tvec, error = valid0, rvec0, tvec0, error0
+            inliers = [None]
+        elif valid1 == True and len(inliers1.tolist())<6:
+            valid, rvec, tvec, error = valid0, rvec0, tvec0, error0
+            inliers = [None]
+        else:
+            objPoints2 = np.array([objPoints[i[0]] for i in inliers1])
+            undistorted2 = np.array([undistorted[i[0]] for i in inliers1])
+            valid, rvec, tvec, error = cv2.solvePnPGeneric(objPoints2, undistorted2, camera.intrinsic, camera.dist)
+            inliers = inliers1.reshape((1,-1))[0].tolist()
 
     elif method == "solvePnP":
         valid, rvec, tvec = cv2.solvePnP(board.points[detections.ids], undistorted, camera.intrinsic, camera.dist)
         error = np.zeros((2, 1))
+        inliers = [None]
 
     elif method == "solvePnP_P3P":
         objPoints = board.points[detections.ids].astype('float32')
         ret, rvecs, tvecs = cv2.solveP3P(objPoints[0:3,:], undistorted[0:3,:], camera.intrinsic, camera.dist, flags=cv2.SOLVEPNP_P3P)
         error = np.zeros((2, 1))
+        inliers = [None]
 
 
     if not valid:
-      return None, 0
+      return None, 0, [None]
 
-    return rtvec.join(rvec[0].flatten(), tvec[0].flatten()), error[0][0]
+    return rtvec.join(rvec[0].flatten(), tvec[0].flatten()), error[0][0], inliers
 
 
 def subpix_corners(image, detections, window):

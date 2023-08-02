@@ -167,7 +167,7 @@ class Workspace:
           info(f"{name} {camera}")
           info("")
 
-    def calibrate_single(self, camera_model, fix_aspect=False, has_skew=False, max_images=None, isFisheye=False):
+    def calibrate_single(self, camera_model, reprojection_error_limit, fix_aspect=False, has_skew=False, max_images=None, isFisheye=False):
         assert self.detected_points is not None, "calibrate_single: no points found, first use detect_boards to find corner points"
 
         check_detections(self.names.camera, self.boards, self.detected_points)
@@ -178,6 +178,7 @@ class Workspace:
                 self.boards,
                 self.detected_points,
                 self.image_size,
+                reprojection_error_limit,
                 model=camera_model,
                 fix_aspect=fix_aspect,
                 has_skew=has_skew,
@@ -223,8 +224,8 @@ class Workspace:
         self.calibrations["initialisation"] = calib
         return calib
 
-    def initialise_board(self):
-        self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras)
+    def initialise_board(self, runtime):
+        self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras, method=runtime.pose_estimation)
 
         info("Pose counts:")
         tables.table_info(self.pose_table.valid, self.names)
