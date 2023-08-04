@@ -55,12 +55,12 @@ class handEye():
                 self.handEyeGripper = os.path.join(self.base_path, "handEyeGripper.json")
 
 
-    def initiate_workspace(self):
+    def initiate_workspace(self, show_all_poses=False):
         pathO = args.PathOpts(image_path=self.datasetPath)
         cam = args.CameraOpts(motion_model="calibrate_board", intrinsic_error_limit=0.5)
         # pose_estimation_method = "solvePnPRansac"
         pose_estimation_method = "solvePnPGeneric"
-        runt = args.RuntimeOpts(pose_estimation=pose_estimation_method)
+        runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=show_all_poses)
         opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True)
         c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
         self.workspace = c.execute_board()
@@ -804,12 +804,18 @@ def main5(base_path, limit_images, num_adjustments):
     h = handEye(base_path)
     h.initiate_workspace()
     handEye_dict = h.handEye_table(master_cam=1, limit_image=limit_images, num_adjustments=num_adjustments)
+    pass
 
+def main6(base_path, limit_images, num_adjustments):
+
+    h = handEye(base_path)
+    h.initiate_workspace(show_all_poses=True)
     pass
 
 if __name__ == '__main__':
     # main1(base_path, cam=0, board=3)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    main4(base_path, limit_images=10, num_adjustments=0)
+    # main4(base_path, limit_images=10, num_adjustments=0)
     # main5(base_path, limit_images=10, num_adjustments=1)
+    main6(base_path, limit_images=10, num_adjustments=1)
     pass

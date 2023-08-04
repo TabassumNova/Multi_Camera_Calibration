@@ -225,7 +225,8 @@ class Workspace:
         return calib
 
     def initialise_board(self, runtime):
-        self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras, method=runtime.pose_estimation)
+        self.pose_table = tables.make_pose_table(self.point_table,
+                    self.boards, self.cameras, method=runtime.pose_estimation, show_all_poses=runtime.show_all_poses)
 
         info("Pose counts:")
         tables.table_info(self.pose_table.valid, self.names)
