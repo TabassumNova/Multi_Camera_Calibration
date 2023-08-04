@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 
 import src.multical.app.calibrate as calibrate
@@ -33,6 +35,7 @@ class handEye():
         self.board_param = []
         self.campose_param = {}
         self.camintrinsic_param = []
+        self.inliers = None
 
     def collect_files(self):
         """
@@ -89,50 +92,61 @@ class handEye():
                 [0, 0, 1],
             ]
             return np.array(intrinsic), np.array(dist)
-        def fun(param_vec):
+        def fun(param_vec, cam_idx):
             error_list = []
-            for idxc, cam in enumerate(self.workspace.names.camera):
-                camera = self.workspace.cameras[idxc]
-                cam_matrix, cam_dist = decode_intrinsic(param_vec[idxc * 10: idxc * 10 + 10])
-                for idxi, image in enumerate(self.workspace.names.image):
-                    for idxb, board in enumerate(self.workspace.names.board):
-                        board = self.workspace.boards[idxb]
-                        detections = self.workspace.detected_points[idxc][idxi][idxb]
-                        if board.has_min_detections(detections):
-                            undistorted = camera.undistort_points(detections.corners).astype('float32')
-                            objPoints = board.points[detections.ids].astype('float32')
-                            valid, rvec, tvec, inliers = cv2.solvePnPRansac(objPoints, undistorted, cam_matrix,
-                                                                                cam_dist, reprojectionError=1.0)
-                            if valid == True and len(inliers.tolist())>6:
-                                objPoints2 = np.array([objPoints[i[0]] for i in inliers])
-                                cornerPoints2 = np.array([detections.corners[i[0]] for i in inliers])
-                                undistorted2 = np.array([undistorted[i[0]] for i in inliers])
-                                valid2, rvec2, tvec2, error2 = cv2.solvePnPGeneric(objPoints2, undistorted2, cam_matrix,
-                                                                               cam_dist)
-                                imP, _ = cv2.projectPoints(np.copy(objPoints2), np.array(rvec2), np.array(tvec2), cam_matrix, cam_dist)
-                                error = np.linalg.norm(cornerPoints2 - imP.reshape([-1, 2]), axis=-1)
-                                error_list.extend(list(error))
+            camera = self.workspace.cameras[cam_idx]
+            cam_matrix, cam_dist = decode_intrinsic(param_vec[0: 10])
+            for idxi, image in enumerate(self.workspace.names.image):
+                for idxb, board in enumerate(self.workspace.names.board):
+                    board = self.workspace.boards[idxb]
+                    detections = self.workspace.detected_points[idxc][idxi][idxb]
+                    if board.has_min_detections(detections):
+                        undistorted = camera.undistort_points(detections.corners).astype('float32')
+                        objPoints = board.points[detections.ids].astype('float32')
+                        valid, rvec, tvec, inliers = cv2.solvePnPRansac(objPoints, undistorted, cam_matrix,
+                                                                            cam_dist, reprojectionError=1.0)
+                        if valid == True and len(inliers.tolist())>6:
+                            objPoints2 = np.array([objPoints[i[0]] for i in inliers])
+                            cornerPoints2 = np.array([detections.corners[i[0]] for i in inliers])
+                            undistorted2 = np.array([undistorted[i[0]] for i in inliers])
+                            valid2, rvec2, tvec2, error2 = cv2.solvePnPGeneric(objPoints2, undistorted2, cam_matrix,
+                                                                           cam_dist)
+                            imP, _ = cv2.projectPoints(np.copy(objPoints), np.array(rvec2), np.array(tvec2), cam_matrix, cam_dist)
+                            error = np.linalg.norm(detections.corners - imP.reshape([-1, 2]), axis=-1)
+                            # if np.isfinite(error.all()):
+                            #     error_list.extend(list(error))
+                            for idx, e in enumerate(error):
+                                if e > 1:
+                                    error[idx] = 10
+                        else:
+                            error = np.ones((detections.ids.shape))+10
+                        error_list.extend(list(error))
             return error_list
 
-        def evaluation(param_vec, inliers, x):
-            error0 = fun(param_vec)
+        def evaluation(param_vec, inliers, cam_idx):
+            error0 = fun(param_vec, cam_idx)
             error = np.array([error0[i] for i, v in enumerate(inliers) if v == True])
             return error
 
-        param_vec = self.camintrinsic_param
-        point_errors = fun(param_vec)
-        inliers = np.ones(len(point_errors))
-        x = 0
 
-        for i in range(5):
-            info(f"Adjust_outliers {i}:")
-            res = least_squares(evaluation, param_vec,
-                                verbose=2, x_scale='jac', f_scale=1.0, ftol=1e-4, max_nfev=100,
-                                method='trf', loss='linear', args=(inliers, x))
-            point_errors = fun(res.x)
-            threshold = np.quantile(point_errors, 0.75)
-            inliers = np.array(point_errors < threshold).flatten()
-        point_errors = fun(res.x)
+        for idxc, cam in enumerate(self.workspace.names.camera):
+            param_vec = self.workspace.cameras[idxc].param_vec.tolist()
+            point_errors = fun(param_vec, idxc)
+            inliers = np.ones(len(point_errors))
+            for idx, e in enumerate(point_errors):
+                if e>10:
+                    inliers[idx] = 0
+            x = 0
+
+            for i in range(1):
+                info(f"Adjust_outliers {i}:")
+                res = least_squares(evaluation, param_vec,
+                                    verbose=2, x_scale='jac', f_scale=1.0, ftol=1e-4, max_nfev=100,
+                                    method='trf', loss='linear', args=(inliers, idxc))
+                point_errors = fun(res.x, idxc)
+                threshold = np.quantile(point_errors, 0.75)
+                inliers = np.array(point_errors < threshold).flatten()
+            point_errors = fun(res.x, idxc)
 
     def handEye_gripper(self, camera, board):
         board_cam_pose = self.workspace.pose_table._index_select(camera, axis=0)._index_select(board, axis=1)
@@ -379,31 +393,7 @@ class handEye():
 
     def check_cluster_reprojectionerr(self):
         self.handEye_optimization()
-        # cluster_error = {}
-        # for idxM, master_cam in enumerate(self.workspace.names.camera):
-        #     cluster_error[master_cam] = {}
-        #     for idxS, slave_cam in enumerate(self.workspace.names.camera):
-        #         error = []
-        #         if master_cam != slave_cam:
-        #             slaveCam_wrt_masterCam = np.array(self.cam_pose[master_cam][slave_cam]['extrinsic'])
-        #             groups = self.cam_pose[master_cam][slave_cam]['group']
-        #             for g in groups:
-        #                 images = self.all_handEye[master_cam][g]['image_list']
-        #                 masterCam_wrt_masterB = np.array(self.all_handEye[master_cam][g]['masterCam_wrt_masterB'])
-        #
-        #                 ZB = matrix.transform(slaveCam_wrt_masterCam, masterCam_wrt_masterB)
-        #                 slaveB_wrt_masterB = np.array(self.all_handEye[master_cam][g]['boardS_wrto_boardM'])
-        #                 slaveB_wrt_slaveCam = np.linalg.inv(np.array(self.all_handEye[master_cam][g]['slaveCam_wrto_slaveB']))
-        #                 estimated_slaveB_slaveCam = np.linalg.inv(matrix.transform(ZB, np.linalg.inv(slaveB_wrt_masterB)))
-        #                 err2 = rtvec.from_matrix(estimated_slaveB_slaveCam) - rtvec.from_matrix(slaveB_wrt_slaveCam)
-        #                 slave_board = self.workspace.names.board.index(self.all_handEye[master_cam][g]['slave_board'])
-        #                 point_errors, reprojection_error = self.reprojectionError_calculation(idxS, slave_board,
-        #                                                                            estimated_slaveB_slaveCam,
-        #                                                                            images)
-        #                 error.extend(point_errors)
-        #             mse = np.square(np.array(point_errors).ravel()).mean()
-        #             rms = np.sqrt(mse)
-        #             cluster_error[master_cam][slave_cam] = rms
+
         pass
 
     def handEye_optimization(self):
@@ -416,51 +406,73 @@ class handEye():
                 [0, 0, 1],
             ]
             return np.array(intrinsic), np.array(dist)
+        def find_projection(cam_idx, board_idx, image_list, cam_matrix, cam_dist):
+            board = self.workspace.boards[board_idx]
+            camera = self.workspace.cameras[cam_idx]
+            transformation_list = []
+            for img in image_list:
+                image_idx = self.workspace.names.image.index(img)
+                detections = self.workspace.detected_points[cam_idx][image_idx][board_idx]
+                undistorted = camera.undistort_points(detections.corners).astype('float32')
+                objPoints = board.points[detections.ids].astype('float32')
+                valid, rvec, tvec, error = cv2.solvePnPGeneric(objPoints, undistorted, cam_matrix,
+                                                                   cam_dist)
+                rt_matrix = np.linalg.inv(rtvec.to_matrix(rtvec.join(rvec[0].flatten(), tvec[0].flatten())))
+                transformation_list.append(rt_matrix)
+            return np.array(transformation_list)
+
         def reprojection_error(param_vec, masterCam, groups):
             error = []
+            min_error = 100000000
+            min_group = None
             for idx, g in enumerate(groups):
                 num_camera = len(self.workspace.names.camera)
                 slaveCam = self.all_handEye[masterCam][g]['slave_cam']
                 slaveBoard = self.all_handEye[masterCam][g]['slave_board']
                 masterBoard = self.all_handEye[masterCam][g]['master_board']
+                image_list = self.all_handEye[masterCam][g]['image_list']
                 slaveCam_idx = self.workspace.names.camera.index(slaveCam)
                 slaveBoard_idx = self.workspace.names.board.index(slaveBoard)
+                masterCam_idx = self.workspace.names.camera.index(masterCam)
                 masterBoard_idx = self.workspace.names.board.index(masterBoard)
-                t = param_vec[slaveCam_idx*10 : slaveCam_idx*10+10]
-                slaveCam_matrix, slaveCam_dist = decode_intrinsic(param_vec[slaveCam_idx*10 : slaveCam_idx*10+10])
-                slaveCam_wrt_masterCam = rtvec.to_matrix(param_vec[(slaveCam_idx*6+num_camera*10):(slaveCam_idx*6)+6+num_camera*10])
+                # masterCam_matrix, masterCam_dist = decode_intrinsic(param_vec[masterCam_idx * 10: masterCam_idx * 10 + 10])
                 masterCam_wrt_masterB = np.array(self.all_handEye[masterCam][g]['masterCam_wrt_masterB'])
+                # masterCam_wrt_masterB1 = find_projection(masterCam_idx, masterBoard_idx, image_list, masterCam_matrix, masterCam_dist)
+                # slaveCam_matrix, slaveCam_dist = decode_intrinsic(param_vec[slaveCam_idx*10 : slaveCam_idx*10+10])
+                slaveCam_matrix, slaveCam_dist = self.workspace.cameras[slaveCam_idx].intrinsic, self.workspace.cameras[slaveCam_idx].dist
+                slaveCam_wrt_masterCam = rtvec.to_matrix(param_vec[(slaveCam_idx*6):(slaveCam_idx*6)+6])
 
-                masterBoard_t = rtvec.to_matrix(param_vec[(masterBoard_idx * 6) + num_camera * 10 + num_camera * 6: (
-                                                masterBoard_idx * 6 + 6) + num_camera * 10 + num_camera * 6])
-                slaveBoard_t = rtvec.to_matrix(param_vec[(slaveBoard_idx * 6) + num_camera * 10 + num_camera * 6: (
-                                                slaveBoard_idx * 6 + 6) + num_camera * 10 + num_camera * 6])
+                masterBoard_t = rtvec.to_matrix(param_vec[(masterBoard_idx * 6) + num_camera * 6: (
+                                                masterBoard_idx * 6 + 6) + num_camera * 6])
+                slaveBoard_t = rtvec.to_matrix(param_vec[(slaveBoard_idx * 6) + num_camera * 6: (
+                                                slaveBoard_idx * 6 + 6)  + num_camera * 6])
                 # slaveB_wrt_masterB = rtvec.to_matrix(param_vec[(idx + 1) * 6:(idx + 1)*6+6])
                 slaveB_wrt_masterB = matrix.relative_to(slaveBoard_t, masterBoard_t)
+                # slaveCam_wrt_slaveB = find_projection(slaveCam_idx, slaveBoard_idx, image_list, slaveCam_matrix, slaveCam_dist)
+                # slaveB_wrt_slaveCam1 = np.linalg.inv(slaveCam_wrt_slaveB)
                 slaveB_wrt_slaveCam = np.linalg.inv(np.array(self.all_handEye[masterCam][g]['slaveCam_wrto_slaveB']))
                 ZB = matrix.transform(slaveCam_wrt_masterCam, masterCam_wrt_masterB)
                 estimated_slaveB_slaveCam = np.linalg.inv(matrix.transform(ZB, np.linalg.inv(slaveB_wrt_masterB)))
                 images = self.all_handEye[master_cam][g]['image_list']
-                # masterCam_wrt_masterB = np.array(self.all_handEye[master_cam][g]['masterCam_wrt_masterB'])
-                #
-                # ZB = matrix.transform(slaveCam_wrt_masterCam, masterCam_wrt_masterB)
-                # slaveB_wrt_masterB = rtvec.to_matrix(param_vec[(idx + 1) * 6:(idx + 1) * 6 + 6])
-                # slaveB_wrt_slaveCam = np.linalg.inv(np.array(self.all_handEye[master_cam][g]['slaveCam_wrto_slaveB']))
-                # estimated_slaveB_slaveCam = np.linalg.inv(matrix.transform(ZB, np.linalg.inv(slaveB_wrt_masterB)))
-                # x = rtvec.from_matrix(estimated_slaveB_slaveCam)
+
                 handeye_err = rtvec.from_matrix(estimated_slaveB_slaveCam) - rtvec.from_matrix(slaveB_wrt_slaveCam)
                 e = handeye_err.reshape((1,-1)).tolist()[0]
-                # slave_board = self.workspace.names.board.index(self.all_handEye[master_cam][g]['slave_board'])
-                # slave_cam = self.workspace.names.camera.index(self.all_handEye[master_cam][g]['slave_cam'])
+
                 point_errors, reprojection_error = self.reprojectionError_calculation(slaveCam_idx, slaveBoard_idx,
                                                                                       estimated_slaveB_slaveCam,
                                                                                       images, camMatrix=slaveCam_matrix, camDist=slaveCam_dist)
-                error.extend(list(point_errors))
+                if reprojection_error < min_error:
+                    min_error = reprojection_error
+                    min_group = g
+                    error = []
+                    error.extend(list(point_errors))
             mse = np.square(np.array(error).ravel()).mean()
             rms = np.sqrt(mse)
-            return error, rms
+            print('min_group: ', min_group)
+            print('min_error: ', min_error)
+            return error, rms, min_group
         def reprojection_error_eval(param_vec, master_cam, groups, inliers):
-            point_errors, _ = reprojection_error(param_vec, master_cam, groups)
+            point_errors, _, _ = reprojection_error(param_vec, master_cam, groups)
             errors = np.array([point_errors[i] for i, v in enumerate(inliers) if v == True])
             return errors
 
@@ -471,18 +483,30 @@ class handEye():
                 slaveCam = self.all_handEye[masterCam][g]['slave_cam']
                 slaveBoard = self.all_handEye[masterCam][g]['slave_board']
                 masterBoard = self.all_handEye[masterCam][g]['master_board']
+                image_list = self.all_handEye[masterCam][g]['image_list']
                 slaveCam_idx = self.workspace.names.camera.index(slaveCam)
                 slaveBoard_idx = self.workspace.names.board.index(slaveBoard)
+                # slaveCam_matrix, slaveCam_dist = decode_intrinsic(param_vec[slaveCam_idx * 10: slaveCam_idx * 10 + 10])
+                slaveCam_matrix, slaveCam_dist = self.workspace.cameras[slaveCam_idx].intrinsic, self.workspace.cameras[
+                    slaveCam_idx].dist
+                # masterCam_idx = self.workspace.names.camera.index(masterCam)
                 masterBoard_idx = self.workspace.names.board.index(masterBoard)
-                x = param_vec[(slaveCam_idx*6+num_camera*10):(slaveCam_idx*6)+6+num_camera*10]
-                slaveCam_wrt_masterCam = rtvec.to_matrix(param_vec[(slaveCam_idx*6+num_camera*10):(slaveCam_idx*6)+6+num_camera*10])
+                # masterCam_matrix, masterCam_dist = decode_intrinsic(
+                #     param_vec[masterCam_idx * 10: masterCam_idx * 10 + 10])
+
+                slaveCam_wrt_masterCam = rtvec.to_matrix(param_vec[(slaveCam_idx*6):(slaveCam_idx*6)+6])
                 masterCam_wrt_masterB = np.array(self.all_handEye[masterCam][g]['masterCam_wrt_masterB'])
-                y = param_vec[(masterBoard_idx*6)+num_camera*10+num_camera*6 : (masterBoard_idx*6+6)+num_camera*10+num_camera*6]
-                masterBoard_t = rtvec.to_matrix(param_vec[(masterBoard_idx*6)+num_camera*10+num_camera*6 : (masterBoard_idx*6+6)+num_camera*10+num_camera*6])
-                slaveBoard_t = rtvec.to_matrix(param_vec[(slaveBoard_idx * 6)+num_camera*10 + num_camera*6: (slaveBoard_idx * 6 + 6)+num_camera*10 + num_camera*6])
+                # masterCam_wrt_masterB1 = find_projection(masterCam_idx, masterBoard_idx, image_list, masterCam_matrix,
+                #                                          masterCam_dist)
+                y = param_vec[(masterBoard_idx*6)+num_camera*6 : (masterBoard_idx*6+6)+num_camera*6]
+                masterBoard_t = rtvec.to_matrix(param_vec[(masterBoard_idx*6)+num_camera*6 : (masterBoard_idx*6+6)+num_camera*6])
+                slaveBoard_t = rtvec.to_matrix(param_vec[(slaveBoard_idx * 6) + num_camera*6: (slaveBoard_idx * 6 + 6) + num_camera*6])
                 # slaveB_wrt_masterB = rtvec.to_matrix(param_vec[(idx + 1) * 6:(idx + 1)*6+6])
                 slaveB_wrt_masterB = matrix.relative_to(slaveBoard_t, masterBoard_t)
                 slaveB_wrt_slaveCam = np.linalg.inv(np.array(self.all_handEye[masterCam][g]['slaveCam_wrto_slaveB']))
+                slaveCam_wrt_slaveB = find_projection(slaveCam_idx, slaveBoard_idx, image_list, slaveCam_matrix,
+                                                      slaveCam_dist)
+                slaveB_wrt_slaveCam1 = np.linalg.inv(slaveCam_wrt_slaveB)
                 ZB = matrix.transform(slaveCam_wrt_masterCam, masterCam_wrt_masterB)
                 estimated_slaveB_slaveCam = np.linalg.inv(matrix.transform(ZB, np.linalg.inv(slaveB_wrt_masterB)))
                 error = rtvec.from_matrix(estimated_slaveB_slaveCam) - rtvec.from_matrix(slaveB_wrt_slaveCam)
@@ -497,7 +521,7 @@ class handEye():
             self.cam_pose2['camera_pose'][master_cam][master_cam] = np.eye(4).tolist()
             cluster_error[master_cam] = {}
             # cameraIntrinsic + camera_poses + boards
-            param_vec = self.camintrinsic_param + self.campose_param[master_cam] + self.board_param
+            param_vec = self.campose_param[master_cam] + self.board_param
             for idxS, slave_cam in enumerate(self.workspace.names.camera):
                 error = []
                 # param_vec = []
@@ -507,24 +531,29 @@ class handEye():
                     # param_vec.extend(slaveCam_wrt_masterCam)
                     groups = self.cam_pose[master_cam][slave_cam]['group']
                     err1 = evaluation(np.array(param_vec), master_cam, groups)
-                    point_errors1, rms1 = reprojection_error(np.array(param_vec), master_cam, groups)
-
+                    point_errors1, rms1, min_group1 = reprojection_error(np.array(param_vec), master_cam, groups)
+                    groups = [min_group1]
                     res = least_squares(evaluation, param_vec,
                                         verbose=2, x_scale='jac', f_scale=1.0, ftol=1e-4, max_nfev=100,
                                         method='trf', loss='linear', args=(master_cam, groups))
                     err2 = evaluation(res.x, master_cam, groups)
 
-                    point_errors2, rms2 = reprojection_error(res.x, master_cam, groups)
-                    inliers = np.ones(len(point_errors1))
+                    point_errors2, rms2, min_group2 = reprojection_error(res.x, master_cam, groups)
+                    groups = [min_group2]
+                    inliers = np.ones(len(point_errors2))
                     for i in range(5):
                         info(f"Adjust_outliers {i}:")
                         res = least_squares(reprojection_error_eval, res.x,
                                             verbose=2, x_scale='jac', f_scale=1.0, ftol=1e-4, max_nfev=100,
                                             method='trf', loss='linear', args=(master_cam, groups, inliers))
-                        point_errors, rms = np.array(reprojection_error(res.x, master_cam, groups), dtype=object)
-                        threshold = np.quantile(point_errors, 0.75)
+                        point_errors0 = np.array(reprojection_error_eval(res.x, master_cam, groups, inliers), dtype=object)
+                        mse = np.square(np.array(point_errors0).ravel()).mean()
+                        rms = np.sqrt(mse)
+
+                        point_errors, _, _ = np.array(reprojection_error(res.x, master_cam, groups), dtype=object)
+                        threshold = np.quantile(point_errors0, 0.70)
                         inliers = np.array(point_errors < threshold).flatten()
-                    point_errors, rms = reprojection_error(res.x, master_cam, groups)
+                    point_errors, rms, _ = reprojection_error(res.x, master_cam, groups)
                     self.cam_pose2['camera_pose'][master_cam][slave_cam] = rtvec.to_matrix(res.x[0:6]).tolist()
         pass
 
