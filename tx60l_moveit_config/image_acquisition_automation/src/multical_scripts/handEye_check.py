@@ -13,12 +13,14 @@ import copy
 import json
 import os
 from src.multical.transform import common, rtvec
+from src.multical_scripts.extrinsic_viz import *
 
 base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
 
 class handEye():
-    def __init__(self, base_path):
+    def __init__(self, base_path, master_cam=0):
         self.base_path = base_path
+        self.master_cam = master_cam
         self.datasetPath = base_path
         self.boardPath = None
         self.poseJsonPath = None
@@ -57,11 +59,11 @@ class handEye():
 
     def initiate_workspace(self, show_all_poses=False):
         pathO = args.PathOpts(image_path=self.datasetPath)
-        cam = args.CameraOpts(motion_model="calibrate_board", intrinsic_error_limit=0.5)
+        cam = args.CameraOpts(intrinsic_error_limit=0.5)
         # pose_estimation_method = "solvePnPRansac"
         pose_estimation_method = "solvePnPGeneric"
         runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=show_all_poses)
-        opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True)
+        opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True, adjust_outliers=False)
         c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
         self.workspace = c.execute_board()
         # self.workspace.pose_table = make_pose_table(self.workspace.point_table, self.workspace.boards,
@@ -77,8 +79,31 @@ class handEye():
         for b in range(len(self.workspace.names.board)):
             t = rtvec.from_matrix(self.workspace.board_poses.poses[b])
             self.board_param.extend(rtvec.from_matrix(self.workspace.board_poses.poses[b]).tolist())
+        pass
+        # self.refine_detected_points()
 
+    def refine_detected_points(self):
+        for idxc, cam in enumerate(self.workspace.names.camera):
+            camera = self.workspace.cameras[idxc]
+            for idxi, img in enumerate(self.workspace.names.image):
+                for idxb, board in enumerate(self.workspace.names.board):
+                    board = self.workspace.boards[idxb]
+                    detections = self.workspace.detected_points[idxc][idxi][idxb]
+                    if board.has_min_detections(detections):
+                        undistorted = camera.undistort_points(detections.corners).astype('float32')
+                        objPoints = board.points[detections.ids].astype('float32')
+                        valid, rvec, tvec, inliers0 = cv2.solvePnPRansac(objPoints, undistorted, camera.intrinsic,
+                                                                        camera.dist, reprojectionError=0.5)
 
+                        point_table_valid = self.workspace.point_table.valid[idxc][idxi][idxb]
+                        inliers = np.zeros((point_table_valid.shape), dtype=bool)
+
+                        if valid:
+                            inliers1 = inliers0.reshape((1, -1))[0].tolist()
+                            x = [detections.ids[i] for i in inliers1]
+                            inliers[x] = True
+                        self.workspace.point_table.valid[idxc][idxi][idxb] = np.array(inliers)
+        pass
 
 
 
@@ -389,11 +414,35 @@ class handEye():
             self.campose_param[master] = []
             for slave in self.workspace.names.camera:
                 self.campose_param[master].extend(rtvec.from_matrix(np.array(master_value[slave]['extrinsic'])).tolist())
+
+        self.setCampose_workspace()
         pass
+
+    def setCampose_workspace(self):
+        master_cam = self.workspace.names.camera[self.master_cam]  # self.master_cam = 0
+        data = self.workspace.export_Data
+        cam_pose = {}
+        for cam in self.workspace.names.camera:
+            if cam == master_cam:
+                name = master_cam
+            else:
+                name = cam + '_to_' + master_cam
+            cam_pose[name] = {}
+            p = np.array(self.cam_pose[master_cam][cam]['extrinsic'])
+            R = matrix.rotation(p).tolist()
+            T = matrix.transform(p).tolist()
+            cam_pose[name]['R'] = R
+            cam_pose[name]['T'] = T
+        data.camera_poses = cam_pose
+        self.workspace.export_Data = data
+        filename = os.path.join(self.base_path, "Calibration_handeye.json")
+        with open(filename, 'w') as outfile:
+            json.dump(to_dicts(data), outfile, indent=2)
+        pass
+
 
     def check_cluster_reprojectionerr(self):
         self.handEye_optimization()
-
         pass
 
     def handEye_optimization(self):
@@ -412,9 +461,15 @@ class handEye():
             transformation_list = []
             for img in image_list:
                 image_idx = self.workspace.names.image.index(img)
-                detections = self.workspace.detected_points[cam_idx][image_idx][board_idx]
-                undistorted = camera.undistort_points(detections.corners).astype('float32')
-                objPoints = board.points[detections.ids].astype('float32')
+
+                point_ids = np.flatnonzero(self.workspace.point_table.valid[cam_idx][image_idx][board_idx])
+                imagePoints = self.workspace.point_table.points[cam_idx][image_idx][board_idx][point_ids]
+                undistorted = camera.undistort_points(imagePoints).astype('float32')
+                objPoints = np.array([board.adjusted_points[i] for i in point_ids])
+
+                # detections = self.workspace.detected_points[cam_idx][image_idx][board_idx]
+                # undistorted = camera.undistort_points(detections.corners).astype('float32')
+                # objPoints = board.points[detections.ids].astype('float32')
                 valid, rvec, tvec, error = cv2.solvePnPGeneric(objPoints, undistorted, cam_matrix,
                                                                    cam_dist)
                 rt_matrix = np.linalg.inv(rtvec.to_matrix(rtvec.join(rvec[0].flatten(), tvec[0].flatten())))
@@ -504,9 +559,9 @@ class handEye():
                 # slaveB_wrt_masterB = rtvec.to_matrix(param_vec[(idx + 1) * 6:(idx + 1)*6+6])
                 slaveB_wrt_masterB = matrix.relative_to(slaveBoard_t, masterBoard_t)
                 slaveB_wrt_slaveCam = np.linalg.inv(np.array(self.all_handEye[masterCam][g]['slaveCam_wrto_slaveB']))
-                slaveCam_wrt_slaveB = find_projection(slaveCam_idx, slaveBoard_idx, image_list, slaveCam_matrix,
-                                                      slaveCam_dist)
-                slaveB_wrt_slaveCam1 = np.linalg.inv(slaveCam_wrt_slaveB)
+                # slaveCam_wrt_slaveB = find_projection(slaveCam_idx, slaveBoard_idx, image_list, slaveCam_matrix,
+                #                                       slaveCam_dist)
+                # slaveB_wrt_slaveCam1 = np.linalg.inv(slaveCam_wrt_slaveB)
                 ZB = matrix.transform(slaveCam_wrt_masterCam, masterCam_wrt_masterB)
                 estimated_slaveB_slaveCam = np.linalg.inv(matrix.transform(ZB, np.linalg.inv(slaveB_wrt_masterB)))
                 error = rtvec.from_matrix(estimated_slaveB_slaveCam) - rtvec.from_matrix(slaveB_wrt_slaveCam)
@@ -541,7 +596,7 @@ class handEye():
                     point_errors2, rms2, min_group2 = reprojection_error(res.x, master_cam, groups)
                     groups = [min_group2]
                     inliers = np.ones(len(point_errors2))
-                    for i in range(5):
+                    for i in range(1):
                         info(f"Adjust_outliers {i}:")
                         res = least_squares(reprojection_error_eval, res.x,
                                             verbose=2, x_scale='jac', f_scale=1.0, ftol=1e-4, max_nfev=100,
@@ -635,23 +690,20 @@ class handEye():
         point_errors = []
         for i in range(len(image_list)):
             point_ids = np.flatnonzero(self.workspace.point_table.valid[slaveCam][images.index(image_list[i])][slaveBoard])
-            imagePoints = self.workspace.point_table.points[slaveCam][images.index(image_list[i])][slaveBoard][point_ids]
-            undistorted = self.workspace.cameras[slaveCam].undistort_points(imagePoints).astype('float32')
-            # imagePoints = self.workspace.detected_points[slaveCam][images.index(image_list[i])][slaveBoard]['corners']
-            # point_ids = self.workspace.detected_points[slaveCam][images.index(image_list[i])][slaveBoard]['ids']
-            repo_error = self.workspace.pose_table.reprojection_error[slaveCam][images.index(image_list[i])][slaveBoard]
-            # if repo_error < 0.5:
-            objectPoints = np.array([self.workspace.boards[slaveBoard].adjusted_points[i] for i in point_ids])
-            rmatrix = estimated_slaveBoard_slaveCam[i][0:3, 0:3]
-            tmatrix = estimated_slaveBoard_slaveCam[i][0:3, 3]
-            rvec = (R.from_matrix([rmatrix]).as_rotvec())
-            tvec = (tmatrix.T)
-            imP, _ = cv2.projectPoints(np.copy(objectPoints), rvec, tvec, cameraMatrix, distortion)
-            error = np.linalg.norm(imagePoints - imP.reshape([-1, 2]), axis=-1)
-            point_errors.extend(imagePoints - imP.reshape([-1, 2]))
-            # mse = np.square(error).mean()
-            # rms = np.sqrt(mse)
-            error_list.extend(list(error))
+            if point_ids.size != 0:
+                imagePoints = self.workspace.point_table.points[slaveCam][images.index(image_list[i])][slaveBoard][point_ids]
+                # undistorted = self.workspace.cameras[slaveCam].undistort_points(imagePoints).astype('float32')
+                objectPoints = np.array([self.workspace.boards[slaveBoard].adjusted_points[i] for i in point_ids])
+                rmatrix = estimated_slaveBoard_slaveCam[i][0:3, 0:3]
+                tmatrix = estimated_slaveBoard_slaveCam[i][0:3, 3]
+                rvec = (R.from_matrix([rmatrix]).as_rotvec())
+                tvec = (tmatrix.T)
+                imP, _ = cv2.projectPoints(np.copy(objectPoints), rvec, tvec, cameraMatrix, distortion)
+                error = np.linalg.norm(imagePoints - imP.reshape([-1, 2]), axis=-1)
+                point_errors.extend(imagePoints - imP.reshape([-1, 2]))
+                # mse = np.square(error).mean()
+                # rms = np.sqrt(mse)
+                error_list.extend(list(error))
         # new
         mse = np.square(np.array(point_errors).ravel()).mean()
         rms = np.sqrt(mse)
@@ -689,12 +741,13 @@ class handEye():
         return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list), image_list
 
     def export_handEye_Camera(self):
-        filename = os.path.join(base_path, "handEyeCamera.json")
+        filename = os.path.join(self.base_path, "handEyeCamera.json")
         json_object = json.dumps((self.all_handEye), indent=4)
         # Writing to sample.json
         with open(filename, "w") as outfile:
             outfile.write(json_object)
         pass
+        v = Interactive_Extrinsic(base_path)
 
     def export_campose2(self):
         filename = os.path.join(base_path, "campose2.json")
@@ -708,7 +761,7 @@ class handEye():
         param = {}
         param['camera_pose'] = self.cam_pose
         param['board_pose'] = self.board_pose
-        filename = os.path.join(base_path, "CameraBoard_param.json")
+        filename = os.path.join(self.base_path, "CameraBoard_param.json")
         json_object = json.dumps((param), indent=4)
         # Writing to sample.json
         with open(filename, "w") as outfile:
@@ -793,6 +846,7 @@ def main4(base_path, limit_images, num_adjustments):
     h = handEye(base_path)
     h.initiate_workspace()
     h.calc_camPose_param(limit_images, num_adjustments)
+    h.export_handEye_Camera()
     h.check_cluster_reprojectionerr()
     h.export_handEye_Camera()
     h.export_camera_board_param()
@@ -815,7 +869,7 @@ def main6(base_path, limit_images, num_adjustments):
 if __name__ == '__main__':
     # main1(base_path, cam=0, board=3)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    # main4(base_path, limit_images=10, num_adjustments=0)
+    main4(base_path, limit_images=10, num_adjustments=0)
     # main5(base_path, limit_images=10, num_adjustments=1)
-    main6(base_path, limit_images=10, num_adjustments=1)
+    # main6(base_path, limit_images=10, num_adjustments=1)
     pass

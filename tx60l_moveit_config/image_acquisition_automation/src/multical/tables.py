@@ -40,10 +40,10 @@ def sparse_points(points):
 
 # invalid_pose = struct(poses=np.eye(4), num_points=0, valid=False, reprojection_error=0, view_angles=[0, 0, 0], inliers=[None])
 
-def valid_pose(t, inliers, error=0, angles=[0, 0, 0]):
+def valid_pose(t, inliers=[None], error=0, angles=[0, 0, 0]):
   return struct(poses=t, valid=True, reprojection_error=error, view_angles=angles, inliers=inliers)
 
-def invalid_pose(inliers):
+def invalid_pose(inliers=[None]):
   return struct(poses=np.eye(4), num_points=0, valid=False, reprojection_error=0, view_angles=[0, 0, 0], inliers=inliers)
 
 def extract_pose(points, board, camera, method="solvePnPGeneric", show_all_poses=False):
@@ -325,7 +325,7 @@ def expand_poses(estimates):
 def mean_robust_n(pose_table, axis=0):
   def f(poses):
     if not np.any(poses.valid):
-      return invalid_pose
+      return invalid_pose()
     else:
       return valid_pose(matrix.mean_robust(poses.poses[poses.valid]))
 
@@ -336,7 +336,7 @@ def mean_robust_n(pose_table, axis=0):
 def relative_between(table1, table2):
   common1, common2, valid = common_entries(table1, table2)
   if valid.size == 0:
-    return invalid_pose
+    return invalid_pose()
   else:
     t, _ = matrix.align_transforms_robust(common1.poses, common2.poses)
     return valid_pose(t)

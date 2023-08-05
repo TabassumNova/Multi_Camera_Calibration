@@ -91,7 +91,7 @@ def export_json(calib, names, filenames, master=None):
     # camera_poses = export_sequential(names.camera, camera_poses),
     camera_poses = export_camera_poses(names.camera, camera_poses)\
       if master is None else export_relative(names.camera, camera_poses, master),
-    image_sets = export_images(names.camera, filenames)
+    # image_sets = export_images(names.camera, filenames)
 
   )
 

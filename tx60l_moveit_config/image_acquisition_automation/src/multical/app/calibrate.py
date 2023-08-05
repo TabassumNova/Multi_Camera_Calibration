@@ -67,8 +67,8 @@ def calibrate_board(args):
                                        args.paths.cameras, args.paths.camera_pattern, limit=args.paths.limit_images)
     # print(ws)
     initialise_with_images(ws, boards, camera_images, args.camera, args.runtime)
-
-    # ws.export()
+    # optimize(ws, args.optimizer)
+    ws.export()
     # ws.dump()
     return ws
 

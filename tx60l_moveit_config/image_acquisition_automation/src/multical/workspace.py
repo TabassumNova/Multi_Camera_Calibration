@@ -93,6 +93,8 @@ class Workspace:
         self.boards = None
         self.board_colors = None
         self.board_poses = None
+        self.camera_poses = None
+        self.export_Data = None
 
         self.filenames = None
         self.image_path = None
@@ -204,6 +206,7 @@ class Workspace:
 
         info("Pose counts:")
         tables.table_info(self.pose_table.valid, self.names)
+        self.board_poses = tables.initialise_board(self)
 
         pose_init = tables.initialise_poses(self.pose_table,
           camera_poses=None if camera_poses is None else np.array([camera_poses[k] for k in self.names.camera])
@@ -281,7 +284,7 @@ class Workspace:
         camera_poses=True, motion=True, board_poses=True, 
         cameras=False, boards=False,
         loss='linear', tolerance=1e-4, num_adjustments=5,
-        quantile=0.75, auto_scale=None, outlier_threshold=5.0)  -> Calibration:
+        quantile=0.75, auto_scale=None, outlier_threshold=5.0, adjust_outliers=True)  -> Calibration:
 
         info("step: multical.workspace.calibrate()")
 
@@ -289,13 +292,14 @@ class Workspace:
             cameras=cameras, boards=boards, camera_poses=camera_poses,
             motion=motion, board_poses=board_poses)
             
-        calib = calib.adjust_outliers(
-          loss=loss, 
-          tolerance=tolerance,
-          num_adjustments=num_adjustments,
-          select_outliers = select_threshold(quantile=quantile, factor=outlier_threshold),
-          select_scale = select_threshold(quantile=quantile, factor=auto_scale) if auto_scale is not None else None
-        )
+        if adjust_outliers:
+            calib = calib.adjust_outliers(
+              loss=loss,
+              tolerance=tolerance,
+              num_adjustments=num_adjustments,
+              select_outliers = select_threshold(quantile=quantile, factor=outlier_threshold),
+              select_scale = select_threshold(quantile=quantile, factor=auto_scale) if auto_scale is not None else None
+            )
 
         self.calibrations[name] = calib
         return calib
@@ -352,9 +356,10 @@ class Workspace:
       info(f"Exporting calibration to {filename}")
 
       data = self.export_json(master=master)
+      self.export_Data = data
       with open(filename, 'w') as outfile:
         json.dump(to_dicts(data), outfile, indent=2)
-        
+
     def dump(self, filename=None):
         filename = filename or path.join(self.output_path, f"{self.name}.pkl")
 

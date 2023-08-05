@@ -47,7 +47,7 @@ class RuntimeOpts:
   no_cache: bool = False # Don't attempt to load detections from cache
   seed : int = 0 # Seed for repeatable runs
   pose_estimation: str = choice("solvePnPRansac", "solvePnPGeneric", "solvePnP", "solvePnP_P3P", default="solvePnPRansac")
-  show_all_poses: bool = False
+  show_all_poses: bool = False  # poses that crosses reprojection error limit also
 
 @dataclass 
 class OptimizerOpts:
@@ -65,6 +65,7 @@ class OptimizerOpts:
   fix_board_poses: bool = False  # Constant poses between boards   
   fix_motion: bool = False  # Constant camera motion estimates
   adjust_board: bool = False  # Enable optimization for board non-planarity
+  adjust_outliers: bool = True
 
 
 

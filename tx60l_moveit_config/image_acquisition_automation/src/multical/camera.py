@@ -86,7 +86,7 @@ class Camera(Parameters):
     # err, K, dist, error_perView = Camera.adjust_outliers(points, image_size, criteria)
     ## new
     ## new
-    err = 1
+    err = reprojection_error_limit
     while abs(err) >= reprojection_error_limit:
       # err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
       #                                                                       image_size, None, None)

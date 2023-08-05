@@ -17,9 +17,9 @@ from src.multical.transform import common, rtvec
 
 base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
 '''
-for camera extrinsic visualization
+for pairwise handeye board visualization
 '''
-class Interactive_Extrinsic():
+class Interactive_Board():
     def __init__(self, base_path):
         self.base_path = base_path
         self.workspace, self.handEye_group, self.campose2 = self.load_files()
@@ -183,7 +183,7 @@ class Interactive_Extrinsic():
 
 if __name__ == '__main__':
     # argument : the minimum/maximum value of x, y, z
-    v = Interactive_Extrinsic(base_path)
+    v = Interactive_Board(base_path)
 
     # visualizer = CameraPoseVisualizer([-2000, 2000], [-2000, 2000], [-2000, 2000])
     #
