@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from src.multical.transform.rtvec import *
 from src.multical_scripts.board_angle import *
+from src.multical_scripts.handEye_viz import *
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
     import numpy as np
@@ -234,6 +235,13 @@ class MyTabWidget(QWidget):
         self.btnLoad9.clicked.connect(self.calibrationTab_loadNext)
         self.btnLoad9.setGeometry(QRect(533, 0, 30, 28))
 
+        self.btnLoad10 = QPushButton(self.tab2)
+        self.btnLoad10.setObjectName('Show visualization')
+        self.btnLoad10.setText('Show visualization')
+        # self.btnLoad6.setStyleSheet("background-color : cyan;")
+        self.btnLoad10.clicked.connect(self.calibrationTab_showviz)
+        self.btnLoad10.setGeometry(QRect(570, 0, 150, 28))
+
         self.labelLoad10 = QLabel(self.tab2)
         self.labelLoad10.setObjectName('Pose')
         self.labelLoad10.setText('Pose')
@@ -261,6 +269,13 @@ class MyTabWidget(QWidget):
         self.tab2_gridLayout3.addWidget(self.tab2_table)
 
         self.tab2.setLayout(self.tab2.layout)
+
+
+    def calibrationTab_showviz(self):
+        camera = str(self.cam_num)
+        group = str(self.cam_group)
+        viz = Interactive_Board(self.folder_path)
+        viz.draw_boards(camera, group)
 
 
     def calibrationTab_loadNext(self):
@@ -291,9 +306,6 @@ class MyTabWidget(QWidget):
                 self.viewer[c] = QtImageViewer()
                 self.viewer[c].leftMouseButtonReleased.connect(self.handleLeftClick)
         pass
-
-    # def selectionchange(self):
-    #     pass
 
     def open_ImageViewer(self, gridLayout):
         for path, subdirs, files in os.walk(self.folder_path):

@@ -66,7 +66,7 @@ def optimize(ws : Workspace, opt : OptimizerOpts = OptimizerOpts()):
     camera_poses=not opt.fix_camera_poses,
     board_poses=not opt.fix_board_poses,
     motion=not opt.fix_motion,
-    auto_scale=opt.auto_scale, 
+    auto_scale=opt.auto_scale, num_adjustments=opt.iter,
     outlier_threshold=opt.outlier_threshold, quantile=opt.outlier_quantile, adjust_outliers=opt.adjust_outliers)
 
   return ws

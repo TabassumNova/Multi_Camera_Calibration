@@ -430,7 +430,7 @@ class handEye():
             cam_pose[name] = {}
             p = np.array(self.cam_pose[master_cam][cam]['extrinsic'])
             R = matrix.rotation(p).tolist()
-            T = matrix.transform(p).tolist()
+            T = matrix.translation(p).tolist()
             cam_pose[name]['R'] = R
             cam_pose[name]['T'] = T
         data.camera_poses = cam_pose
@@ -609,7 +609,7 @@ class handEye():
                         threshold = np.quantile(point_errors0, 0.70)
                         inliers = np.array(point_errors < threshold).flatten()
                     point_errors, rms, _ = reprojection_error(res.x, master_cam, groups)
-                    self.cam_pose2['camera_pose'][master_cam][slave_cam] = rtvec.to_matrix(res.x[0:6]).tolist()
+                    # self.cam_pose2['camera_pose'][master_cam][slave_cam] = rtvec.to_matrix(res.x[0:6]).tolist()
         pass
 
 
@@ -847,10 +847,8 @@ def main4(base_path, limit_images, num_adjustments):
     h.initiate_workspace()
     h.calc_camPose_param(limit_images, num_adjustments)
     h.export_handEye_Camera()
-    h.check_cluster_reprojectionerr()
-    h.export_handEye_Camera()
-    h.export_camera_board_param()
-    # h.export_campose2()
+    # h.check_cluster_reprojectionerr()
+
     pass
 
 def main5(base_path, limit_images, num_adjustments):

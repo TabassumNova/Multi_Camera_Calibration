@@ -19,16 +19,22 @@ base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
 '''
 for pairwise handeye board visualization
 '''
+
 class Interactive_Board():
     def __init__(self, base_path):
         self.base_path = base_path
-        self.workspace, self.handEye_group, self.campose2 = self.load_files()
+        # self.workspace, self.handEye_group, self.campose2 = self.load_files()
+        self.workspace = None
+        self.handEye_group = None
+        self.campose2 = None
+        self.camera_pose = {}
+        self.load_files()
         self.camera_color = {}
         self.set_Cam_color()
         # self.num_group = len(self.handEye)
         self.groups = {}
-        self.select_group()
-        self.draw_groups()
+        # self.select_group()
+        # self.draw_groups()
         pass
 
     def set_Cam_color(self):
@@ -36,76 +42,39 @@ class Interactive_Board():
         for idx, cam in enumerate(self.workspace.names.camera):
             self.camera_color[cam] = colors[idx]
 
-    def draw_groups(self):
-        all_fig = []
+    def draw_boards(self, master_cam, group):
         visualizer = CameraPoseVisualizer([-2000, 2000], [-2000, 2000], [-2000, 2000])
         final_layout = go.Figure()
+        handEye_group = self.handEye_group[master_cam][group]
+        slave_cam = handEye_group['slave_cam']
+        for idx in range(len(handEye_group['image_list'])):
+            poseM_board = np.linalg.inv(handEye_group['masterCam_wrt_masterB'][idx])
+            poseS_board = np.linalg.inv(handEye_group['slaveCam_wrto_slaveB'][idx])
+            poseM_cam = self.camera_pose[master_cam]
+            poseS_cam = self.camera_pose[slave_cam]
 
-        for cam_name, cam_value in self.groups.items():
-            # # all_fig = []
-            # add annotation
-            final_layout = go.Figure()
-            final_layout.add_annotation(dict(font=dict(color='black', size=20),
-                                    x=0,
-                                    y=0.12,
-                                    showarrow=False,
-                                    text=cam_name,
-                                    textangle=0,
-                                    xanchor='left',
-                                    xref="paper",
-                                    yref="paper"))
-            mean_calculation = {}
-            for key, group in cam_value.items():
-                # all_fig = []
-                for key2, value in group.items():
-                    master_cam = value['master_cam']
-                    slave_cam = value['slave_cam']
-                    master_extrinsic = np.eye(4)
-                    slave_extrinsic = np.array(value['slaveCam_wrto_masterCam'])
-                    rvec, tvec = split(as_rtvec(slave_extrinsic))
-                    # name = key + "_" + key2
-                    name = "Master : " + master_cam + "\n" + "Slave: " + slave_cam + "\n" + "Group: " + "\n" + key2
+            name = handEye_group['image_list'][idx]
 
-                    data = visualizer.extrinsic2pyramid(master_extrinsic, color=self.camera_color[master_cam],
-                                                        focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False, hover_template=master_cam)
-                    data1 = visualizer.extrinsic2pyramid(slave_extrinsic, color=self.camera_color[slave_cam],
-                                                         focal_len_scaled=0.1, aspect_ratio=0.3,
-                                                         hover_template=slave_cam+ "_" + str(tvec), name=name)
-                    # all_fig.append(data)
-                    # all_fig.append(data1)
-                    final_layout.add_trace(data)
-                    final_layout.add_trace(data1)
+            data_camM = visualizer.extrinsic2pyramid(poseM_cam, color=self.camera_color[master_cam],
+                                                focal_len_scaled=0.1, aspect_ratio=0.1, show_legend=False,
+                                                hover_template=master_cam)
+            data_camS = visualizer.extrinsic2pyramid(poseS_cam, color=self.camera_color[slave_cam],
+                                                 focal_len_scaled=0.1, aspect_ratio=0.1,
+                                                 hover_template=slave_cam, name=name)
 
-                    meanGroup = "M"+master_cam+'_S'+slave_cam
-                    if meanGroup not in mean_calculation:
-                        mean_calculation[meanGroup] = from_matrix(slave_extrinsic).reshape((1,-1))
-                    else:
-                        mean_calculation[meanGroup] = np.concatenate((mean_calculation[meanGroup],
-                                                                      from_matrix(slave_extrinsic).reshape((1,-1))), axis=0)
-                pass
-            mean_group_dict = self.show_cluster_mean(mean_calculation)
-            for g in mean_group_dict:
-                d = visualizer.extrinsic2pyramid(mean_group_dict[g], color='black',
-                                                         focal_len_scaled=0.1, aspect_ratio=0.3,
-                                                         hover_template="mean", name=g)
-                final_layout.add_trace(d)
-            if self.campose2 is not None:
-                for cam in self.workspace.names.camera:
-                    x = np.array(self.campose2['camera_pose'][cam_name][cam])
-                    d = visualizer.extrinsic2pyramid(x, color='darkviolet',
-                                                     focal_len_scaled=0.1, aspect_ratio=0.3,
-                                                     hover_template="handEye_opt", name=cam)
-                    final_layout.add_trace(d)
-            final_layout.show()
+            data_boardM = visualizer.extrinsic2Board(poseM_board, poseM_cam, color=self.camera_color[master_cam],
+                                                focal_len_scaled=0.1, aspect_ratio=0.1,
+                                                hover_template=master_cam, name=name)
+            data_boardS = visualizer.extrinsic2Board(poseS_board, poseS_cam, color=self.camera_color[slave_cam],
+                                                 focal_len_scaled=0.1, aspect_ratio=0.1,
+                                                 hover_template=slave_cam, name=name)
+
+            final_layout.add_trace(data_camM)
+            final_layout.add_trace(data_camS)
+            final_layout.add_trace(data_boardM)
+            final_layout.add_trace(data_boardS)
+        final_layout.show()
         pass
-
-    def show_cluster_mean(self, mean_calculation):
-        mean_group_dict = {}
-        for key, value in mean_calculation.items():
-            x = rtvec.to_matrix(common.mean_robust(value))
-            mean_group_dict[key] = x
-
-        return mean_group_dict
 
     def write_html(self, figure):
         buffer = io.StringIO()
@@ -165,19 +134,34 @@ class Interactive_Board():
         pass
 
     def load_files(self):
-        workspace, handEye, campose2 = None, None, None
+        # workspace, handEye, campose2 = None, None, None
         for path, subdirs, files in os.walk((self.base_path)):
             if path == self.base_path:
                 workspace_path = os.path.join(self.base_path, [f for f in files if f == "workspace.pkl"][0])
-                workspace = pickle.load(open(workspace_path, "rb"))
+                self.workspace = pickle.load(open(workspace_path, "rb"))
                 for file in files:
                     if file == "handEyeCamera.json":
                         handEye_path = os.path.join(self.base_path, "handEyeCamera.json")
-                        handEye = json.load(open(handEye_path))
+                        self.handEye_group = json.load(open(handEye_path))
+                    if file == "Calibration_handeye.json":
+                        calib_path = os.path.join(self.base_path, "Calibration_handeye.json")
+                        self.load_campose(calib_path)
                     if file == "campose2.json":
                         campose2_path = os.path.join(self.base_path, "campose2.json")
-                        campose2 = json.load(open(campose2_path))
-        return workspace, handEye, campose2
+                        self.campose2 = json.load(open(campose2_path))
+
+    def load_campose(self, path):
+        calib = json.load(open(path))
+        for k in calib['camera_poses']:
+            if k in self.workspace.names.camera:
+                cam = k
+            else:
+                source, dest = k.split("_to_")
+                cam = source
+            R = np.array(calib['camera_poses'][k]['R'])
+            t = matrix.translation(np.array(calib['camera_poses'][k]['T']))
+            self.camera_pose[cam] = matrix.join(R, t)
+        pass
 
 
 
