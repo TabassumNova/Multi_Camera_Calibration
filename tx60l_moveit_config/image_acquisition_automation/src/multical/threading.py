@@ -51,8 +51,6 @@ def parmap_lists(f, xs_list, j=cpu_count() // 2, chunksize=1, pool=ThreadPool):
   """ Map over a list of lists in parallel by flattening then splitting at the end"""
   cam_lengths = map_list(len, xs_list)
   xs = concat_lists(xs_list)
-  x = f
-  print("f: ", f)
   results = parmap_list(f, xs, j=j, chunksize=chunksize, pool=pool)
-  # print("results: ",results)
+
   return split_list(results, cam_lengths)

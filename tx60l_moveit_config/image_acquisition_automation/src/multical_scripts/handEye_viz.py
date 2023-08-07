@@ -55,18 +55,19 @@ class Interactive_Board():
 
             name = handEye_group['image_list'][idx]
 
-            data_camM = visualizer.extrinsic2pyramid(poseM_cam, color=self.camera_color[master_cam],
-                                                focal_len_scaled=0.1, aspect_ratio=0.1, show_legend=False,
-                                                hover_template=master_cam)
+
             data_camS = visualizer.extrinsic2pyramid(poseS_cam, color=self.camera_color[slave_cam],
-                                                 focal_len_scaled=0.1, aspect_ratio=0.1,
+                                                 focal_len_scaled=0.1, aspect_ratio=0.3,
                                                  hover_template=slave_cam, name=name)
+            data_camM = visualizer.extrinsic2pyramid(poseM_cam, color=self.camera_color[master_cam],
+                                                     focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False,
+                                                     hover_template=master_cam)
 
             data_boardM = visualizer.extrinsic2Board(poseM_board, poseM_cam, color=self.camera_color[master_cam],
-                                                focal_len_scaled=0.1, aspect_ratio=0.1,
+                                                focal_len_scaled=0.1, aspect_ratio=0.3,
                                                 hover_template=master_cam, name=name)
             data_boardS = visualizer.extrinsic2Board(poseS_board, poseS_cam, color=self.camera_color[slave_cam],
-                                                 focal_len_scaled=0.1, aspect_ratio=0.1,
+                                                 focal_len_scaled=0.1, aspect_ratio=0.3,
                                                  hover_template=slave_cam, name=name)
 
             final_layout.add_trace(data_camM)
@@ -159,7 +160,7 @@ class Interactive_Board():
                 source, dest = k.split("_to_")
                 cam = source
             R = np.array(calib['camera_poses'][k]['R'])
-            t = matrix.translation(np.array(calib['camera_poses'][k]['T']))
+            t = np.array(calib['camera_poses'][k]['T'])
             self.camera_pose[cam] = matrix.join(R, t)
         pass
 

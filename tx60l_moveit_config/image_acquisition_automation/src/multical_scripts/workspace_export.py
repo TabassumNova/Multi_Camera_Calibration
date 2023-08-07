@@ -9,7 +9,7 @@ from structs.struct import struct, to_dicts, transpose_lists
 from src.multical.workspace import *
 import src.multical.workspace as ws
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30"
 
 def export_workspace(workspace, path):
     '''
@@ -44,15 +44,15 @@ def main1(datasetPath):
     cam = args.CameraOpts(intrinsic_error_limit=0.5)
     # pose_estimation_method = "solvePnPRansac"
     pose_estimation_method = "solvePnPGeneric"
-    runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=True)
-    opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True)
+    runt = args.RuntimeOpts(pose_estimation=pose_estimation_method)
+    opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True, adjust_outliers=False)
     c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
-    workspace = c.execute()
-    workspace.point_table.valid = workspace.pose_table.inliers
+    workspace = c.execute_board()
+    # workspace.point_table.valid = workspace.pose_table.inliers
     return workspace
 
 if __name__ == '__main__':
 
     ws = main1(base_path)
-    # export_workspace(ws, base_path)
+    export_workspace(ws, base_path)
     pass
