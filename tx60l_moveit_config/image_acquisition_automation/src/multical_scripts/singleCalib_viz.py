@@ -27,7 +27,8 @@ class Interactive_calibration():
         self.workspace = None
         self.handEye_group = None
         self.campose2 = None
-        self.camera_pose = {}
+        self.camera_pose_final = {}
+        self.camera_pose_init = {}
         self.load_files()
         self.camera_color = {}
         self.set_Cam_color()
@@ -36,18 +37,23 @@ class Interactive_calibration():
 
     def set_Cam_color(self):
         colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'lime']
-        for idx, cam in enumerate(self.camera_pose.keys()):
+        for idx, cam in enumerate(self.camera_pose_final.keys()):
             self.camera_color[cam] = colors[idx]
 
     def draw_cameras(self):
         visualizer = CameraPoseVisualizer([-2000, 2000], [-2000, 2000], [-2000, 2000])
         final_layout = go.Figure()
 
-        for cam, pose in self.camera_pose.items():
+        for cam, pose in self.camera_pose_final.items():
             data = visualizer.extrinsic2pyramid(pose, color=self.camera_color[cam],
-                                                     focal_len_scaled=0.1, aspect_ratio=0.1, show_legend=False,
-                                                     hover_template=cam)
+                                                     focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False,
+                                                     hover_template=cam+'_final')
+
+            data1 = visualizer.extrinsic2pyramid(self.camera_pose_init[cam], color=self.camera_color[cam],
+                                                focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False,
+                                                hover_template=cam+'_init')
             final_layout.add_trace(data)
+            final_layout.add_trace(data1)
         final_layout.show()
         pass
 
@@ -58,10 +64,13 @@ class Interactive_calibration():
                 for file in files:
                     if file == "calibration.json":
                         calib_path = os.path.join(self.base_path, "calibration.json")
-                        self.load_campose(calib_path)
+                        self.load_campose(calib_path, calib_type='final')
+                    if file == "Calibration_handeye.json":
+                        init_calib_path = os.path.join(self.base_path, "Calibration_handeye.json")
+                        self.load_campose(init_calib_path, calib_type='initial')
 
 
-    def load_campose(self, path):
+    def load_campose(self, path, calib_type):
         calib = json.load(open(path))
         for k in calib['camera_poses']:
             if k in calib['cameras']:
@@ -71,7 +80,10 @@ class Interactive_calibration():
                 cam = source
             R = np.array(calib['camera_poses'][k]['R'])
             t = np.array(calib['camera_poses'][k]['T'])
-            self.camera_pose[cam] = matrix.join(R, t)
+            if calib_type == 'final':
+                self.camera_pose_final[cam] = matrix.join(R, t)
+            if calib_type == 'initial':
+                self.camera_pose_init[cam] = matrix.join(R, t)
         pass
 
 

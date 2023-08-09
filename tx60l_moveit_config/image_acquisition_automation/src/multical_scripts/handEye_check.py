@@ -14,6 +14,8 @@ import json
 import os
 from src.multical.transform import common, rtvec
 from src.multical_scripts.extrinsic_viz import *
+import plotly.express as px
+import pandas as pd
 
 base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
 
@@ -39,6 +41,7 @@ class handEye():
         self.campose_param = {}
         self.camintrinsic_param = []
         self.inliers = None
+        self.final_campose = {}
 
     def collect_files(self):
         """
@@ -590,8 +593,9 @@ class handEye():
         def decode_paramVec(param_vec, master_cam, slave_cam):
             ############ param_vec = self.campose_param[master_cam][idxS*6 : idxS*6+6] + self.board_param  #########
             idxS = self.workspace.names.camera.index(slave_cam)
+            cam_pose = rtvec.to_matrix(np.array(param_vec[0:6])).tolist()
             self.campose_param[master_cam][idxS*6 : idxS*6+6] = param_vec[0:6]
-            self.cam_pose[master_cam][slave_cam]['extrinsic'] = rtvec.to_matrix(np.array(param_vec[0:6]))
+            self.cam_pose[master_cam][slave_cam]['extrinsic'] = cam_pose
             board_pose = {}
             for idxb in range(self.workspace.sizes.board):
                 pose = np.array(param_vec[idxb*6+6 : idxb*6+12])
@@ -600,18 +604,22 @@ class handEye():
                 else:
                     board_pose[idxb] = rtvec.to_matrix(rtvec.relative_to(pose, pose))
             self.board_pose_temp.append(board_pose)
+            return cam_pose
+
 
 
         cluster_error = {}
         # self.cam_pose2['camera_pose'] = {}
         camera = [self.workspace.names.camera[self.master_cam]]
-        for idxM, master_cam in enumerate(camera):
+        for idxM, master_cam in enumerate(self.workspace.names.camera):
+            self.final_campose[master_cam] = {}
             # self.cam_pose2['camera_pose'][master_cam] = {}
             # self.cam_pose2['camera_pose'][master_cam][master_cam] = np.eye(4).tolist()
             cluster_error[master_cam] = {}
             # cameraIntrinsic + camera_poses + boards
             # param_vec = self.campose_param[master_cam] + self.board_param
             for idxS, slave_cam in enumerate(self.workspace.names.camera):
+                self.final_campose[master_cam][slave_cam]={}
                 error = []
                 # param_vec = []
                 param_vec = self.campose_param[master_cam][idxS*6 : idxS*6+6] + self.board_param
@@ -629,6 +637,7 @@ class handEye():
                     '''
                     err1 = evaluation(np.array(param_vec), master_cam, groups)
                     point_errors1, rms1, min_group1 = reprojection_error(np.array(param_vec), master_cam, groups)
+                    self.final_campose[master_cam][slave_cam]['initial_reprojectionError'] = rms1
                     groups = [min_group1]
                     #### optimization using handEye equation
                     res = least_squares(evaluation, param_vec,
@@ -652,11 +661,65 @@ class handEye():
                         point_errors, _, _ = np.array(reprojection_error(res.x, master_cam, groups), dtype=object)
                         threshold = np.quantile(point_errors0, 0.70)
                         inliers = np.array(point_errors < threshold).flatten()
-                    point_errors, rms, _ = reprojection_error(res.x, master_cam, groups)
+                    point_errors, rms, min_group = reprojection_error(res.x, master_cam, groups)
+                    self.final_campose[master_cam][slave_cam]['final_reprojectionError'] = rms
+                    self.final_campose[master_cam][slave_cam]['group'] = min_group
+                    self.final_campose[master_cam][slave_cam]['cam_pose'] = rtvec.to_matrix(np.array(res.x[0:6])).tolist()
+                    # self.draw_viz(master_cam, min_group, rms)
                     # self.cam_pose2['camera_pose'][master_cam][slave_cam] = rtvec.to_matrix(res.x[0:6]).tolist()
 
         # self.calculate_board_mean()
         # self.final_reprojection_error()
+        pass
+
+    def draw_viz(self, master_cam, group, final_error):
+        masterBoard_angles = self.all_handEye[master_cam][group]['masterBoard_angle']
+        slaveBoard_angles = self.all_handEye[master_cam][group]['slaveBoard_angle']
+        masterBoard_error = self.all_handEye[master_cam][group]['masterBoard_error']
+        slaveBoard_error = self.all_handEye[master_cam][group]['slaveBoard_error']
+        master_x = []
+        master_y = []
+        master_z = []
+        master_name = []
+        slave_x = []
+        slave_y = []
+        slave_z = []
+        slave_name = []
+        for k in masterBoard_angles.keys():
+            master_x.append(masterBoard_angles[k][0])
+            master_y.append(masterBoard_angles[k][1])
+            master_z.append(masterBoard_error[k])
+            master_name.append(k)
+            slave_x.append(slaveBoard_angles[k][0])
+            slave_y.append(slaveBoard_angles[k][1])
+            slave_z.append(slaveBoard_error[k])
+            slave_name.append(k)
+
+        dataM = {'view_angle X': master_x, 'view_angle Y': master_y, 'reprojection error': master_z, 'name': master_name}
+        dataS = {'view_angle X': slave_x, 'view_angle Y': slave_y, 'reprojection error': slave_z,
+                 'name': slave_name}
+
+        nameM = master_cam +' group-'+ str(group)
+        final_layout = go.Figure()
+        final_layout.add_trace(
+            go.Scatter3d(
+                x=master_x,
+                y=master_y,
+                z=master_z,
+                name=nameM
+            )
+        )
+        nameS = self.all_handEye[master_cam][group]['slave_cam']
+        final_layout.add_trace(
+            go.Scatter3d(
+                x=slave_x,
+                y=slave_y,
+                z=slave_z,
+                name=nameS
+            )
+        )
+
+        final_layout.show()
         pass
 
     def final_reprojection_error(self):
@@ -739,37 +802,28 @@ class handEye():
             ]
             return np.array(intrinsic), np.array(dist)
 
-        def fun(param_vec):
-            slaveCam_wrt_masterCam = rtvec.to_matrix(param_vec[10:16])
-            slaveB_wrt_masterB = rtvec.to_matrix(param_vec[16:22])
+        def fun(param_vec, camMatrix, camDist):
+            slaveCam_wrt_masterCam = rtvec.to_matrix(param_vec[0:6])
+            slaveB_wrt_masterB = rtvec.to_matrix(param_vec[6:12])
             ZB = matrix.transform(slaveCam_wrt_masterCam, masterCam_wrt_masterB)
             estimated_slaveB_slaveCam = np.linalg.inv(matrix.transform(ZB, np.linalg.inv(slaveB_wrt_masterB)))
-            return estimated_slaveB_slaveCam
-
-        def evaluation(param_vec):
-            estimated_slaveB_slaveCam = fun(param_vec)
-            camMatrix, camDist = decode_intrinsic(param_vec[0:10])
             point_errors, reprojection_error = self.reprojectionError_calculation(slave_cam, boardS,
                                                                                   estimated_slaveB_slaveCam, image_list,
                                                                                   camMatrix=camMatrix, camDist=camDist)
+            return point_errors, reprojection_error
+
+        def evaluation(param_vec, camMatrix, camDist, inliers):
+            point_errors, _ = fun(param_vec, camMatrix, camDist)
             errors = np.array([point_errors[i] for i, v in enumerate(inliers) if v == True ])
             return errors
-
-        def calculate_meanError(param_vec):
-            estimated_slaveB_slaveCam = fun(param_vec)
-            camMatrix, camDist = decode_intrinsic(param_vec[0:10])
-            point_errors, reprojection_error = self.reprojectionError_calculation(slave_cam, boardS,
-                                                            estimated_slaveB_slaveCam, image_list, camMatrix=camMatrix, camDist=camDist)
-            mean_error = reprojection_error
-            return point_errors, mean_error
-
 
         ### new
         slaveCam_vec = rtvec.from_matrix(init_slaveCam_wrt_masterCam)
         slaveB_vec = rtvec.from_matrix(init_slaveB_wrt_masterB)
         intrinsic = np.array(self.camintrinsic_param[slave_cam*10: slave_cam*10+10])
-        param_vec = np.concatenate((intrinsic, slaveCam_vec, slaveB_vec))
-        point_errors, _ = calculate_meanError(param_vec)
+        K, dist = decode_intrinsic(intrinsic)
+        param_vec = np.concatenate((slaveCam_vec, slaveB_vec))
+        point_errors, _ = fun(param_vec, K, dist)
         inliers = np.ones(len(point_errors))
 
         if num_adjustments ==0:
@@ -778,13 +832,13 @@ class handEye():
             info(f"Adjust_outliers {i}:")
             res = least_squares(evaluation, param_vec,
                                 verbose=2, x_scale='jac', f_scale=1.0, ftol=1e-4, max_nfev=100,
-                                method='trf', loss='linear')
-            point_errors, _ = calculate_meanError(res.x)
+                                method='trf', loss='linear', args=(K, dist, inliers))
+            point_errors, _ = fun(param_vec, K, dist)
             threshold = np.quantile(point_errors, 0.75)
             inliers = np.array(point_errors < threshold).flatten()
 
         ### new
-        _, mean_error = calculate_meanError(res.x)
+        _, mean_error = fun(res.x, K, dist)
         return mean_error
 
     def reprojectionError_calculation(self, slaveCam, slaveBoard, estimated_slaveBoard_slaveCam, image_list, camMatrix=np.zeros((3,3)), camDist=np.zeros((1,5))):
@@ -961,7 +1015,7 @@ def main4(base_path, limit_images, num_adjustments):
     h.initiate_workspace()
     h.calc_camPose_param(limit_images, num_adjustments)
     h.export_handEye_Camera()
-    h.check_cluster_reprojectionerr()
+    # h.check_cluster_reprojectionerr()
 
     pass
 
@@ -981,7 +1035,7 @@ def main6(base_path, limit_images, num_adjustments):
 if __name__ == '__main__':
     # main1(base_path, cam=0, board=3)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    main4(base_path, limit_images=10, num_adjustments=0)
+    main4(base_path, limit_images=10, num_adjustments=1)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass

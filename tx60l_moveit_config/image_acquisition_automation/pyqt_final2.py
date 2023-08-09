@@ -274,8 +274,54 @@ class MyTabWidget(QWidget):
     def calibrationTab_showviz(self):
         camera = str(self.cam_num)
         group = str(self.cam_group)
-        viz = Interactive_Board(self.folder_path)
-        viz.draw_boards(camera, group)
+        self.draw_viz(camera, group)
+
+
+    def draw_viz(self, master_cam, group):
+        masterBoard_angles = self.tab1_handEyeCamera[master_cam][group]['masterBoard_angle']
+        slaveBoard_angles = self.tab1_handEyeCamera[master_cam][group]['slaveBoard_angle']
+        masterBoard_error = self.tab1_handEyeCamera[master_cam][group]['masterBoard_error']
+        slaveBoard_error = self.tab1_handEyeCamera[master_cam][group]['slaveBoard_error']
+        master_x = []
+        master_y = []
+        master_z = []
+        master_name = []
+        slave_x = []
+        slave_y = []
+        slave_z = []
+        slave_name = []
+        for k in masterBoard_angles.keys():
+            master_x.append(masterBoard_angles[k][0])
+            master_y.append(masterBoard_angles[k][1])
+            master_z.append(masterBoard_error[k])
+            master_name.append(k)
+            slave_x.append(slaveBoard_angles[k][0])
+            slave_y.append(slaveBoard_angles[k][1])
+            slave_z.append(slaveBoard_error[k])
+            slave_name.append(k)
+
+        nameM = master_cam +' group-'+ str(group)
+        final_layout = go.Figure()
+        final_layout.add_trace(
+            go.Scatter3d(
+                x=master_x,
+                y=master_y,
+                z=master_z,
+                name=nameM
+            )
+        )
+        nameS = self.tab1_handEyeCamera[master_cam][group]['slave_cam']
+        final_layout.add_trace(
+            go.Scatter3d(
+                x=slave_x,
+                y=slave_y,
+                z=slave_z,
+                name=nameS
+            )
+        )
+
+        final_layout.show()
+        pass
 
 
     def calibrationTab_loadNext(self):

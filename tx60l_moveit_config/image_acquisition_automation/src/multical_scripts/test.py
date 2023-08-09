@@ -1,9 +1,6 @@
+from sklearn.neighbors import NearestNeighbors
 import numpy as np
-
-camMatrix= np.zeros((3,3))
-camDist= np.zeros((1,5))
-
-if camMatrix.all() == 0 and camDist.all() == 0:
-       print('done')
-else:
-       print("not done")
+X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
+nbrs = NearestNeighbors(n_neighbors=2, algorithm='ball_tree').fit(X)
+distances, indices = nbrs.kneighbors(X)
+pass
