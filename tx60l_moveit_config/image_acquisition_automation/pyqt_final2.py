@@ -319,7 +319,10 @@ class MyTabWidget(QWidget):
                 name=nameS
             )
         )
-
+        final_layout.update_layout(scene = dict(
+                    xaxis_title='Roll',
+                    yaxis_title='Pitch',
+                    zaxis_title='Re-projection error'))
         final_layout.show()
         pass
 

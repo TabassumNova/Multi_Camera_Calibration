@@ -96,7 +96,7 @@ def get_pose(box_attacher, euler=False, print_msg=False, ros_format=False, extri
         
     return pose_dict 
 
-def get_calib_poses(box_attacher, initial_pose, offsetpoint=[0.0, 0.0, 0.0], angles=None): 
+def get_calib_poses(box_attacher, initial_pose, point_num, offsetpoint=[0.0, 0.0, 0.0], angles=None):
     """
     Creates a list of robot endeffector motion poses for calibration
     
@@ -119,10 +119,15 @@ def get_calib_poses(box_attacher, initial_pose, offsetpoint=[0.0, 0.0, 0.0], ang
         # euler rotations around each axis relative to the initial pose; 0.0 is automatically included 
         # angle_x_list = [0, 10.0, 15.0, 20, -10.0, -15.0, -20] 
         # angle_y_list = [0, 10.0, 15.0, 20, -10.0, -15.0, -20]#, -10.0] 
-        # angle_z_list = [0, 10.0, 15.0, 20, -10.0, -15.0, -20] 
-        angle_x_list = [0.0, 10.0, -10.0] 
-        angle_y_list = [0.0, 10.0, 15.0]#, -10.0] 
-        angle_z_list = [0.0, 10.0, -10.0] 
+        # angle_z_list = [0, 10.0, 15.0, 20, -10.0, -15.0, -20]
+        if (point_num % 2) == 0:
+            angle_x_list = [10.0, 25.0, 30.0]
+            angle_y_list = [10.0, 15.0]#, -10.0]
+            angle_z_list = [10.0, 25.0, 30.0]
+        else:
+            angle_x_list = [-10.0, -25.0, -30.0]
+            angle_y_list = [-10.0, -15.0]  # , -10.0]
+            angle_z_list = [-10.0, -25.0, -30.0]
     else:
         angle_x_list = angles[0] 
         angle_y_list = angles[1] 

@@ -168,7 +168,7 @@ class Box_Attacher_3(object):
             for j in range(pointx.shape[0]):
                 plan = self.move_ef_position(pointx[j], pointy[j], pointz[j])
                 initial_pose = get_pose(self, euler=True)
-                pose_list = get_calib_poses_new(self, initial_pose)
+                pose_list = get_calib_poses(self, initial_pose, point_num=j)
                 for i in range(len(pose_list)):
                     # Move to first point automatically
                     if library == 'cvb':
@@ -192,7 +192,7 @@ class Box_Attacher_3(object):
                 # Serializing json
                 json_object = json.dumps(json_dict, indent=4)
                 # Writing to sample.json
-                with open("/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/poses.json", "w") as outfile:
+                with open("/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/poses_10august.json", "w") as outfile:
                     outfile.write(json_object)
                 plan = self.move_ef_position(pointx[j], pointy[j], pointz[j])
 
