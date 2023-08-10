@@ -107,6 +107,19 @@ class Box_Attacher_3(object):
         self.move_group.stop()
         return plan
 
+    def plan_from_pose_json(self, pose_json_path):
+        pose_file = open(pose_json_path)
+        data = json.load(pose_file)
+        
+        for pose in data:
+            pose_dict = {}
+            pose_dict['position'] = [float(p) for p in data[pose]["position (x,y,z)"]]
+            orientation = [float(p) for p in data[pose]["orintation (w,x,y,z)"]]
+            pose_dict['orientation'] = [orientation[1], orientation[2], orientation[3], orientation[0]]
+            move_robot(self, pose_dict)
+            start_arv_image_acquisition(self, int(pose))
+        pass
+    
     def plan_box_param(self, library = 'arv'):
         enter = input("Hit ENTER if you want to start planning: ")
         wpose = self.move_group.get_current_pose().pose
@@ -189,11 +202,11 @@ class Box_Attacher_3(object):
                     motion_successful = move_robot(self, pose_list[i])
                     pose += 1
                 
-                # Serializing json
-                json_object = json.dumps(json_dict, indent=4)
-                # Writing to sample.json
-                with open("/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/poses_10august.json", "w") as outfile:
-                    outfile.write(json_object)
+                    # Serializing json
+                    json_object = json.dumps(json_dict, indent=4)
+                    # Writing to sample.json
+                    with open("/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/poses_10august.json", "w") as outfile:
+                        outfile.write(json_object)
                 plan = self.move_ef_position(pointx[j], pointy[j], pointz[j])
 
         ### new
