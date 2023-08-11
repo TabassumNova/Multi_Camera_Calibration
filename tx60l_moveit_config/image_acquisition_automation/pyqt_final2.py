@@ -62,8 +62,6 @@ class App(QMainWindow):
         self.show()
 
 
-
-
 # Creating tab widgets
 class MyTabWidget(QWidget):
     def __init__(self, parent):
