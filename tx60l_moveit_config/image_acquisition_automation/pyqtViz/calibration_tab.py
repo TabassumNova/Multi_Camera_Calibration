@@ -48,11 +48,11 @@ class Calibration(QWidget):
         self.boards = None
         self.detectedPoints = None
         self.intrinsic = None
+        self.selected_pose = []
 
         self.btnLoad1 = QPushButton(self)
         self.btnLoad1.setObjectName('Load')
         self.btnLoad1.setText('Load')
-        # self.btnLoad7.setStyleSheet("background-color : cyan;")
         self.btnLoad1.clicked.connect(self.open_dir_dialog)
         self.btnLoad1.setGeometry(QRect(0, 0, 93, 28))
 
@@ -62,33 +62,55 @@ class Calibration(QWidget):
         self.btnLoad2 = QPushButton(self)
         self.btnLoad2.setObjectName('<')
         self.btnLoad2.setText('<')
-        self.btnLoad2.clicked.connect(self.calibrationTab_loadPrevious)
+        self.btnLoad2.clicked.connect(self.loadPrevious)
         self.btnLoad2.setGeometry(QRect(495, 0, 30, 28))
 
         self.btnLoad3 = QPushButton(self)
         self.btnLoad3.setObjectName('>')
         self.btnLoad3.setText('>')
         # self.btnLoad6.setStyleSheet("background-color : cyan;")
-        self.btnLoad3.clicked.connect(self.calibrationTab_loadNext)
+        self.btnLoad3.clicked.connect(self.loadNext)
         self.btnLoad3.setGeometry(QRect(618, 0, 30, 28))
 
         self.btnLoad4 = QPushButton(self)
-        self.btnLoad4.setObjectName('Show visualization')
-        self.btnLoad4.setText('Show visualization')
-        self.btnLoad4.clicked.connect(self.calibrationTab_showviz)
-        self.btnLoad4.setGeometry(QRect(650, 0, 150, 28))
+        self.btnLoad4.setObjectName('Select Current Pose')
+        self.btnLoad4.setText('Select Current Pose')
+        self.btnLoad4.clicked.connect(self.selectCurrentPose)
+        self.btnLoad4.setGeometry(QRect(650, 0, 180, 28))
 
-        self.labelLoad5 = QLabel(self)
-        self.labelLoad5.setObjectName('Pose')
-        self.labelLoad5.setText('Pose')
-        # self.btnLoad7.setStyleSheet("background-color : cyan;")
-        self.labelLoad5.setStyleSheet("border: 1px solid black;")
-        # self.labelLoad10.clicked.connect(self.calibrationTab_Load)
-        self.labelLoad5.setGeometry(QRect(525, 0, 93, 28))
+        self.btnLoad5 = QPushButton(self)
+        self.btnLoad5.setObjectName('Show visualization')
+        self.btnLoad5.setText('Show visualization')
+        self.btnLoad5.clicked.connect(self.showviz)
+        self.btnLoad5.setGeometry(QRect(830, 0, 150, 28))
+
+        self.label1 = QLabel(self)
+        self.label1.setObjectName('Pose')
+        self.label1.setText('Pose')
+        self.label1.setStyleSheet("border: 1px solid black;")
+        self.label1.setGeometry(QRect(525, 0, 93, 28))
+
+        self.label2 = QLabel(self)
+        self.label2.setObjectName('Selected poses')
+        self.label2.setText('Selected poses')
+        self.label2.setStyleSheet("border: 1px solid black;")
+        self.label2.setGeometry(QRect(0, 30, 1880, 28))
+
+        self.btnLoad6 = QPushButton(self)
+        self.btnLoad6.setObjectName('Calibrate Selected poses')
+        self.btnLoad6.setText('Calibrate Selected poses')
+        self.btnLoad6.clicked.connect(self.handEye_Calibration)
+        self.btnLoad6.setGeometry(QRect(0, 60, 150, 28))
+
+        self.label3 = QLabel(self)
+        self.label3.setObjectName('Result')
+        self.label3.setText('Result')
+        self.label3.setStyleSheet("border: 1px solid black;")
+        self.label3.setGeometry(QRect(153, 60, 200, 28))
 
         # Grid for images
         self.gridLayoutWidget1 = QWidget(self)
-        self.gridLayoutWidget1.setGeometry(QRect(0, 50, 1880, 500))
+        self.gridLayoutWidget1.setGeometry(QRect(0, 100, 1880, 500))
         self.gridLayoutWidget1.setObjectName("gridLayoutWidget")
         self.gridLayout1 = QGridLayout(self.gridLayoutWidget1)
         self.gridLayout1.setContentsMargins(0, 0, 0, 0)
@@ -105,6 +127,9 @@ class Calibration(QWidget):
         self.gridLayout3.addWidget(self.table)
 
         self.setLayout(self.layout)
+
+    def handEye_Calibration(self):
+        pass
 
     def group_decode(self, group):
         group_num = {}
@@ -132,7 +157,7 @@ class Calibration(QWidget):
         master_path = os.path.join(self.folder_path, master_cam, image_list[poseCount])
         slave_path = os.path.join(self.folder_path, slave_cam, image_list[poseCount])
         pose = 'Pose '+ image_list[poseCount][1:-4]
-        self.labelLoad5.setText(pose)
+        self.label1.setText(pose)
         imageLabel1 = self.image_load(master_path, master_cam, master_board, image_list[poseCount])
         imageLabel2 = self.image_load(slave_path, slave_cam, slave_board, image_list[poseCount])
         # self.clearLayout(layout)
@@ -204,7 +229,7 @@ class Calibration(QWidget):
                         self.handEyeCamera = json.load(open(handEye_path))
 
 
-    def calibrationTab_loadNext(self):
+    def loadNext(self):
         if self.Last_poseCount-1 > self.Current_poseCount >= 0:
             self.Current_poseCount += 1
             self.clearLayout(self.gridLayout1)
@@ -214,11 +239,10 @@ class Calibration(QWidget):
             print("Pose end")
         # return 0
 
-    def calibrationTab_loadPrevious(self):
+    def loadPrevious(self):
         if self.Current_poseCount > 0:
             self.Current_poseCount -= 1
             self.clearLayout(self.gridLayout1)
-            # self.set_viewer(gridLayout=self.tab2_gridLayout1)
             self.selectionchange(self.group, self.Current_poseCount)
         else:
             self.clearLayout(self.gridLayout1)
@@ -229,10 +253,17 @@ class Calibration(QWidget):
             if child.widget():
                 child.widget().deleteLater()
 
-    def calibrationTab_showviz(self):
+    def showviz(self):
         camera = str(self.cam_num)
         group = str(self.cam_group)
         self.draw_viz(camera, group)
+
+    def selectCurrentPose(self):
+        image = self.handEyeCamera[self.cam_num][str(self.cam_group)]['image_list'][self.Current_poseCount]
+        if image not in self.selected_pose:
+            self.selected_pose.append(image)
+        self.label2.setText(str(self.selected_pose))
+        print(self.selected_pose, self.cam_num, self.cam_group)
 
     def draw_viz(self, master_cam, group):
         masterBoard_angles = self.handEyeCamera[master_cam][group]['masterBoard_angle']
