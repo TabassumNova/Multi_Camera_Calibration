@@ -37,6 +37,7 @@ except ImportError:
 
 from operation_tab import *
 from calibration_tab import *
+from viewPlan_tab import *
 import cv2
 
 # Creating the main window
@@ -66,14 +67,14 @@ class MyTabWidget(QWidget):
         self.tab1 = Operation()
         self.tab2 = Calibration()
         self.tab3 = QWidget()
-        self.tab4 = QWidget()
+        self.tab4 = View_Plan()
         self.tab5 = QWidget()
         # self.tabs.resize(300, 200)
         # Add tabs
         self.tabs.addTab(self.tab1, "Operation")
         self.tabs.addTab(self.tab2, "Calibration")
         self.tabs.addTab(self.tab3, "Measurement Setup")
-        self.tabs.addTab(self.tab4, "Cameras")
+        self.tabs.addTab(self.tab4, "View_Plan")
         self.tabs.addTab(self.tab5, "Settings")
 
         self.new_window = None

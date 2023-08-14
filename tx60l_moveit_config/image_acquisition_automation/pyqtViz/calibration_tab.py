@@ -295,6 +295,8 @@ class Calibration(QWidget):
                 x=master_x,
                 y=master_y,
                 z=master_z,
+                mode = 'markers',
+                text=master_name, textposition="bottom center",
                 name=nameM
             )
         )
@@ -304,6 +306,8 @@ class Calibration(QWidget):
                 x=slave_x,
                 y=slave_y,
                 z=slave_z,
+                mode='markers',
+                text=slave_name, textposition="bottom center",
                 name=nameS
             )
         )

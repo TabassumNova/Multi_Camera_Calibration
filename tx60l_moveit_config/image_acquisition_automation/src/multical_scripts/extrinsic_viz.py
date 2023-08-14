@@ -32,7 +32,7 @@ class Interactive_Extrinsic():
         pass
 
     def set_Cam_color(self):
-        colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'lime']
+        colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'lime', 'pink', 'teal', 'darkcyan', 'violet', 'brown', 'indigo']
         for idx, cam in enumerate(self.workspace.names.camera):
             self.camera_color[cam] = colors[idx]
 

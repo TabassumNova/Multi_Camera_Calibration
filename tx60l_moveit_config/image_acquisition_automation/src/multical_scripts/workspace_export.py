@@ -9,7 +9,7 @@ from structs.struct import struct, to_dicts, transpose_lists
 from src.multical.workspace import *
 import src.multical.workspace as ws
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
 
 def export_workspace(workspace, path):
     '''
@@ -41,7 +41,7 @@ def export_workspace(workspace, path):
 
 def main1(datasetPath):
     pathO = args.PathOpts(image_path=datasetPath)
-    cam = args.CameraOpts(intrinsic_error_limit=0.5)
+    cam = args.CameraOpts(intrinsic_error_limit=1)
     # pose_estimation_method = "solvePnPRansac"
     pose_estimation_method = "solvePnPGeneric"
     runt = args.RuntimeOpts(pose_estimation=pose_estimation_method)

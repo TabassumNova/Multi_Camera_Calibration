@@ -17,7 +17,7 @@ from src.multical_scripts.extrinsic_viz import *
 import plotly.express as px
 import pandas as pd
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
 
 class handEye():
     def __init__(self, base_path, master_cam=0):
@@ -317,10 +317,11 @@ class handEye():
         for cam in range(0, num_cameras):
             handEye_dict[cam] = self.handEye_table(master_cam=cam)
 
-    def handEye_table(self, master_cam=0, limit_image=2, num_adjustments=5):
+    def handEye_table(self, master_cam=0, limit_image=2, num_adjustments=5, limit_board_image=2):
         '''
         handEye for Master_cam to Slave_cam
-        :param master_cam:
+        :param limit_image: number of image allowed for hand eye pair
+               limit_board_image : number of image allowed to choose major board seen by cameras
         :return:
         '''
         num_cameras = len(self.workspace.names.camera)
@@ -328,9 +329,9 @@ class handEye():
 
         handEye_dict = {}
         serial = 0
-        master_boards = [b for b in range(0, num_boards) if self.workspace.pose_table.valid[master_cam][:, b].sum() > 20]
+        master_boards = [b for b in range(0, num_boards) if self.workspace.pose_table.valid[master_cam][:, b].sum() > limit_board_image]
         for slave_cam in range(0, num_cameras):
-            slave_boards = [b for b in range(0, num_boards) if self.workspace.pose_table.valid[slave_cam][:, b].sum() > 20]
+            slave_boards = [b for b in range(0, num_boards) if self.workspace.pose_table.valid[slave_cam][:, b].sum() > limit_board_image]
 
             for boardM in master_boards:
                 # if boardM not in self.board_pose:
@@ -397,24 +398,33 @@ class handEye():
             mean_group_dict[cam1][cam1]['group'] = [0]
             for cam2, cam_value2 in cam_value1.items():
                 if cam2 != cam1:
-                    g = common.cluster(cam_value2['extrinsic'])
-                    group = np.array(cam_value2['group'])[common.cluster(cam_value2['extrinsic'])]
-                    x = rtvec.to_matrix(common.mean_robust(cam_value2['extrinsic']))
-                    mean_group_dict[cam1][cam2] = {}
-                    mean_group_dict[cam1][cam2]['extrinsic'] = x.tolist()
-                    mean_group_dict[cam1][cam2]['group'] = group.tolist()
-                    mean_group_dict[cam1][cam2]['boards'] = []
-                    for g in group:
-                        mean_group_dict[cam1][cam2]['boards'].append([self.all_handEye[cam1][g]['master_board'],
-                                                                      self.all_handEye[cam1][g]['slave_board']])
+                    if len(cam_value2['group'])>3:
+                        g = common.cluster(cam_value2['extrinsic'])
+                        group = np.array(cam_value2['group'])[common.cluster(cam_value2['extrinsic'])]
+                        x = rtvec.to_matrix(common.mean_robust(cam_value2['extrinsic']))
+                        mean_group_dict[cam1][cam2] = {}
+                        mean_group_dict[cam1][cam2]['extrinsic'] = x.tolist()
+                        mean_group_dict[cam1][cam2]['group'] = group.tolist()
+                        mean_group_dict[cam1][cam2]['boards'] = []
+                        for g in group:
+                            mean_group_dict[cam1][cam2]['boards'].append([self.all_handEye[cam1][g]['master_board'],
+                                                                          self.all_handEye[cam1][g]['slave_board']])
+                    else:
+                        mean_group_dict[cam1][cam2] = {}
+                        mean_group_dict[cam1][cam2]['group'] = cam_value2['group']
+                        mean_group_dict[cam1][cam2]['extrinsic'] = rtvec.to_matrix(cam_value2['extrinsic'][0])
+                        mean_group_dict[cam1][cam2]['boards'] = []
+                        for g in cam_value2['group']:
+                            mean_group_dict[cam1][cam2]['boards'].append([self.all_handEye[cam1][g]['master_board'],
+                                                                          self.all_handEye[cam1][g]['slave_board']])
 
         return mean_group_dict
 
-    def calc_camPose_param(self, limit_images, num_adjustments):
+    def calc_camPose_param(self, limit_images, num_adjustments, limit_board_image):
         cameras = self.workspace.names.camera
         # cameras = ['08320217']
         for idx, master_cam in enumerate(cameras):
-            handEye_dict = self.handEye_table(master_cam=idx, limit_image=limit_images, num_adjustments=num_adjustments)
+            handEye_dict = self.handEye_table(master_cam=idx, limit_image=limit_images, num_adjustments=num_adjustments, limit_board_image=limit_board_image)
             self.all_handEye[master_cam] = handEye_dict
 
         mean_calculation = {}
@@ -440,7 +450,8 @@ class handEye():
         for master, master_value in self.cam_pose.items():
             self.campose_param[master] = []
             for slave in self.workspace.names.camera:
-                self.campose_param[master].extend(rtvec.from_matrix(np.array(master_value[slave]['extrinsic'])).tolist())
+                if slave in master_value:
+                    self.campose_param[master].extend(rtvec.from_matrix(np.array(master_value[slave]['extrinsic'])).tolist())
 
         self.setCampose_workspace()
         pass
@@ -455,11 +466,12 @@ class handEye():
             else:
                 name = cam + '_to_' + master_cam
             cam_pose[name] = {}
-            p = np.array(self.cam_pose[master_cam][cam]['extrinsic'])
-            R = matrix.rotation(p).tolist()
-            T = matrix.translation(p).tolist()
-            cam_pose[name]['R'] = R
-            cam_pose[name]['T'] = T
+            if cam in self.cam_pose[master_cam]:
+                p = np.array(self.cam_pose[master_cam][cam]['extrinsic'])
+                R = matrix.rotation(p).tolist()
+                T = matrix.translation(p).tolist()
+                cam_pose[name]['R'] = R
+                cam_pose[name]['T'] = T
         data.camera_poses = cam_pose
         self.workspace.export_Data = data
         filename = os.path.join(self.base_path, "Calibration_handeye.json")
@@ -1009,11 +1021,11 @@ def main3(base_path, limit_images, num_adjustments):
     h.export_handEye_Camera()
     pass
 
-def main4(base_path, limit_images, num_adjustments):
+def main4(base_path, limit_images, num_adjustments, limit_board_image):
 
     h = handEye(base_path)
     h.initiate_workspace()
-    h.calc_camPose_param(limit_images, num_adjustments)
+    h.calc_camPose_param(limit_images, num_adjustments, limit_board_image)
     h.export_handEye_Camera()
     # h.check_cluster_reprojectionerr()
 
@@ -1035,7 +1047,7 @@ def main6(base_path, limit_images, num_adjustments):
 if __name__ == '__main__':
     # main1(base_path, cam=0, board=3)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    main4(base_path, limit_images=10, num_adjustments=1)
+    main4(base_path, limit_images=10, num_adjustments=1, limit_board_image=10)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass
