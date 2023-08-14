@@ -20,3 +20,4 @@
             bailool/mc-calib-prod
             
     '''
+    https://www.murhabazi.com/install-nvidia-driver
