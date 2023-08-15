@@ -676,7 +676,7 @@ def estimate_camera_board_poses_old(ws):
   return rel_cam_poses, rel_board_poses, board_selection_matrix
 
 
-def initialise_poses(pose_table, camera_poses=None):
+def initialise_poses(pose_table, camera_poses=None, board_poses=None):
     # Find relative transforms between cameras and rig poses
   camera = estimate_relative_poses(pose_table, axis=0)
 
@@ -689,6 +689,11 @@ def initialise_poses(pose_table, camera_poses=None):
     )
     
   board  = estimate_relative_poses_inv(pose_table, axis=2)
+  if board_poses is not None:
+    board = inverse(Table.create(
+      poses=board_poses,
+      valid=np.ones(board_poses.shape[0], dtype=np.bool)
+    ))
 
   # solve for the rig transforms cam @ rig @ board = pose
   # first take inverse of both sides by board pose  
@@ -701,8 +706,15 @@ def initialise_poses(pose_table, camera_poses=None):
 
   return struct(times=times, camera=camera, board=board)
 
-def initialise_board(ws, camera_poses=None):
+def initialise_board(ws, board_poses=None):
   board = estimate_relative_poses_inv(ws.pose_table, axis=2)
+  if board_poses is not None:
+    info("Board initialisation vs. supplied calibration")
+    report_poses("Board", np.linalg.inv(board_poses), board.poses)
+    board = inverse(Table.create(
+      poses=board_poses,
+      valid=np.ones(board_poses.shape[0], dtype=np.bool)
+    ))
   return board
 
 def initialise_HandEye(ws, camera_poses=None):

@@ -16,13 +16,15 @@ from src.multical.transform import common, rtvec
 from src.multical_scripts.extrinsic_viz import *
 import plotly.express as px
 import pandas as pd
+from src.multical_scripts.extrinsic_viz_board import *
 
 base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
 
 class handEye():
-    def __init__(self, base_path, master_cam=0):
+    def __init__(self, base_path, master_cam=0, master_board=0):
         self.base_path = base_path
         self.master_cam = master_cam
+        self.master_board = master_board
         self.datasetPath = base_path
         self.boardPath = None
         self.poseJsonPath = None
@@ -42,6 +44,8 @@ class handEye():
         self.camintrinsic_param = []
         self.inliers = None
         self.final_campose = {}
+        self.calib_obj = {}
+        self.calibObj_mean = {}
 
     def collect_files(self):
         """
@@ -348,8 +352,18 @@ class handEye():
                         slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, \
                         estimated_slaveB_slaveCam, err, err2 = self.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
 
-                        # if boardS not in self.board_pose[boardM]:
-                        #     self.board_pose[boardM][boardS] = slaveB_wrt_masterB.tolist()
+                        ## for board pose
+                        if boardM not in self.calib_obj:
+                            self.calib_obj[boardM] = {}
+                        if boardS not in self.calib_obj[boardM]:
+                            self.calib_obj[boardM][boardS] = []
+                            self.calib_obj[boardM][boardS].append(rtvec.from_matrix(slaveB_wrt_masterB))
+                        else:
+                            self.calib_obj[boardM][boardS].append(rtvec.from_matrix(slaveB_wrt_masterB))
+                        if boardS in self.calib_obj and boardM in self.calib_obj[boardS]:
+                            poses = [rtvec.from_matrix(np.linalg.inv(rtvec.to_matrix(p))) for p in self.calib_obj[boardS][boardM]]
+                            self.calib_obj[boardM][boardS] += poses
+                        ##
 
                         _, initial_error = self.reprojectionError_calculation(slave_cam, boardS, estimated_slaveB_slaveCam, image_list)
                         # error = sum(reprojection_error)/len(reprojection_error)
@@ -420,12 +434,46 @@ class handEye():
 
         return mean_group_dict
 
+    def calibObj_cluster_mean(self, board=0, limit_pose=1000):
+        # b = Interactive_Extrinsic_Board(self.calib_obj[board])
+        # calibObj_mean = {}
+        master_board = self.workspace.names.board[board]
+        for board_id in self.calib_obj[board].keys():
+            b = self.workspace.names.board[board_id]
+            a0 = np.array(self.calib_obj[board][board_id])
+            if len(a0)>limit_pose:
+                selectedG1 = np.random.choice(np.arange(len(a0)), size=limit_pose)
+                a = np.array([a0[g] for g in selectedG1])
+            else:
+                a = a0
+            if a.size != 0 and len(a)>3:
+                g = common.cluster(a)
+                group = a[g]
+                x = rtvec.to_matrix(common.mean_robust(group))
+                self.calibObj_mean[b] = {}
+                self.calibObj_mean[b]['mean'] = x
+                if len(group)>100:
+                    selectedG = np.random.choice(np.arange(len(group)), size=100)
+                else:
+                    selectedG = np.arange(len(group))
+                self.calibObj_mean[b]['group'] = [rtvec.to_matrix(group[g]) for g in selectedG]
+            else:
+                self.calibObj_mean[b] = {}
+                self.calibObj_mean[b]['mean'] = rtvec.to_matrix(a[0])
+                self.calibObj_mean[b]['group'] = [rtvec.to_matrix(a[idx]) for idx,g in enumerate(a)]
+
+        # group = np.array(cam_value2['group'])[common.cluster(cam_value2['extrinsic'])]
+        b = Interactive_Extrinsic_Board(self.calibObj_mean, self.workspace.names.board)
+        pass
+
     def calc_camPose_param(self, limit_images, num_adjustments, limit_board_image):
         cameras = self.workspace.names.camera
         # cameras = ['08320217']
         for idx, master_cam in enumerate(cameras):
             handEye_dict = self.handEye_table(master_cam=idx, limit_image=limit_images, num_adjustments=num_adjustments, limit_board_image=limit_board_image)
             self.all_handEye[master_cam] = handEye_dict
+
+        self.calibObj_cluster_mean()
 
         mean_calculation = {}
         for cam_name, cam_group in self.all_handEye.items():
@@ -453,12 +501,13 @@ class handEye():
                 if slave in master_value:
                     self.campose_param[master].extend(rtvec.from_matrix(np.array(master_value[slave]['extrinsic'])).tolist())
 
-        self.setCampose_workspace()
+        self.setCamBoardpose_workspace()
         pass
 
-    def setCampose_workspace(self):
+    def setCamBoardpose_workspace(self):
+        ## for camera_poses
         master_cam = self.workspace.names.camera[self.master_cam]  # self.master_cam = 0
-        data = self.workspace.export_Data
+        old_data = self.workspace.export_Data
         cam_pose = {}
         for cam in self.workspace.names.camera:
             if cam == master_cam:
@@ -472,11 +521,32 @@ class handEye():
                 T = matrix.translation(p).tolist()
                 cam_pose[name]['R'] = R
                 cam_pose[name]['T'] = T
-        data.camera_poses = cam_pose
-        self.workspace.export_Data = data
+        # data.camera_poses = cam_pose
+        # self.workspace.export_Data = data
+        ## for camera_poses
+
+        ## for board_poses
+        master_board = self.workspace.names.board[self.master_board]
+        board_pose = {}
+        for board in self.workspace.names.board:
+            if board == master_board:
+                name = master_board
+            else:
+                name = board + '_to_' + master_board
+            board_pose[name] = {}
+            if board in self.calibObj_mean:
+                p = np.array(self.calibObj_mean[board]['mean'])
+                R = matrix.rotation(p).tolist()
+                T = matrix.translation(p).tolist()
+                board_pose[name]['R'] = R
+                board_pose[name]['T'] = T
+        ## for board_poses
+
+        ## for export
+        new_data = struct(cameras=old_data.cameras, boards=self.workspace.names.board, camera_poses=cam_pose, board_poses=board_pose)
         filename = os.path.join(self.base_path, "Calibration_handeye.json")
         with open(filename, 'w') as outfile:
-            json.dump(to_dicts(data), outfile, indent=2)
+            json.dump(to_dicts(new_data), outfile, indent=2)
         pass
 
 
@@ -1047,7 +1117,7 @@ def main6(base_path, limit_images, num_adjustments):
 if __name__ == '__main__':
     # main1(base_path, cam=0, board=3)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    main4(base_path, limit_images=10, num_adjustments=1, limit_board_image=10)
+    main4(base_path, limit_images=10, num_adjustments=0, limit_board_image=10)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass
