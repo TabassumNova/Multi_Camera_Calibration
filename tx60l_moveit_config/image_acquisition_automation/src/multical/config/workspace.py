@@ -39,13 +39,13 @@ def initialise_with_images(ws : Workspace, boards, camera_images,
           isFisheye=camera_opts.isFisheye)
 
 
-    if camera_opts.motion_model == 'hand_eye':
-        ws.initialise_HandEye(
-            # motion=camera_opts.motion_model,
-            motion_model=get_motion_model(camera_opts.motion_model),
-            camera_poses=calib.camera_poses if calib is not None else None
-        )
-    elif camera_opts.motion_model == 'calibrate_board':
+    # if camera_opts.motion_model == 'hand_eye':
+    #     ws.initialise_HandEye(
+    #         # motion=camera_opts.motion_model,
+    #         motion_model=get_motion_model(camera_opts.motion_model),
+    #         camera_poses=calib.camera_poses if calib is not None else None
+    #     )
+    if camera_opts.motion_model == 'calibrate_board':
         ws.initialise_board(runtime)
         pass
     else:

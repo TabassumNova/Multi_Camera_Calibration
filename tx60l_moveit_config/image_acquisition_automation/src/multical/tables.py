@@ -676,8 +676,17 @@ def estimate_camera_board_poses_old(ws):
   return rel_cam_poses, rel_board_poses, board_selection_matrix
 
 
-def initialise_poses(pose_table, camera_poses=None, board_poses=None):
+def initialise_poses_new(pose_table, camera_poses=None, board_poses=None, masterCam = 0):
     # Find relative transforms between cameras and rig poses
+  '''
+  Created on 15th August
+  camera : slaveCam_wrto_masterCam
+  board : slaveBoard_wrto_masterBoard
+  time : pose of boardX_wrto_masterCam
+  here,
+    MasterCam = 0
+    MasterBoard = 0
+    '''
   camera = estimate_relative_poses(pose_table, axis=0)
 
   if camera_poses is not None:
@@ -690,21 +699,59 @@ def initialise_poses(pose_table, camera_poses=None, board_poses=None):
     
   board  = estimate_relative_poses_inv(pose_table, axis=2)
   if board_poses is not None:
+    board = (Table.create(
+      poses=board_poses,
+      valid=np.ones(board_poses.shape[0], dtype=np.bool)
+    ))
+  # times = pose_table._index[masterCam]
+
+  board_relative = multiply_tables(pose_table, expand((board), [0, 1]))
+
+  # solve for unknown rig
+  expanded = broadcast_to(expand(camera, [1, 2]), board_relative)
+  times = relative_between_n(expanded, board_relative, axis=1, inv=True)
+
+  return struct(times=times, camera=camera, board=board)
+
+def initialise_poses(pose_table, camera_poses=None, board_poses=None):
+  '''
+  This is te original one
+  named on 15th August
+  :param pose_table:
+  :param camera_poses:
+  :param board_poses:
+  :return:
+  '''
+
+  # Find relative transforms between cameras and rig poses
+  camera = estimate_relative_poses(pose_table, axis=0)
+
+  if camera_poses is not None:
+    info("Camera initialisation vs. supplied calibration")
+    report_poses("camera", camera_poses, camera.poses)
+    camera = Table.create(
+      poses=camera_poses,
+      valid=np.ones(camera_poses.shape[0], dtype=np.bool)
+    )
+
+  board = estimate_relative_poses_inv(pose_table, axis=2)
+  if board_poses is not None:
     board = inverse(Table.create(
       poses=board_poses,
       valid=np.ones(board_poses.shape[0], dtype=np.bool)
     ))
 
   # solve for the rig transforms cam @ rig @ board = pose
-  # first take inverse of both sides by board pose  
+  # first take inverse of both sides by board pose
   # cam @ rig = board_relative = pose @ board^-1
-  board_relative = multiply_tables(pose_table, expand(inverse(board), [0, 1]) )
-  
-  # solve for unknown rig 
+  board_relative = multiply_tables(pose_table, expand(inverse(board), [0, 1]))
+
+  # solve for unknown rig
   expanded = broadcast_to(expand(camera, [1, 2]), board_relative)
   times = relative_between_n(expanded, board_relative, axis=1, inv=True)
 
   return struct(times=times, camera=camera, board=board)
+
 
 def initialise_board(ws, board_poses=None):
   board = estimate_relative_poses_inv(ws.pose_table, axis=2)

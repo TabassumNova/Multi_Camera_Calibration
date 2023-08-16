@@ -213,14 +213,24 @@ class Workspace:
           camera_poses=None if camera_poses is None else np.array([camera_poses[k] for k in self.names.camera]),
           board_poses=None if board_poses is None else np.array([board_poses[k] for k in self.names.board]))
 
-        calib = Calibration(
-            ParamList(self.cameras, self.names.camera),
-            ParamList(self.boards, self.names.board),
-            self.point_table,
-            PoseSet(pose_init.camera, self.names.camera),
-            PoseSet(pose_init.board, self.names.board),
-            motion_model.init(pose_init.times, self.names.image),
-        )
+        if motion_model == HandEye:
+            calib = Calibration(
+                ParamList(self.cameras, self.names.camera),
+                ParamList(self.boards, self.names.board),
+                self.point_table,
+                PoseSet(pose_init.camera, self.names.camera),
+                PoseSet(pose_init.board, self.names.board),
+                motion_model.init(self, pose_init, self.names.image),
+            )
+        else:
+            calib = Calibration(
+                ParamList(self.cameras, self.names.camera),
+                ParamList(self.boards, self.names.board),
+                self.point_table,
+                PoseSet(pose_init.camera, self.names.camera),
+                PoseSet(pose_init.board, self.names.board),
+                motion_model.init(pose_init.times, self.names.image),
+            )
 
         # calib = calib.reject_outliers_quantile(0.75, 5)
         calib.report(f"Initialisation")

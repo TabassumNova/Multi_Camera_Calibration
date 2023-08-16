@@ -227,14 +227,14 @@ class Calibration(parameters.Parameters):
       # info(f"num_inliers: { len(self.inliers)}")
       return (calib.reprojected.points - calib.point_table.points)[self.inliers].ravel()
 
-    with contextlib.redirect_stdout(LogWriter.info()):
-      res = optimize.least_squares(evaluate, self.param_vec, jac_sparsity=self.sparsity_matrix,
-        verbose=2, x_scale='jac', f_scale=f_scale, ftol=tolerance, max_nfev=max_iterations, method='trf', loss=loss)
+    # with contextlib.redirect_stdout(LogWriter.info()):
+    #   res = optimize.least_squares(evaluate, self.param_vec, jac_sparsity=self.sparsity_matrix,
+    #     verbose=2, x_scale='jac', f_scale=f_scale, ftol=tolerance, max_nfev=max_iterations, method='trf', loss=loss)
 
     ## removed jac_sparsity
-    # with contextlib.redirect_stdout(LogWriter.info()):
-    #   res = optimize.least_squares(evaluate, self.param_vec,
-    #     verbose=2, x_scale='jac', f_scale=f_scale, ftol=tolerance, max_nfev=max_iterations, method='trf', loss=loss)
+    with contextlib.redirect_stdout(LogWriter.info()):
+      res = optimize.least_squares(evaluate, self.param_vec,
+        verbose=2, x_scale='jac', f_scale=f_scale, ftol=tolerance, max_nfev=max_iterations, method='trf', loss=loss)
   
     return self.with_param_vec(res.x)
   

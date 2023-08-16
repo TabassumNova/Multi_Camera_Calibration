@@ -9,7 +9,7 @@ from structs.struct import struct, to_dicts, transpose_lists
 from src.multical.workspace import *
 import src.multical.workspace as ws
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35_test"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30"
 
 def export_workspace(workspace, path):
     '''
