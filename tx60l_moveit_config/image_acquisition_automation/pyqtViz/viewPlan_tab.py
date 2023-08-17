@@ -31,6 +31,8 @@ except ImportError:
 from calibration_tab import *
 # from src.aravis_show_image import find_cameras, show_image
 from functools import partial
+from src.helpers import *
+import cv2
 
 class View_Plan(QWidget):
     def __init__(self):
@@ -39,24 +41,47 @@ class View_Plan(QWidget):
         self.viewer = {}
         self.cameras = None
         self.checkBox = {}
+        self.saved_path = None
+        self.handEyeGripper = None
+        self.camera_images = None
+        self.pose = 1
         # add buttons
         self.btn4_1 = QPushButton(self)
         self.btn4_1.setObjectName('Find Cameras')
         self.btn4_1.setText('Find Cameras')
-        self.btn4_1.setGeometry(QRect(10, 20, 111, 28))
+        self.btn4_1.setGeometry(QRect(10, 50, 111, 28))
         # self.btn4_1.clicked.connect(self.findCameras)
+
+        self.btn4_2 = QPushButton(self)
+        self.btn4_2.setObjectName('Directory')
+        self.btn4_2.setText('Directory')
+        self.btn4_2.setGeometry(QRect(10, 20 , 111, 28))
+        self.btn4_2.clicked.connect(self.open_dir_dialog)
 
         self.label1 = QLabel(self)
         self.label1.setObjectName('Cameras')
         self.label1.setText('Cameras')
         self.label1.setStyleSheet("border: 1px solid black;")
-        self.label1.setGeometry(QRect(125, 20, 1200, 28))
+        self.label1.setGeometry(QRect(125, 50, 1200, 28))
 
-        self.btn4_2 = QPushButton(self)
-        self.btn4_2.setObjectName('Show Next Images')
-        self.btn4_2.setText('Show Next Images')
-        self.btn4_2.setGeometry(QRect(10, 50, 150, 28))
-        self.btn4_2.clicked.connect(self.showImages)
+        self.label10 = QLabel(self)
+        self.label10.setObjectName('Directory')
+        self.label10.setText('Directory')
+        self.label10.setStyleSheet("border: 1px solid black;")
+        self.label10.setGeometry(QRect(125, 20, 1200, 28))
+
+
+        self.btn4_3 = QPushButton(self)
+        self.btn4_3.setObjectName('Show Next Images')
+        self.btn4_3.setText('Show Next Images')
+        self.btn4_3.setGeometry(QRect(10, 80, 150, 28))
+        self.btn4_3.clicked.connect(self.showImages)
+
+        self.btn4_4 = QPushButton(self)
+        self.btn4_4.setObjectName('Save Pose')
+        self.btn4_4.setText('Save Pose')
+        self.btn4_4.setGeometry(QRect(160, 80, 150, 28))
+        self.btn4_4.clicked.connect(self.savePose)
 
         self.label2 = QLabel(self)
         self.label2.setObjectName('Translation')
@@ -179,7 +204,7 @@ class View_Plan(QWidget):
         self.btn14.clicked.connect(self.showImages)
 
         self.gridLayoutWidget4_1 = QWidget(self)
-        self.gridLayoutWidget4_1.setGeometry(QRect(0, 250, 1880, 300))
+        self.gridLayoutWidget4_1.setGeometry(QRect(0, 200, 1880, 300))
         self.gridLayoutWidget4_1.setObjectName("gridLayoutWidget")
         self.gridLayout4_1 = QGridLayout(self.gridLayoutWidget4_1)
         self.gridLayout4_1.setContentsMargins(0, 0, 0, 0)
@@ -187,16 +212,38 @@ class View_Plan(QWidget):
 
         self.setLayout(self.layout)
 
+    def open_dir_dialog(self):
+        '''
+        Select a folder that contains handEyeGripper.json file
+        '''
+        dialog = QFileDialog()
+        self.saved_path = dialog.getExistingDirectory(None, "Select Folder")
+        self.label10.setText(self.saved_path)
+        for path, subdirs, files in os.walk(self.saved_path):
+            for name in files:
+                if name == 'handEyeGripper.json':
+                    self.handEyeGripper = os.path.join(self.saved_path, name)
+        print(self.handEyeGripper)
 
     def findCameras(self):
         num_cams, camera_serial = find_cameras()
         self.cameras = camera_serial
         self.label1.setText(str(camera_serial))
+        for cam in self.cameras:
+            path = self.saved_path + cam + '/'
+            make_directory(path)
 
     def showImages(self):
-        cam_images = show_image()
+        self.camera_images = show_image()
         self.set_viewer(gridLayout=self.gridLayout4_1, cameraImgs=cam_images)
         return 0
+
+    def savePose(self):
+        for cam in self.cameras:
+            path = self.saved_path + cam + '/p' + str(self.pose) + '.png'
+            cv2.imwrite(path, self.camera_images[cam])
+        self.pose += 1
+        pass
 
     def set_viewer(self, gridLayout, cameraImgs):
         # # Create image viewer.
@@ -233,126 +280,126 @@ class View_Plan(QWidget):
     def move_camera(self, cam):
         pass
 
-    def set_viewer(self, gridLayout, group_name="group01", live_view=False, cameraImgs={}):
-        # # # Create image viewer.
-        # self.viewer[0] = QtImageViewer()
-        # self.viewer[0].leftMouseButtonReleased.connect(self.handleLeftClick)
-        #
-        # self.viewer[1] = QtImageViewer()
-        # self.viewer[1].leftMouseButtonReleased.connect(self.handleLeftClick)
-        #
-        # self.viewer[2] = QtImageViewer()
-        # self.viewer[2].leftMouseButtonReleased.connect(self.handleLeftClick)
-        #
-        # self.viewer[3] = QtImageViewer()
-        # self.viewer[3].leftMouseButtonReleased.connect(self.handleLeftClick)
-        #
-        # self.viewer[4] = QtImageViewer()
-        # self.viewer[4].leftMouseButtonReleased.connect(self.handleLeftClick)
-        #
-        # self.viewer[5] = QtImageViewer()
-        # self.viewer[5].leftMouseButtonReleased.connect(self.handleLeftClick)
-        #
-        # if self.folder_path:
-        #     cam1 = self.folder_path + '/cam1'
-        #     self.last_pose = (len([name for name in os.listdir(cam1) if os.path.isfile(os.path.join(cam1, name))]))
-        #     # start = time.time()
-        #     # Open images as numpy array
-        #     v1 = self.folder_path + '/cam1' + '/p' + str(self.pose) + '.png'
-        #     v2 = self.folder_path + '/cam2' + '/p' + str(self.pose) + '.png'
-        #     v3 = self.folder_path + '/cam3' + '/p' + str(self.pose) + '.png'
-        #     v4 = self.folder_path + '/cam4' + '/p' + str(self.pose) + '.png'
-        #     v5 = self.folder_path + '/cam5' + '/p' + str(self.pose) + '.png'
-        #     v6 = self.folder_path + '/cam6' + '/p' + str(self.pose) + '.png'
-        #
-        #     self.viewer[0].open(v1)
-        #     self.viewer[1].open(v2)
-        #     self.viewer[2].open(v3)
-        #     self.viewer[3].open(v4)
-        #     self.viewer[4].open(v5)
-        #     self.viewer[5].open(v6)
-        #
-        #     self.add_3d_scatter()
-        #     self.add_table_widget()
-
-
-        if live_view:
-            cam1 = 11120229
-            cam2 = 11120233
-            cam3 = 11120237
-            cam4 = 11120241
-            cam5 = 42120642
-            cam6 = 42120643
-
-            if cam1 in cameraImgs:
-                v1 = cameraImgs[cam1]
-            else:
-                v1 = np.ones((5,5))
-            if cam2 in cameraImgs:
-                v2 = cameraImgs[cam2]
-            else:
-                v2 = np.ones((5,5))
-            if cam3 in cameraImgs:
-                v3 = cameraImgs[cam3]
-            else:
-                v3 = np.ones((5,5))
-            if cam4 in cameraImgs:
-                v4 = cameraImgs[cam4]
-            else:
-                v4 = np.ones((5,5))
-            if cam5 in cameraImgs:
-                v5 = cameraImgs[cam5]
-            else:
-                v5 = np.ones((5,5))
-            if cam6 in cameraImgs:
-                v6 = cameraImgs[cam6]
-            else:
-                v6 = np.ones((5,5))
-
-            self.viewer[0].setImage(v1)
-            self.viewer[1].setImage(v2)
-            self.viewer[2].setImage(v3)
-            self.viewer[3].setImage(v4)
-            self.viewer[4].setImage(v5)
-            self.viewer[5].setImage(v6)
-
-        start = time.time()
-        label1 = QLabel()
-        label1.setText("Camera 01")
-        label1.setAlignment(Qt.AlignCenter)
-        gridLayout.addWidget(label1, 1, 0)
-        label2 = QLabel()
-        label2.setText("Camera 02")
-        label2.setAlignment(Qt.AlignCenter)
-        gridLayout.addWidget(label2, 1, 1)
-        label3 = QLabel()
-        label3.setText("Camera 03")
-        label3.setAlignment(Qt.AlignCenter)
-        gridLayout.addWidget(label3, 1, 2)
-        label4 = QLabel()
-        label4.setText("Camera 04")
-        label4.setAlignment(Qt.AlignCenter)
-        gridLayout.addWidget(label4, 1, 3)
-        label5 = QLabel()
-        label5.setText("Camera 05")
-        label5.setAlignment(Qt.AlignCenter)
-        gridLayout.addWidget(label5, 1, 4)
-        label6 = QLabel()
-        label6.setText("Camera 06")
-        label6.setAlignment(Qt.AlignCenter)
-        gridLayout.addWidget(label6, 1, 5)
-        label7 = QLabel()
-        label7.setText("Pose: "+ str(self.pose))
-        label7.setAlignment(Qt.AlignCenter)
-        gridLayout.addWidget(label7, 2, 0)
-
-        # self.layout.update()
-        gridLayout.addWidget(self.viewer[0], 0, 0)
-        gridLayout.addWidget(self.viewer[1], 0, 1)
-        gridLayout.addWidget(self.viewer[2], 0, 2)
-        gridLayout.addWidget(self.viewer[3], 0, 3)
-        gridLayout.addWidget(self.viewer[4], 0, 4)
-        gridLayout.addWidget(self.viewer[5], 0, 5)
-
-        end = time.time()
-        print("Passed time: ", end - start)
+    # def set_viewer(self, gridLayout, group_name="group01", live_view=False, cameraImgs={}):
+    #     # # # Create image viewer.
+    #     # self.viewer[0] = QtImageViewer()
+    #     # self.viewer[0].leftMouseButtonReleased.connect(self.handleLeftClick)
+    #     #
+    #     # self.viewer[1] = QtImageViewer()
+    #     # self.viewer[1].leftMouseButtonReleased.connect(self.handleLeftClick)
+    #     #
+    #     # self.viewer[2] = QtImageViewer()
+    #     # self.viewer[2].leftMouseButtonReleased.connect(self.handleLeftClick)
+    #     #
+    #     # self.viewer[3] = QtImageViewer()
+    #     # self.viewer[3].leftMouseButtonReleased.connect(self.handleLeftClick)
+    #     #
+    #     # self.viewer[4] = QtImageViewer()
+    #     # self.viewer[4].leftMouseButtonReleased.connect(self.handleLeftClick)
+    #     #
+    #     # self.viewer[5] = QtImageViewer()
+    #     # self.viewer[5].leftMouseButtonReleased.connect(self.handleLeftClick)
+    #     #
+    #     # if self.folder_path:
+    #     #     cam1 = self.folder_path + '/cam1'
+    #     #     self.last_pose = (len([name for name in os.listdir(cam1) if os.path.isfile(os.path.join(cam1, name))]))
+    #     #     # start = time.time()
+    #     #     # Open images as numpy array
+    #     #     v1 = self.folder_path + '/cam1' + '/p' + str(self.pose) + '.png'
+    #     #     v2 = self.folder_path + '/cam2' + '/p' + str(self.pose) + '.png'
+    #     #     v3 = self.folder_path + '/cam3' + '/p' + str(self.pose) + '.png'
+    #     #     v4 = self.folder_path + '/cam4' + '/p' + str(self.pose) + '.png'
+    #     #     v5 = self.folder_path + '/cam5' + '/p' + str(self.pose) + '.png'
+    #     #     v6 = self.folder_path + '/cam6' + '/p' + str(self.pose) + '.png'
+    #     #
+    #     #     self.viewer[0].open(v1)
+    #     #     self.viewer[1].open(v2)
+    #     #     self.viewer[2].open(v3)
+    #     #     self.viewer[3].open(v4)
+    #     #     self.viewer[4].open(v5)
+    #     #     self.viewer[5].open(v6)
+    #     #
+    #     #     self.add_3d_scatter()
+    #     #     self.add_table_widget()
+    #
+    #
+    #     if live_view:
+    #         cam1 = 11120229
+    #         cam2 = 11120233
+    #         cam3 = 11120237
+    #         cam4 = 11120241
+    #         cam5 = 42120642
+    #         cam6 = 42120643
+    #
+    #         if cam1 in cameraImgs:
+    #             v1 = cameraImgs[cam1]
+    #         else:
+    #             v1 = np.ones((5,5))
+    #         if cam2 in cameraImgs:
+    #             v2 = cameraImgs[cam2]
+    #         else:
+    #             v2 = np.ones((5,5))
+    #         if cam3 in cameraImgs:
+    #             v3 = cameraImgs[cam3]
+    #         else:
+    #             v3 = np.ones((5,5))
+    #         if cam4 in cameraImgs:
+    #             v4 = cameraImgs[cam4]
+    #         else:
+    #             v4 = np.ones((5,5))
+    #         if cam5 in cameraImgs:
+    #             v5 = cameraImgs[cam5]
+    #         else:
+    #             v5 = np.ones((5,5))
+    #         if cam6 in cameraImgs:
+    #             v6 = cameraImgs[cam6]
+    #         else:
+    #             v6 = np.ones((5,5))
+    #
+    #         self.viewer[0].setImage(v1)
+    #         self.viewer[1].setImage(v2)
+    #         self.viewer[2].setImage(v3)
+    #         self.viewer[3].setImage(v4)
+    #         self.viewer[4].setImage(v5)
+    #         self.viewer[5].setImage(v6)
+    #
+    #     start = time.time()
+    #     label1 = QLabel()
+    #     label1.setText("Camera 01")
+    #     label1.setAlignment(Qt.AlignCenter)
+    #     gridLayout.addWidget(label1, 1, 0)
+    #     label2 = QLabel()
+    #     label2.setText("Camera 02")
+    #     label2.setAlignment(Qt.AlignCenter)
+    #     gridLayout.addWidget(label2, 1, 1)
+    #     label3 = QLabel()
+    #     label3.setText("Camera 03")
+    #     label3.setAlignment(Qt.AlignCenter)
+    #     gridLayout.addWidget(label3, 1, 2)
+    #     label4 = QLabel()
+    #     label4.setText("Camera 04")
+    #     label4.setAlignment(Qt.AlignCenter)
+    #     gridLayout.addWidget(label4, 1, 3)
+    #     label5 = QLabel()
+    #     label5.setText("Camera 05")
+    #     label5.setAlignment(Qt.AlignCenter)
+    #     gridLayout.addWidget(label5, 1, 4)
+    #     label6 = QLabel()
+    #     label6.setText("Camera 06")
+    #     label6.setAlignment(Qt.AlignCenter)
+    #     gridLayout.addWidget(label6, 1, 5)
+    #     label7 = QLabel()
+    #     label7.setText("Pose: "+ str(self.pose))
+    #     label7.setAlignment(Qt.AlignCenter)
+    #     gridLayout.addWidget(label7, 2, 0)
+    #
+    #     # self.layout.update()
+    #     gridLayout.addWidget(self.viewer[0], 0, 0)
+    #     gridLayout.addWidget(self.viewer[1], 0, 1)
+    #     gridLayout.addWidget(self.viewer[2], 0, 2)
+    #     gridLayout.addWidget(self.viewer[3], 0, 3)
+    #     gridLayout.addWidget(self.viewer[4], 0, 4)
+    #     gridLayout.addWidget(self.viewer[5], 0, 5)
+    #
+    #     end = time.time()
+    #     print("Passed time: ", end - start)

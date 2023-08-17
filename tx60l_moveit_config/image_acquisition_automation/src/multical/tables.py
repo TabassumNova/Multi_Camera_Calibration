@@ -676,7 +676,7 @@ def estimate_camera_board_poses_old(ws):
   return rel_cam_poses, rel_board_poses, board_selection_matrix
 
 
-def initialise_poses_new(pose_table, camera_poses=None, board_poses=None, masterCam = 0):
+def initialise_poses(pose_table, camera_poses=None, board_poses=None, masterCam = 0):
     # Find relative transforms between cameras and rig poses
   '''
   Created on 15th August
@@ -713,7 +713,7 @@ def initialise_poses_new(pose_table, camera_poses=None, board_poses=None, master
 
   return struct(times=times, camera=camera, board=board)
 
-def initialise_poses(pose_table, camera_poses=None, board_poses=None):
+def initialise_poses_org(pose_table, camera_poses=None, board_poses=None):
   '''
   This is te original one
   named on 15th August

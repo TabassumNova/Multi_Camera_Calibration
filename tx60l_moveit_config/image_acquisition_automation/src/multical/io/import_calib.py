@@ -86,7 +86,8 @@ def load_json(filename):
 def import_cameras(calib_data):
     assert 'cameras' in calib_data, "import_cameras: no camera information in data"
     cameras = {k:import_camera(camera) for k, camera in calib_data.cameras.items()}
-    boards = calib_data.boards
+    if 'board_poses' in calib_data:
+        boards = calib_data.boards
 
     transforms_cameras = import_pose_graph(calib_data.camera_poses, cameras)\
       if 'camera_poses' in calib_data else None

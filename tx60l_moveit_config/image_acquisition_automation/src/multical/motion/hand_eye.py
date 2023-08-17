@@ -91,11 +91,14 @@ class HandEye(Parameters, MotionModel):
                       t = matrix.transform(t1, np.linalg.inv(self.base_wrt_camera[cam_id]))
                   t0 = self.workspace.pose_table.poses[cam_id][img_id][board_id]
                   err = rtvec.from_matrix(t0) - rtvec.from_matrix(t)
-                  objectPoints = (world_points['points'][board_id])
+                  # objectPoints = (world_points['points'][board_id])
+                  objectPoints = np.array([self.workspace.boards[board_id].adjusted_points])
                   cameraMatrix = (cameras[cam_id].intrinsic)
                   distortion = (cameras[cam_id].dist)
                   rvec, tvec = rtvec.split(rtvec.from_matrix(t))
                   imP, _ = cv2.projectPoints(np.copy(objectPoints), rvec, tvec, cameraMatrix, distortion)
+                  cornerPoints = self.workspace.point_table.points[cam_id][img_id][board_id]
+                  error = np.linalg.norm(cornerPoints - imP.reshape([-1, 2]), axis=-1)
                   imagePoints[cam_id][img_id][board_id] = imP.reshape([-1, 2])
                   imagePoints_valid[cam_id][img_id][board_id] = True
 

@@ -1,7 +1,7 @@
 import math
 
 import numpy as np
-
+from src.extrinsic2pyramid.camera_pose_visualizer import CameraPoseVisualizer
 import src.multical.app.calibrate as calibrate
 import src.multical.config.arguments as args
 from src.multical.tables import *
@@ -18,7 +18,7 @@ import plotly.express as px
 import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):
@@ -38,6 +38,7 @@ class handEye():
         self.cam_pose = None
         # self.cam_pose2 = {}
         # self.board_pose2 = {}
+        self.camera_color = {}
         self.all_handEye = {}
         self.board_param = []
         self.campose_param = {}
@@ -67,7 +68,7 @@ class handEye():
 
     def initiate_workspace(self, show_all_poses=False):
         pathO = args.PathOpts(image_path=self.datasetPath)
-        cam = args.CameraOpts(intrinsic_error_limit=0.5)
+        cam = args.CameraOpts(calibration="D:\MY_DRIVE_N\Masters_thesis\Dataset\V38\Calibration_handeye.json",intrinsic_error_limit=0.5)
         # pose_estimation_method = "solvePnPRansac"
         pose_estimation_method = "solvePnPGeneric"
         runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=show_all_poses)
@@ -89,6 +90,7 @@ class handEye():
             self.board_param.extend(rtvec.from_matrix(self.workspace.board_poses.poses[b]).tolist())
         pass
         # self.refine_detected_points()
+        self.set_Cam_color()
 
     def refine_detected_points(self):
         for idxc, cam in enumerate(self.workspace.names.camera):
@@ -218,10 +220,112 @@ class handEye():
                                 camera_wrt_world=camera_wrt_world, base_wrt_gripper=base_wrt_gripper, estimated_gripper_base=estimated_gripper_base, images=image_list,
                                 corners=corner_list, objPoints=point3D_list)
 
-        self.reprojectionError_Calculation_new(handEye_struct)
-        self.test_robotMove(handEye_struct)
+        # self.reprojectionError_Calculation_new(handEye_struct)
+        # self.test_robotMove(handEye_struct)
 
-        return handEye_struct
+        return base_wrt_cam, gripper_wrt_world
+
+    def viewPlanSimple(self, limit_board_image=10):
+        '''
+        If the number of hand-eye transformations is very few. with cube
+        '''
+        num_cameras = len(self.workspace.names.camera)
+        num_boards = len(self.workspace.names.board)
+        handEyeGripper_dict = {}
+        for cam_id, cam in enumerate(self.workspace.names.camera):
+            if cam not in handEyeGripper_dict:
+                handEyeGripper_dict[cam] = {}
+            viewed_boards = [b for b in range(0, num_boards) if
+                             self.workspace.pose_table.valid[cam_id][:, b].sum() > limit_board_image]
+            for board_id in viewed_boards:
+                board = self.workspace.names.board[board_id]
+                if board not in handEyeGripper_dict[cam]:
+                    handEyeGripper_dict[cam][board] = {}
+                base_wrt_cam, gripper_wrt_world = self.handEye_gripper(cam_id, board_id)
+                handEyeGripper_dict[cam][board]['base_wrt_cam'] = base_wrt_cam.tolist()
+                handEyeGripper_dict[cam][board]['gripper_wrt_world'] = gripper_wrt_world.tolist()
+
+        json_object = json.dumps(handEyeGripper_dict, indent=4)
+        # Writing to sample.json
+        path = os.path.join(self.base_path, 'handEyeGripper.json')
+        with open(path, "w") as outfile:
+            outfile.write(json_object)
+        pass
+
+    def viewPlanRobust(self, limit_board_image=10):
+        '''
+        This function will return handEye pose for Camera-Base and Board-Gripper
+        It will work if the hand-eye has robust transformation with isohedron
+        '''
+
+        num_cameras = len(self.workspace.names.camera)
+        num_boards = len(self.workspace.names.board)
+
+        base_camera_list = {}
+        gripper_board_list = {}
+        serial = 0
+        cam_visualizer = CameraPoseVisualizer([-2000, 2000], [-2000, 2000], [-2000, 2000])
+        cam_layout = go.Figure()
+        cam_layout.add_annotation(dict(font=dict(color='black', size=20), x=0, y=0.12, showarrow=False, text='camera',
+                                         textangle=0, xanchor='left', xref="paper", yref="paper"))
+        board_visualizer = CameraPoseVisualizer([-2000, 2000], [-2000, 2000], [-2000, 2000])
+        board_layout = go.Figure()
+        board_layout.add_annotation(dict(font=dict(color='black', size=20), x=0, y=0.12, showarrow=False, text='board',
+                                       textangle=0, xanchor='left', xref="paper", yref="paper"))
+        for cam_id, cam in enumerate(self.workspace.names.camera):
+            if cam not in base_camera_list:
+                base_camera_list[cam] = {}
+                base_camera_list[cam]['group'] = []
+            viewed_boards = [b for b in range(0, num_boards) if
+                             self.workspace.pose_table.valid[cam_id][:, b].sum() > limit_board_image]
+            for board_id, board in enumerate(self.workspace.names.board):
+                if board not in gripper_board_list:
+                    gripper_board_list[board] = {}
+                    gripper_board_list[board]['group'] = []
+                if board_id in viewed_boards:
+                    base_wrt_cam, gripper_wrt_world = self.handEye_gripper(cam_id, board_id)
+                    base_camera_list[cam]['group'].append(rtvec.from_matrix(base_wrt_cam))
+                    gripper_board_list[board]['group'].append(rtvec.from_matrix(gripper_wrt_world))
+                    data_cam = cam_visualizer.extrinsic2pyramid(base_wrt_cam, color=self.camera_color[cam],
+                                                        focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False,
+                                                        hover_template=cam)
+                    data_board = board_visualizer.extrinsic2pyramid(gripper_wrt_world, color='red',
+                                                                focal_len_scaled=0.1, aspect_ratio=0.3,
+                                                                show_legend=False,
+                                                                hover_template=board)
+                    cam_layout.add_trace(data_cam)
+                    board_layout.add_trace(data_board)
+
+        for cam_id, cam in enumerate(self.workspace.names.camera):
+            if len(base_camera_list[cam]['group'])>=3:
+                mean = rtvec.to_matrix(common.mean_robust(np.array(base_camera_list[cam]['group'])))
+                base_camera_list[cam]['mean'] = mean
+            else:
+                base_camera_list[cam]['mean'] = rtvec.to_matrix(base_camera_list[cam]['group'][0])
+            data_cam_mean = cam_visualizer.extrinsic2pyramid(base_camera_list[cam]['mean'], color='black',
+                                                        focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False,
+                                                        hover_template=cam)
+            cam_layout.add_trace(data_cam_mean)
+        for board_id, board in enumerate(self.workspace.names.board):
+            if len(gripper_board_list[board]['group']) >= 3:
+                mean = rtvec.to_matrix(common.mean_robust(np.array(gripper_board_list[board]['group'])))
+                gripper_board_list[board]['mean'] = mean
+            else:
+                gripper_board_list[board]['mean'] = rtvec.to_matrix(gripper_board_list[board]['group'][0])
+            data_board_mean = board_visualizer.extrinsic2pyramid(gripper_board_list[board]['mean'], color='black',
+                                                            focal_len_scaled=0.1, aspect_ratio=0.3,
+                                                            show_legend=False,
+                                                            hover_template=board)
+
+            board_layout.add_trace(data_board_mean)
+        cam_layout.show()
+        board_layout.show()
+        pass
+
+    def set_Cam_color(self):
+        colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'lime', 'pink', 'teal', 'darkcyan', 'violet', 'brown', 'indigo']
+        for idx, cam in enumerate(self.workspace.names.camera):
+            self.camera_color[cam] = colors[idx]
 
     def hand_eye_robot_world(self, cam_world_R, cam_world_t, base_gripper_R, base_gripper_t):
         base_cam_r, base_cam_t, gripper_world_r, gripper_world_t = \
@@ -1018,7 +1122,7 @@ class handEye():
             outfile.write(json_object)
         pass
 
-def main1(base_path, cam, board):
+def main1(base_path, limit_image=10):
     '''
     Input->  base_path : It takes folder containing only 1 camera, board.yaml, calibration.json, gripper_pose.json
              cam : int (choice 0)
@@ -1028,8 +1132,10 @@ def main1(base_path, cam, board):
     h = handEye(base_path)
     h.initiate_workspace()
     h.set_gripper_pose()
-    handEye_struct = h.handEye_gripper(camera=cam, board=board)
-    h.export_handEyeGripper(handEye_struct)
+    # h.viewPlanRobust()
+    h.viewPlanSimple()
+
+    # h.export_handEyeGripper(handEye_struct)
     # h.estimate_camera_board_poses()
 
 def main2(base_path, master="cam218"):
@@ -1115,9 +1221,9 @@ def main6(base_path, limit_images, num_adjustments):
     pass
 
 if __name__ == '__main__':
-    # main1(base_path, cam=0, board=3)
+    main1(base_path, limit_image=10)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    main4(base_path, limit_images=10, num_adjustments=0, limit_board_image=10)
+    # main4(base_path, limit_images=10, num_adjustments=0, limit_board_image=10)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass

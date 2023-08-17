@@ -39,7 +39,7 @@ def show_image():
         cam.start_acquisition_continuous()
         frame = np.asarray(cam.pop_frame())
         cam_images[serial] = frame
-        print(cam_images[serial].max)
+        # print(cam_images[serial].max)
         cam.stop_acquisition()
 
     return cam_images
