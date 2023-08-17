@@ -49,7 +49,10 @@ class Boards:
 
 
 def show_boards(args):
-  boards = board.load_config(args.boards)
+  if isinstance(args.boards, str):
+    boards = board.load_config(args.boards)
+  if isinstance(args.boards, dict):
+    boards = args.boards
 
   print("Using boards:")
   for name, b in boards.items():
@@ -99,7 +102,7 @@ def show_boards(args):
       image = show_detections(image, detections, radius=10)
       display(image)
     else:
-      return detections
+      return boards, detections
 
     if args.write_detect_image is not None:
       pathlib.Path(args.write_detect_image).mkdir(parents=True, exist_ok=True)

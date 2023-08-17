@@ -29,7 +29,7 @@ def board_config(detected_board):
     return board
 
 
-def board_pose(objpoints, corners, ids, board, camMatrix, camDist, image, method="solvePnP"):
+def board_pose(objpoints, corners, ids, camMatrix, camDist, method="solvePnPGeneric"):
     # ret, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(corners, ids, board, camMatrix, camDist, np.empty(1), np.empty(1))
     # euler_deg = rotVec_to_euler(rvecs)
     # print(image + ' angle = ', euler_deg )
@@ -73,6 +73,11 @@ def rotVec_to_euler(rvecs):
     r = R.from_rotvec(rvecs.reshape(-1))
     euler_deg = r.as_euler('xyz', degrees=True)
     return euler_deg
+
+def euler_to_rotVec(euler_angle):
+    r = R.from_euler('xyz', euler_angle, degrees=True)
+    rvec = r.as_rotvec()
+    return rvec
 
 def draw_cube(img, imgpts):
     img = np.float64(img)

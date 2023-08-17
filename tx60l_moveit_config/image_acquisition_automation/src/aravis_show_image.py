@@ -16,7 +16,7 @@ def find_cameras():
     return num_cams, camera_serial
 
 
-def show_image():
+def show_image(size_percentage=1):
     cameras = get_device_ids()
     num_cams = len(cameras)
     # arv_camera = []
@@ -29,10 +29,10 @@ def show_image():
         serial = str(cameras[cam_idx][-8:-1]+cameras[cam_idx][-1])
         # camera_serial.append(serial)
         cam = Camera(cameras[cam_idx])
-        cam.set_feature("Width", 5472/2)
-        cam.set_feature("Height", 3648/2)
+        cam.set_feature("Width", 5472*size_percentage)
+        cam.set_feature("Height", 3648*size_percentage)
         cam.set_frame_rate(2)
-        cam.set_exposure_time(1000000)
+        # cam.set_exposure_time(1000000)
         # arv_camera.append(cam)
         # new_path.append(base_path + camera_serial[cam_idx] + '/')
         # make_directory(new_path[cam_idx])
