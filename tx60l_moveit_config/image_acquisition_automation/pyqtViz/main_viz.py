@@ -7,6 +7,7 @@
 import os.path
 from cameraWindow import *
 from calibrtaion_tab2 import *
+from src.aravis_show_image import *
 # INFO: QtInteractor can not work with PyQt6
 # PyQt5
 from PyQt5.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize, QRect

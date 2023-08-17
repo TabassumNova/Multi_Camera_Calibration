@@ -11,7 +11,7 @@ def find_cameras():
     camera_serial = []
     for cam_idx in range(num_cams):
         serial = cameras[cam_idx][-8:-1]+cameras[cam_idx][-1]
-        camera_serial.append(int(serial))
+        camera_serial.append(str(serial))
 
     return num_cams, camera_serial
 
@@ -26,7 +26,7 @@ def show_image():
     cam_images = {}
 
     for cam_idx in range(num_cams):
-        serial = int(cameras[cam_idx][-8:-1]+cameras[cam_idx][-1])
+        serial = str(cameras[cam_idx][-8:-1]+cameras[cam_idx][-1])
         # camera_serial.append(serial)
         cam = Camera(cameras[cam_idx])
         cam.set_feature("Width", 5472/2)

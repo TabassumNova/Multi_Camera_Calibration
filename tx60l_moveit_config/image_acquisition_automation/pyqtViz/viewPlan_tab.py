@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from src.multical_scripts.board_angle import *
 from src.multical_scripts.handEye_viz import *
+from src.aravis_show_image import *
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
     import numpy as np
@@ -45,12 +46,13 @@ class View_Plan(QWidget):
         self.handEyeGripper = None
         self.camera_images = None
         self.pose = 1
+        self.currentCamera = None
         # add buttons
         self.btn4_1 = QPushButton(self)
         self.btn4_1.setObjectName('Find Cameras')
         self.btn4_1.setText('Find Cameras')
         self.btn4_1.setGeometry(QRect(10, 50, 111, 28))
-        # self.btn4_1.clicked.connect(self.findCameras)
+        self.btn4_1.clicked.connect(self.findCameras)
 
         self.btn4_2 = QPushButton(self)
         self.btn4_2.setObjectName('Directory')
@@ -230,19 +232,20 @@ class View_Plan(QWidget):
         self.cameras = camera_serial
         self.label1.setText(str(camera_serial))
         for cam in self.cameras:
-            path = self.saved_path + cam + '/'
+            path = self.saved_path + '/' + cam + '/'
             make_directory(path)
 
     def showImages(self):
         self.camera_images = show_image()
-        self.set_viewer(gridLayout=self.gridLayout4_1, cameraImgs=cam_images)
+        self.set_viewer(gridLayout=self.gridLayout4_1, cameraImgs=self.camera_images)
         return 0
 
     def savePose(self):
         for cam in self.cameras:
-            path = self.saved_path + cam + '/p' + str(self.pose) + '.png'
+            path = self.saved_path + '/' + cam + '/p' + str(self.pose) + '.png'
             cv2.imwrite(path, self.camera_images[cam])
         self.pose += 1
+        print('save pose')
         pass
 
     def set_viewer(self, gridLayout, cameraImgs):
@@ -263,7 +266,7 @@ class View_Plan(QWidget):
 
     def open_ImageViewer(self, gridLayout, cam_imgs):
         for idx,v in enumerate(self.viewer):
-            self.viewer[v].setImage(cam_imgs[idx])
+            self.viewer[v].setImage(cam_imgs[v])
             gridLayout.addWidget(self.viewer[v], 0, idx)
 
     def add_cameraCheck(self, gridLayout):
@@ -273,10 +276,29 @@ class View_Plan(QWidget):
             # btn = QPushButton(self)
             # btn.setObjectName(cam)
             # btn.setText(cam)
-            self.checkBox[cam].clicked.connect(partial(self.move_camera, cam))
+            # self.checkBox[cam].clicked.connect(partial(self.selectedCamera, cam))
+            self.checkBox[cam].stateChanged.connect(partial(self.selectedCamera, cam))
             self.checkBox[cam].setGeometry(QRect(0, 650, 30, 28))
             gridLayout.addWidget(self.checkBox[cam], 1, idx)
 
+    def selectedCamera(self, cam):
+        state = self.checkBox[cam].isChecked()
+        if state:
+            self.currentCamera = cam
+        else:
+            self.currentCamera = None
+        print(self.currentCamera)
+
+        # print(state)
+        # if state == Qt.CheckState.Checked:
+        #     print('Checked')
+        # elif state == Qt.CheckState.Unchecked:
+        #     print('Unchecked')
+        # self.currentCamera = cam
+        # print(self.currentCamera)
+        # print(cam)
+        pass
+    
     def move_camera(self, cam):
         pass
 
