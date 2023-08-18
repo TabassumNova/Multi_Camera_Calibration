@@ -21,8 +21,9 @@ from PyQt5.QtGui import *
 #     QHBoxLayout, QGridLayout, QLineEdit, QLabel, QTabWidget, QScrollArea, QTextBrowser, QCheckBox
 # from PyQt6.QtWidgets import *
 # from PyQt6.QtGui import *
-from src.multical_scripts.board_angle import *
+
 from src.multical_scripts.handEye_viz import *
+from src.multical_scripts.board_angle import *
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
     import numpy as np

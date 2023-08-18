@@ -35,5 +35,5 @@ if __name__ == '__main__':
             objpoints = np.array([adjusted_points[a] for a in ids], dtype=np.float32).reshape((-1, 3))
             
             ret, rvecs, tvecs, euler_deg, view_angle = board_pose(objpoints,
-                                                undistorted, ids, cam_matrix, cam_dist)
+                                                undistorted, ids, cam_matrix, cam_dist, method="solvePnP")
             pass

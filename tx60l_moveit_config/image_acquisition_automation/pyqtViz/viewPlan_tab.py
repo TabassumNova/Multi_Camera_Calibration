@@ -401,7 +401,7 @@ class View_Plan(QWidget):
         objpoints = np.array([adjusted_points[a] for a in ids], dtype=np.float32).reshape((-1, 3))
         
         ret, rvecs, tvecs, euler_deg, view_angle = board_pose(objpoints,
-                                            undistorted, ids, cam_matrix, cam_dist)
+                                            undistorted, ids, cam_matrix, cam_dist, method="solvePnP")
         self.tvecs = tvecs
         self.euler_angle = euler_deg
         self.new_tvecs = self.tvecs
