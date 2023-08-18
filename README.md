@@ -139,7 +139,17 @@ DICT_6X6_1000.json
 
 # OpenCV Issues
 - For aruco, PyQT related issues
+    - pip3 uninstall opencv-python
+    - python3 -m pip install opencv-contrib-python
     - pip install opencv-contrib-python-headless==4.6.0.66
 - cv2.solvePnPGeneric sometimes show irrelevent results
     - take 3/5 pictures of the same poses. Calculate pose. Take average of the poses
+
+- openCV >= 4.6 (Python>= 3.6): 
+    - solvePnPGeneric/ solvePnP working
+    - PyQt5 not working
+- openCV = 4.2:
+    - solvePnPGeneric not working
+    - solvePnP working
+    - PyQt5 working
 
