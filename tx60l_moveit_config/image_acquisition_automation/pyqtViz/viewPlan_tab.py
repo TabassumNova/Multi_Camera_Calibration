@@ -395,7 +395,7 @@ class View_Plan(QWidget):
                                  np.array(self.cameraIntrinsic['cameras'][self.currentCamera]['dist'], dtype=np.float32)
         ids = self.detection[board_num].ids
         corners = np.array(self.detection[board_num].corners, dtype=np.float32).reshape(-1, 2)
-        undistorted = cv2.undistortPoints(corners, cam_matrix, cam_dist)
+        undistorted = cv2.undistortPoints(corners, cam_matrix, cam_dist, P=cam_matrix)
         detected_board = self.boards[board_num]
         adjusted_points = self.boards_config[detected_board].adjusted_points
         objpoints = np.array([adjusted_points[a] for a in ids], dtype=np.float32).reshape((-1, 3))
