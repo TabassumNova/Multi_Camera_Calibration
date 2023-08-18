@@ -1,5 +1,5 @@
 import os.path
-# import rospy
+
 from cameraWindow import *
 from calibrtaion_tab2 import *
 # INFO: QtInteractor can not work with PyQt6
@@ -13,6 +13,16 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QSpinBox, QWidget, QPushB
     QHBoxLayout, QGridLayout, QLineEdit, QLabel, QTabWidget, QScrollArea, QTextBrowser, QCheckBox
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+
+# from PyQt6.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize, QRect
+# from PyQt6.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen, QColor
+# from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
+#     QGraphicsItem, QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsLineItem, QGraphicsPolygonItem, QTableWidget, \
+#     QTableWidgetItem
+# from PyQt6.QtWidgets import QApplication, QMainWindow, QSpinBox, QWidget, QPushButton, QTextEdit, QVBoxLayout, \
+#     QHBoxLayout, QGridLayout, QLineEdit, QLabel, QTabWidget, QScrollArea, QTextBrowser, QCheckBox
+# from PyQt6.QtWidgets import *
+# from PyQt6.QtGui import *
 from src.multical_scripts.board_angle import *
 from src.multical_scripts.handEye_viz import *
 # from src.aravis_show_image import *
@@ -31,22 +41,24 @@ except ImportError:
     qimage2ndarray = None
 
 from calibration_tab import *
-# from src.aravis_show_image import find_cameras, show_image
+from src.aravis_show_image import find_cameras, show_image
 from functools import partial
 from src.helpers import *
 from src.multical_scripts.camcalib_detect import *
 from src.multical.board import load_config as board_load_config
 from src.multical_scripts import *
 import cv2
-from src.box_attacher_3 import *
-from src.data_robot_mover2 import *
+
+import rospy
+# from src.box_attacher_3 import *
+# from src.data_robot_mover2 import *
 
 class View_Plan(QWidget):
     def __init__(self):
         super().__init__()
         self.layout = QGridLayout(self)
         self.box_attacher = None
-        self.start_boxAttacher()
+        # self.start_boxAttacher()
         self.viewer = {}
         self.cameras = None
         self.camera_checkBox = {}
@@ -249,6 +261,19 @@ class View_Plan(QWidget):
         self.gridLayout4_1.setContentsMargins(0, 0, 0, 0)
         self.gridLayout4_1.setObjectName("gridLayout")
 
+        self.gridLayoutWidget4_2 = QWidget(self)
+        self.gridLayoutWidget4_2.setGeometry(QRect(110, 690, 300, 28))
+        self.gridLayoutWidget4_2.setObjectName("gridLayoutWidget")
+        self.gridLayout4_2 = QGridLayout(self.gridLayoutWidget4_2)
+        self.gridLayout4_2.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout4_2.setObjectName("gridLayout")
+
+        self.btn4_5 = QPushButton(self)
+        self.btn4_5.setObjectName('Detect Boards')
+        self.btn4_5.setText('Detect Boards')
+        self.btn4_5.setGeometry(QRect(0, 690, 100, 28))
+        self.btn4_5.clicked.connect(partial(self.detectBoards, self.gridLayout4_2))
+
         self.setLayout(self.layout)
 
     def start_boxAttacher(self):
@@ -292,7 +317,7 @@ class View_Plan(QWidget):
             make_directory(path)
 
     def showImages(self):
-        self.camera_images = show_image()
+        self.camera_images = show_image(size_percentage=1)
         self.set_viewer(gridLayout=self.gridLayout4_1, cameraImgs=self.camera_images)
         return 0
 
@@ -343,8 +368,8 @@ class View_Plan(QWidget):
         for idx, board in enumerate(board_list):
             self.board_checkBox[board] = QCheckBox(text=board)
             self.board_checkBox[board].stateChanged.connect(partial(self.selectedBoard, board))
-            self.board_checkBox[board].setGeometry(QRect(0, 690, 30, 28))
-            gridLayout.addWidget(self.board_checkBox[board], 1, idx)
+            self.board_checkBox[board].setGeometry(QRect(110, 690, 30, 28))
+            gridLayout.addWidget(self.board_checkBox[board], 0, idx)
         pass
 
     def selectedCamera(self, cam):
@@ -366,14 +391,17 @@ class View_Plan(QWidget):
 
     def calculate_current_pose(self):
         board_num = self.boards.index(self.currentBoard)
+        cam_matrix, cam_dist = np.array(self.cameraIntrinsic['cameras'][self.currentCamera]['K'], dtype=np.float32),\
+                                 np.array(self.cameraIntrinsic['cameras'][self.currentCamera]['dist'], dtype=np.float32)
         ids = self.detection[board_num].ids
-        corners = detection[board_num].corners
+        corners = np.array(self.detection[board_num].corners, dtype=np.float32).reshape(-1, 2)
+        undistorted = cv2.undistortPoints(corners, cam_matrix, cam_dist)
         detected_board = self.boards[board_num]
-        adjusted_points = detected_board.adjusted_points
-        objpoints = np.array([adjusted_points[a] for a in ids], dtype='float64').reshape((-1, 3))
-        cam_matrix, cam_dist = self.cameraIntrinsic[self.currentCamera].intrinsic, self.cameraIntrinsic[self.currentCamera].dist
+        adjusted_points = self.boards_config[detected_board].adjusted_points
+        objpoints = np.array([adjusted_points[a] for a in ids], dtype=np.float32).reshape((-1, 3))
+        
         ret, rvecs, tvecs, euler_deg, view_angle = board_pose(objpoints,
-                                            corners, ids, cam_matrix, cam_dist)
+                                            undistorted, ids, cam_matrix, cam_dist)
         self.tvecs = tvecs
         self.euler_angle = euler_deg
         self.new_tvecs = self.tvecs

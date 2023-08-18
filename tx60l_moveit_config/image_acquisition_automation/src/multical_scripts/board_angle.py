@@ -44,6 +44,7 @@ def board_pose(objpoints, corners, ids, camMatrix, camDist, method="solvePnPGene
         euler_deg = rotVec_to_euler(rvecs)
         view_angle = view_angle_calc(rvecs)
     elif method == "solvePnPGeneric":
+        r = np.array([], dtype=np.float32)
         ret, rvecs, tvecs, error = cv2.solvePnPGeneric(objpoints, corners, camMatrix, camDist)
         rvecs = rvecs[0]
         tvecs = tvecs[0]

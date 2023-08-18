@@ -1,10 +1,10 @@
 import rospy
 import sys
 from src.box_attacher_3 import Box_Attacher_3
-from src.view_planning import view_Plan
-from src.viewPlan_RL import *
-from src.viewPlan_geo import *
-from src.multical_scripts.viewPlan2 import *
+# from src.view_planning import view_Plan
+# from src.viewPlan_RL import *
+# from src.viewPlan_geo import *
+# from src.multical_scripts.viewPlan2 import *
 
 def main():
     rospy.init_node('box_attacher_3_node', anonymous=True)
@@ -45,6 +45,8 @@ def main():
         box_attacher.add_obstacle("glass_wall")
         # box_attacher.add_obstacle("left_wall")
         box_attacher.add_obstacle("base")
+        # box_attacher.add_obstacle("roof")
+
 
 
         debug = False
@@ -57,7 +59,9 @@ def main():
 
         # row_start (from excel row)
         # box_attacher.plan_xlxs_joint_goal(row_end=8, library = 'arv')
-        box_attacher.plan_cluster_point_goal(plan_num=10)
+        # box_attacher.plan_cluster_point_goal(plan_num=10)
+        path = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/V38/poses_29June_1.json'
+        box_attacher.plan_from_pose_json(path)
         # view_Plan(box_attacher)
         # box_attacher.plan_box_param()
         # viewPlan_RL(box_attacher)

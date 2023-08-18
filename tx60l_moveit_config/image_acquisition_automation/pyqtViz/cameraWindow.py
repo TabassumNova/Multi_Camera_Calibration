@@ -13,7 +13,7 @@ import sys
 import random
 import time
 from functools import partial
-from QtImageViewer import *
+# from QtImageViewer import *
 import json
 from pathlib import Path
 from multiprocessing import Process, Manager
@@ -29,7 +29,6 @@ from qtpy.QtWidgets import QFrame, QAction
 
 
 # INFO: QtInteractor can not work with PyQt6
-# PyQt5
 from PyQt5.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize, QRect
 from PyQt5.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen, QColor
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
@@ -37,8 +36,18 @@ from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePol
     QTableWidgetItem
 from PyQt5.QtWidgets import QApplication, QMainWindow, QSpinBox, QWidget, QPushButton, QTextEdit, QVBoxLayout, \
     QHBoxLayout, QGridLayout, QLineEdit, QLabel, QTabWidget, QScrollArea, QTextBrowser, QCheckBox
-from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+# PyQt6
+# from PyQt6.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize, QRect
+# from PyQt6.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen, QColor
+# from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
+#     QGraphicsItem, QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsLineItem, QGraphicsPolygonItem, QTableWidget, \
+#     QTableWidgetItem
+# from PyQt6.QtWidgets import QApplication, QMainWindow, QSpinBox, QWidget, QPushButton, QTextEdit, QVBoxLayout, \
+#     QHBoxLayout, QGridLayout, QLineEdit, QLabel, QTabWidget, QScrollArea, QTextBrowser, QCheckBox
+# from PyQt6.QtGui import *
+# from PyQt6.QtWidgets import *
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
     import numpy as np
