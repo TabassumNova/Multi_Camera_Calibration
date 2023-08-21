@@ -213,7 +213,7 @@ class handEye():
                 point3D = [objPoints[x] for x in ids]
                 corner_list.append(corners)
                 point3D_list.append(point3D)
-        base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, estimated_gripper_base, _, _ = self.hand_eye_robot_world(np.array(R_cam2world_list),
+        base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, estimated_gripper_base, error1, error2 = self.hand_eye_robot_world(np.array(R_cam2world_list),
                                             np.array(t_cam2world_list), np.array(R_base2gripper_list), np.array(t_base2gripper_list))
 
         handEye_struct = struct(camera=self.workspace.names.camera[camera], board=self.workspace.names.board[board], base_wrt_cam=base_wrt_cam, gripper_wrt_world=gripper_wrt_world,
@@ -223,7 +223,7 @@ class handEye():
         # self.reprojectionError_Calculation_new(handEye_struct)
         # self.test_robotMove(handEye_struct)
 
-        return base_wrt_cam, gripper_wrt_world
+        return base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper
 
     def viewPlanSimple(self, limit_board_image=10):
         '''
@@ -241,9 +241,11 @@ class handEye():
                 board = self.workspace.names.board[board_id]
                 if board not in handEyeGripper_dict[cam]:
                     handEyeGripper_dict[cam][board] = {}
-                base_wrt_cam, gripper_wrt_world = self.handEye_gripper(cam_id, board_id)
+                base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper = self.handEye_gripper(cam_id, board_id)
                 handEyeGripper_dict[cam][board]['base_wrt_cam'] = base_wrt_cam.tolist()
                 handEyeGripper_dict[cam][board]['gripper_wrt_world'] = gripper_wrt_world.tolist()
+                handEyeGripper_dict[cam][board]['camera_wrt_world'] = camera_wrt_world.tolist()
+                handEyeGripper_dict[cam][board]['base_wrt_gripper'] = base_wrt_gripper.tolist()
 
         json_object = json.dumps(handEyeGripper_dict, indent=4)
         # Writing to sample.json

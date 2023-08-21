@@ -276,7 +276,17 @@ class View_Plan(QWidget):
         self.btn4_5.setGeometry(QRect(0, 690, 100, 28))
         self.btn4_5.clicked.connect(partial(self.detectBoards, self.gridLayout4_2))
 
+        self.btn4_6 = QPushButton(self)
+        self.btn4_6.setObjectName('Home position')
+        self.btn4_6.setText('Home position')
+        self.btn4_6.setGeometry(QRect(310, 80, 150, 28))
+        self.btn4_6.clicked.connect(self.goHomePosition)
+
         self.setLayout(self.layout)
+
+    def goHomePosition(self):
+        plan = move_robot(self.box_attacher, self.gripper_pose[1])
+        pass
 
     def start_boxAttacher(self):
         rospy.init_node('box_attacher_3_node', anonymous=True)
@@ -456,41 +466,46 @@ class View_Plan(QWidget):
             self.label5.setText('Z= ' + str(self.new_tvecs[2]))
         if action == 'Rotation_X':
             if operator == '+':
-                self.new_euler_angle[0] += 1
+                self.new_euler_angle[0] += 5
             if operator == '-':
-                self.new_euler_angle[0] -= 1
+                self.new_euler_angle[0] -= 5
             self.label7.setText('X= ' + str(self.new_euler_angle[0]))
         if action == 'Rotation_Y':
             if operator == '+':
-                self.new_euler_angle[1] += 1
+                self.new_euler_angle[1] += 5
             if operator == '-':
-                self.new_euler_angle[1] -= 1
-            self.label7.setText('Y= ' + str(self.new_euler_angle[1]))
+                self.new_euler_angle[1] -= 5
+            self.label8.setText('Y= ' + str(self.new_euler_angle[1]))
         if action == 'Rotation_Z':
             if operator == '+':
-                self.new_euler_angle[2] += 1
+                self.new_euler_angle[2] += 5
             if operator == '-':
-                self.new_euler_angle[2] -= 1
-            self.label7.setText('Z= ' + str(self.new_euler_angle[2]))
+                self.new_euler_angle[2] -= 5
+            self.label9.setText('Z= ' + str(self.new_euler_angle[2]))
 
     def move_board(self):
+        plan = False
         rvec = euler_to_rvec(self.new_euler_angle)
-        euler_test = rotVec_to_euler(rvec)
-        # board_wrt_camera = rtvec.to_matrix(rtvec.join(rvec, self.new_tvecs))
+        # euler_test = rotVec_to_euler(rvec)
+        # # board_wrt_camera = rtvec.to_matrix(rtvec.join(rvec, self.new_tvecs))
         camera_wrt_board = np.linalg.inv(rtvec.to_matrix(rtvec.join(rvec, self.new_tvecs)))
+        # camera_wrt_board_test = np.array(self.handEyeGripper[self.currentCamera][self.currentBoard]['camera_wrt_world'][0])
         if self.currentCamera in self.handEyeGripper:
             if self.currentBoard in self.handEyeGripper[self.currentCamera]:
                 board_wrt_gripper = np.linalg.inv(self.handEyeGripper[self.currentCamera][self.currentBoard]["gripper_wrt_world"])
                 base_wrt_camera = (self.handEyeGripper[self.currentCamera][self.currentBoard]["base_wrt_cam"])
-                gripper_wrt_base = np.linalg.inv(base_wrt_camera @ camera_wrt_board @ board_wrt_gripper)
+                ZB = matrix.transform(base_wrt_camera, camera_wrt_board)
+                gripper_wrt_base = np.linalg.inv(matrix.transform(ZB, board_wrt_gripper))
+
+                # gripper_wrt_base = np.linalg.inv(base_wrt_camera @ camera_wrt_board @ board_wrt_gripper)
                 # gripper_wrt_board = self.handEyeGripper[self.currentCamera][self.currentBoard]["gripper_wrt_world"]
                 # camera_wrt_base = np.linalg.inv(self.handEyeGripper[self.currentCamera][self.currentBoard]["base_wrt_cam"])
                 # gripper_wrt_base = gripper_wrt_board @ board_wrt_camera @ camera_wrt_base
-                move_robot(self.box_attacher, gripper_wrt_base)
-                self.label11.setText('Transformation Found; Press "Show Next image"')
-            else:
-                self.label11.setText('Transformation not found')
+                plan = move_robot(self.box_attacher, gripper_wrt_base)
+
+        if plan:
+            self.label11.setText('Transformation Found; Press "Show Next image"')
         else:
             self.label11.setText('Transformation not found')
-        pass
+       
 
