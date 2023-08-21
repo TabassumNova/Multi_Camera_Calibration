@@ -18,7 +18,34 @@ class CameraPoseVisualizer:
         self.ax.set_zlabel('z')
         print('initialize camera pose visualizer')
 
+    def extrinsic2Board(self, board_extrinsic, color='red', focal_len_scaled=5, aspect_ratio=0.3, show_legend=True,
+                          hover_template='test', name='name'):
+        '''
+        for Board extrinsic visualization
+        '''
+
+        vertex_std = np.array([[0, 0, 0, 1],
+                               [focal_len_scaled * aspect_ratio, -focal_len_scaled * aspect_ratio, focal_len_scaled, 1],
+                               [focal_len_scaled * aspect_ratio, focal_len_scaled * aspect_ratio, focal_len_scaled, 1],
+                               [-focal_len_scaled * aspect_ratio, focal_len_scaled * aspect_ratio, focal_len_scaled, 1],
+                               [-focal_len_scaled * aspect_ratio, -focal_len_scaled * aspect_ratio, focal_len_scaled,
+                                1]])
+        vertex_transformed = vertex_std @ board_extrinsic.T
+        # meshes = [[vertex_transformed[0, :-1], vertex_transformed[1][:-1], vertex_transformed[2, :-1]],
+        #           [vertex_transformed[0, :-1], vertex_transformed[2, :-1], vertex_transformed[3, :-1]],
+        #           [vertex_transformed[0, :-1], vertex_transformed[3, :-1], vertex_transformed[4, :-1]],
+        #           [vertex_transformed[0, :-1], vertex_transformed[4, :-1], vertex_transformed[1, :-1]],
+        #           [vertex_transformed[1, :-1], vertex_transformed[2, :-1], vertex_transformed[3, :-1],
+        #            vertex_transformed[4, :-1]]]
+        meshes = [[vertex_transformed[1, :-1], vertex_transformed[2, :-1], vertex_transformed[3, :-1], vertex_transformed[4, :-1]]]
+        data = self.draw_interactive(meshes, color, show_legend, hover_template, name)
+        return data
+
     def extrinsic2pyramid(self, extrinsic, color='red', focal_len_scaled=5, aspect_ratio=0.3, show_legend=True, hover_template='test', name='name'):
+        '''
+        for camera extrinsic visualization
+        '''
+
         vertex_std = np.array([[0, 0, 0, 1],
                                [focal_len_scaled * aspect_ratio, -focal_len_scaled * aspect_ratio, focal_len_scaled, 1],
                                [focal_len_scaled * aspect_ratio, focal_len_scaled * aspect_ratio, focal_len_scaled, 1],
@@ -30,6 +57,7 @@ class CameraPoseVisualizer:
                             [vertex_transformed[0, :-1], vertex_transformed[3, :-1], vertex_transformed[4, :-1]],
                             [vertex_transformed[0, :-1], vertex_transformed[4, :-1], vertex_transformed[1, :-1]],
                             [vertex_transformed[1, :-1], vertex_transformed[2, :-1], vertex_transformed[3, :-1], vertex_transformed[4, :-1]]]
+        # meshes = [[vertex_transformed[1, :-1], vertex_transformed[2, :-1], vertex_transformed[3, :-1], vertex_transformed[4, :-1]]]
         # self.ax.add_collection3d(
         #     Poly3DCollection(meshes, facecolors=color, linewidths=0.3, edgecolors=color, alpha=0.35))
         data = self.draw_interactive(meshes, color, show_legend, hover_template, name)

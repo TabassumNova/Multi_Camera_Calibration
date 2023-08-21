@@ -12,11 +12,11 @@ def detect_img(board_file, detected_img, write_path=None):
 
 if __name__ == '__main__':
 
-    print(cv2.__version__)
+    # print(cv2.__version__)
 
-    board_yaml = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/viewPlantest/boards.yaml"
-    img_file = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/viewPlantest/08320220/p1.png"
-    cam_intrinsic_file = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/viewPlantest/cameraIntrinsic.json'
+    board_yaml = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38/boards.yaml"
+    img_file = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38/08320217\p3.png"
+    cam_intrinsic_file = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38\calibration.json"
     img = load_image(img_file)
     cam_intrinsic = json.load(open(cam_intrinsic_file))
     board_config0 = board_load_config(board_yaml)

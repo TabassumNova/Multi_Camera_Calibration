@@ -248,6 +248,8 @@ class Operation(QWidget):
 
     def workspace_load(self):
         for path, subdirs, files in os.walk((self.folder_path)):
+            if "workspace.pkl" not in files:
+                print('No "workspace.pkl" file found; Run workspace_export.py')
             if path == self.folder_path:
                 workspace_path = os.path.join(self.folder_path, [f for f in files if f == "workspace.pkl"][0])
                 self.workspace = pickle.load(open( workspace_path, "rb"))
@@ -255,6 +257,12 @@ class Operation(QWidget):
                 self.images = self.workspace.names.image
                 self.boards = self.workspace.names.board
                 self.last_pose_count = len(self.images)
+                if 'calibration.detections.pkl' not in files:
+                    print('No "calibration.detections.pkl" file found')
+                if "calibration.json" not in files:
+                    print('No "calibration.json" file found')
+                if "handEyeCamera.json" not in files:
+                    print('No "handEyeCamera.json" file found; Run main4 of handEye_check.py')
                 for file in files:
                     if file == 'calibration.detections.pkl':
                         pickle_file = ws.Workspace.load(os.path.join(self.folder_path, 'calibration.detections.pkl'))

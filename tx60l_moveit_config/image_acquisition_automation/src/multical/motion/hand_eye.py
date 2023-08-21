@@ -78,29 +78,30 @@ class HandEye(Parameters, MotionModel):
       num_img = self.workspace.sizes.image
       imagePoints = np.zeros((num_cam, num_img, num_board, world_points['points'].shape[1], 2))
       imagePoints_valid = np.zeros((num_cam, num_img, num_board, world_points['points'].shape[1]), dtype=bool)
-      for cam_id, cam_v in enumerate(self.workspace.pose_table.poses):
-          for img_id, img_v in enumerate(self.workspace.pose_table.poses[cam_id]):
-              for board_id, board_v in enumerate(self.workspace.pose_table.poses[cam_id][img_id]):
-                  if self.workspace.pose_table.valid[masterCam][img_id][board_id]:
-                      t = matrix.transform(self.workspace.pose_table.poses[masterCam][img_id][board_id],
-                                           np.linalg.inv(self.base_wrt_camera[cam_id]))
-                  else:
-                      valid_board = np.flatnonzero(self.workspace.pose_table.valid[masterCam][img_id])
-                      t0 = matrix.relative_to(self.gripper_wrt_world[board_id], self.gripper_wrt_world[valid_board[0]])
-                      t1 = matrix.transform(t0, self.workspace.pose_table.poses[masterCam][img_id][valid_board[0]])
-                      t = matrix.transform(t1, np.linalg.inv(self.base_wrt_camera[cam_id]))
-                  t0 = self.workspace.pose_table.poses[cam_id][img_id][board_id]
-                  err = rtvec.from_matrix(t0) - rtvec.from_matrix(t)
-                  # objectPoints = (world_points['points'][board_id])
-                  objectPoints = np.array([self.workspace.boards[board_id].adjusted_points])
-                  cameraMatrix = (cameras[cam_id].intrinsic)
-                  distortion = (cameras[cam_id].dist)
-                  rvec, tvec = rtvec.split(rtvec.from_matrix(t))
-                  imP, _ = cv2.projectPoints(np.copy(objectPoints), rvec, tvec, cameraMatrix, distortion)
-                  cornerPoints = self.workspace.point_table.points[cam_id][img_id][board_id]
-                  error = np.linalg.norm(cornerPoints - imP.reshape([-1, 2]), axis=-1)
-                  imagePoints[cam_id][img_id][board_id] = imP.reshape([-1, 2])
-                  imagePoints_valid[cam_id][img_id][board_id] = True
+      ## new
+      for img_id, img_name in enumerate(self.workspace.names.image):
+          master_boards = np.flatnonzero(self.workspace.pose_table.valid[masterCam][img_id])
+          if master_boards.size != 0:
+              for cam_id, cam_name in enumerate(self.workspace.names.camera):
+                  slave_boards = np.flatnonzero(self.workspace.pose_table.valid[cam_id][img_id])
+                  for sb in slave_boards:
+                      for mb in master_boards:
+                          t0 = matrix.relative_to(self.gripper_wrt_world[sb], self.gripper_wrt_world[mb])
+                          t1 = matrix.transform(t0, self.workspace.pose_table.poses[masterCam][img_id][mb])
+                          t = matrix.transform(t1, np.linalg.inv(self.base_wrt_camera[cam_id]))
+                          real_t = self.workspace.pose_table.poses[cam_id][img_id][sb]
+                          eqn_error = rtvec.from_matrix(real_t) - rtvec.from_matrix(t)
+                          objectPoints = np.array([self.workspace.boards[sb].adjusted_points])
+                          cameraMatrix = (cameras[cam_id].intrinsic)
+                          distortion = (cameras[cam_id].dist)
+                          rvec, tvec = rtvec.split(rtvec.from_matrix(t))
+                          imP, _ = cv2.projectPoints(np.copy(objectPoints), rvec, tvec, cameraMatrix, distortion)
+                          cornerPoints = self.workspace.point_table.points[cam_id][img_id][sb]
+                          undistorted = cv2.undistortPoints(imP.reshape([-1, 2]), cameraMatrix, distortion, P=cameraMatrix)
+                          error = np.linalg.norm(cornerPoints - imP.reshape([-1, 2]), axis=-1)
+                          imagePoints[cam_id][img_id][sb] = imP.reshape([-1, 2])
+                          imagePoints_valid[cam_id][img_id][sb] = self.workspace.point_table.valid[cam_id][img_id][sb]
+      ## new
 
       return Table.create(points=imagePoints, valid=imagePoints_valid)
 

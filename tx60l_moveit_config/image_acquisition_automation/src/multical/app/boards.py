@@ -111,12 +111,14 @@ def show_boards(args):
       print(f"Wrote {filename}")
 
   elif args.write is not None:
+    images = {k: draw_board(board) for k, board in boards.items()}
     pathlib.Path(args.write).mkdir(parents=True, exist_ok=True)
     for k, board_image in images.items():
       filename = path.join(args.write, k + ".png")
       cv2.imwrite(filename, board_image)
       print(f"Wrote {filename}")
   else:
+    images = {k: draw_board(board) for k, board in boards.items()}
     display_stacked(list(images.values()))
 
 

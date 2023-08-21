@@ -41,7 +41,7 @@ except ImportError:
     qimage2ndarray = None
 
 from calibration_tab import *
-from src.aravis_show_image import find_cameras, show_image
+# from src.aravis_show_image import find_cameras, show_image
 from functools import partial
 from src.helpers import *
 from src.multical_scripts.camcalib_detect import *
@@ -49,7 +49,7 @@ from src.multical.board import load_config as board_load_config
 from src.multical_scripts import *
 import cv2
 
-import rospy
+# import rospy
 # from src.box_attacher_3 import *
 # from src.data_robot_mover2 import *
 

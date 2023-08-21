@@ -46,7 +46,7 @@ class RuntimeOpts:
   log_level: str = choice('INFO', 'DEBUG', 'WARN', default='INFO') # Minimum log level
   no_cache: bool = False # Don't attempt to load detections from cache
   seed : int = 0 # Seed for repeatable runs
-  pose_estimation: str = choice("solvePnPRansac", "solvePnPGeneric", "solvePnP", "solvePnP_P3P", default="solvePnPRansac")
+  pose_estimation: str = choice("solvePnPRansac", "solvePnPGeneric", "solvePnP", "solvePnP_P3P", default="solvePnPGeneric")
   show_all_poses: bool = False  # poses that crosses reprojection error limit also
 
 @dataclass 

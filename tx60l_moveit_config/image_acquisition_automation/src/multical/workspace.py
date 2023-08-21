@@ -200,20 +200,21 @@ class Workspace:
             info(camera)
             info("")
 
-    def initialise_poses(self, motion_model=StaticFrames, camera_poses=None, board_poses=None, isFisheye=False, method="solvePnPGeneric", show_all_poses=False):
+    def initialise_poses(self, motion_model=StaticFrames, camera_poses=None, board_poses=None, isFisheye=False, error_limit=1.0, method="solvePnPGeneric", show_all_poses=False):
         assert self.cameras is not None, "initialise_poses: no cameras set, first use calibrate_single or set_cameras"
-        self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras, method=method, show_all_poses=show_all_poses)
+        self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras, error_limit=error_limit, method=method, show_all_poses=show_all_poses)
 
         info("Pose counts:")
         tables.table_info(self.pose_table.valid, self.names)
         self.board_poses = tables.initialise_board(self,
                                 board_poses=None if board_poses is None else np.array([board_poses[k] for k in self.names.board]))
-        #
-        pose_init = tables.initialise_poses(self.pose_table,
-          camera_poses=None if camera_poses is None else np.array([camera_poses[k] for k in self.names.camera]),
-          board_poses=None if board_poses is None else np.array([board_poses[k] for k in self.names.board]))
 
         if motion_model == HandEye:
+            pose_init = tables.initialise_poses_new(self.pose_table,
+                                                camera_poses=None if camera_poses is None else np.array(
+                                                    [camera_poses[k] for k in self.names.camera]),
+                                                board_poses=None if board_poses is None else np.array(
+                                                    [board_poses[k] for k in self.names.board]))
             calib = Calibration(
                 ParamList(self.cameras, self.names.camera),
                 ParamList(self.boards, self.names.board),
@@ -223,6 +224,11 @@ class Workspace:
                 motion_model.init(self, pose_init, self.names.image),
             )
         else:
+            pose_init = tables.initialise_poses(self.pose_table,
+                                                camera_poses=None if camera_poses is None else np.array(
+                                                    [camera_poses[k] for k in self.names.camera]),
+                                                board_poses=None if board_poses is None else np.array(
+                                                    [board_poses[k] for k in self.names.board]))
             calib = Calibration(
                 ParamList(self.cameras, self.names.camera),
                 ParamList(self.boards, self.names.board),
@@ -238,9 +244,9 @@ class Workspace:
         self.calibrations["initialisation"] = calib
         return calib
 
-    def initialise_board(self, runtime):
+    def initialise_board(self, camera_opts, runtime):
         self.pose_table = tables.make_pose_table(self.point_table,
-                    self.boards, self.cameras, method=runtime.pose_estimation, show_all_poses=runtime.show_all_poses)
+                    self.boards, self.cameras, error_limit=camera_opts.intrinsic_error_limit, method=runtime.pose_estimation, show_all_poses=runtime.show_all_poses)
 
         info("Pose counts:")
         tables.table_info(self.pose_table.valid, self.names)

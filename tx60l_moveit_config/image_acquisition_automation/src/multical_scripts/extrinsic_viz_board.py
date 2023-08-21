@@ -54,27 +54,15 @@ class Interactive_Extrinsic_Board():
                                          yref="paper"))
 
         for board_key, board_value in self.calibObj.items():
-            # # all_fig = []
-            # add annotation
-            # final_layout = go.Figure()
-            # final_layout.add_annotation(dict(font=dict(color='black', size=20),
-            #                         x=0,
-            #                         y=0.12,
-            #                         showarrow=False,
-            #                         text=board_key,
-            #                         textangle=0,
-            #                         xanchor='left',
-            #                         xref="paper",
-            #                         yref="paper"))
-            # mean_calculation = {}
+
             for pose in board_value['group']:
                 data = visualizer.extrinsic2Board(pose, color=self.board_color[board_key],
-                                                    focal_len_scaled=0.2, aspect_ratio=0.2, show_legend=True,
+                                                    focal_len_scaled=0.5, aspect_ratio=0.5, show_legend=True,
                                                     hover_template=board_key, name='board_'+str(board_key))
 
                 final_layout.add_trace(data)
             data1 = visualizer.extrinsic2Board(board_value['mean'], color='black',
-                                              focal_len_scaled=0.2, aspect_ratio=0.2, show_legend=True,
+                                              focal_len_scaled=0.5, aspect_ratio=0.5, show_legend=True,
                                               hover_template=board_key, name='mean_'+str(board_key))
 
             final_layout.add_trace(data1)
