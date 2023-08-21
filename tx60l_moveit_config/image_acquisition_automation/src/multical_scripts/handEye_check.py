@@ -18,7 +18,7 @@ import plotly.express as px
 import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
+base_path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/V40"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):
@@ -68,7 +68,7 @@ class handEye():
 
     def initiate_workspace(self, show_all_poses=False):
         pathO = args.PathOpts(image_path=self.datasetPath)
-        cam = args.CameraOpts(intrinsic_error_limit=1.0)
+        cam = args.CameraOpts(calibration=self.intrinsicPath,intrinsic_error_limit=1.0)
         # pose_estimation_method = "solvePnPRansac"
         pose_estimation_method = "solvePnPGeneric"
         runt = args.RuntimeOpts(pose_estimation=pose_estimation_method)
@@ -1143,8 +1143,8 @@ def main1(base_path, limit_image=10):
     h = handEye(base_path)
     h.initiate_workspace()
     h.set_gripper_pose()
-    h.viewPlanRobust()
-    # h.viewPlanSimple()
+    # h.viewPlanRobust()
+    h.viewPlanSimple()
 
     # h.export_handEyeGripper(handEye_struct)
     # h.estimate_camera_board_poses()
@@ -1232,9 +1232,9 @@ def main6(base_path, limit_images, num_adjustments):
     pass
 
 if __name__ == '__main__':
-    # main1(base_path, limit_image=10)
+    main1(base_path, limit_image=10)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    main4(base_path, limit_images=6, num_adjustments=0, limit_board_image=6)
+    # main4(base_path, limit_images=6, num_adjustments=0, limit_board_image=6)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass

@@ -5,8 +5,8 @@
 # https://www.geeksforgeeks.org/pyqt5-qtabwidget/
 
 import os.path
-from cameraWindow import *
-from calibrtaion_tab2 import *
+from pyqtViz.cameraWindow import *
+# from calibrtaion_tab2 import *
 # from src.aravis_show_image import *
 # INFO: QtInteractor can not work with PyQt6
 # PyQt5
@@ -36,9 +36,9 @@ try:
 except ImportError:
     qimage2ndarray = None
 
-from operation_tab import *
-from calibration_tab import *
-from viewPlan_tab import *
+from pyqtViz.operation_tab import *
+from pyqtViz.calibration_tab import *
+from pyqtViz.viewPlan_tab import *
 import cv2
 
 # Creating the main window

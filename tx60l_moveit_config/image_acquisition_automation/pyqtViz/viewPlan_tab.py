@@ -1,7 +1,7 @@
 import os.path
 
-from cameraWindow import *
-from calibrtaion_tab2 import *
+from .cameraWindow import *
+# from calibrtaion_tab2 import *
 # INFO: QtInteractor can not work with PyQt6
 # PyQt5
 from PyQt5.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize, QRect
@@ -25,6 +25,7 @@ from PyQt5.QtGui import *
 # from PyQt6.QtGui import *
 from src.multical_scripts.board_angle import *
 from src.multical_scripts.handEye_viz import *
+from src.QtImageViewer import *
 # from src.aravis_show_image import *
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
@@ -40,8 +41,8 @@ try:
 except ImportError:
     qimage2ndarray = None
 
-from calibration_tab import *
-# from src.aravis_show_image import find_cameras, show_image
+from .calibration_tab import *
+from src.aravis_show_image import find_cameras, show_image
 from functools import partial
 from src.helpers import *
 from src.multical_scripts.camcalib_detect import *
@@ -49,21 +50,22 @@ from src.multical.board import load_config as board_load_config
 from src.multical_scripts import *
 import cv2
 
-# import rospy
-# from src.box_attacher_3 import *
-# from src.data_robot_mover2 import *
+import rospy
+from src.box_attacher_3 import *
+from src.data_robot_mover2 import *
 
 class View_Plan(QWidget):
     def __init__(self):
         super().__init__()
         self.layout = QGridLayout(self)
         self.box_attacher = None
-        # self.start_boxAttacher()
+        self.start_boxAttacher()
         self.viewer = {}
         self.cameras = None
         self.camera_checkBox = {}
         self.board_checkBox = {}
         self.saved_path = None
+        self.gripper_pose = {}
         self.handEyeGripper = None
         self.cameraIntrinsic_file = None
         self.cameraIntrinsic = None
@@ -280,7 +282,7 @@ class View_Plan(QWidget):
         rospy.init_node('box_attacher_3_node', anonymous=True)
         self.box_attacher = Box_Attacher_3()
         size = (0.25, 0.25, 0.25)
-        self.box_attacher.replace_box(size)
+        self.box_attacher.replace_box(size=size)
         self.box_attacher.add_obstacle("camera_wall_1")
         self.box_attacher.add_obstacle("camera_wall_2")
         self.box_attacher.add_obstacle("glass_wall")
@@ -307,6 +309,25 @@ class View_Plan(QWidget):
                     file = open(os.path.join(self.saved_path, name))
                     self.boards_config = board_load_config(file)
                     self.boards = [b for b in self.boards_config.keys()]
+                if name == 'gripper_pose.json':
+                    gripperPose_file = open(os.path.join(self.saved_path, name))
+                    self.set_gripper_pose(gripperPose_file)
+
+
+    def set_gripper_pose(self, gripperPose_file):
+        data = json.load(gripperPose_file)
+        num_pose = len(data.keys())
+        image_name = data.keys()
+        for i in image_name:
+            if i in data:
+                position = [float(j) for j in data[str(i)]["position (x,y,z)"]]
+                orientation = [float(j) for j in data[str(i)]["orintation (w,x,y,z)"]]
+                r = R.from_quat([orientation[1], orientation[2], orientation[3], orientation[0]])
+                rvec = r.as_rotvec()
+                tvec = np.array(position)
+                rt_matrix = rtvec.to_matrix(rtvec.join(rvec, tvec))
+                self.gripper_pose[int(i)] = rt_matrix
+        pass
 
     def findCameras(self):
         num_cams, camera_serial = find_cameras()
@@ -454,12 +475,17 @@ class View_Plan(QWidget):
 
     def move_board(self):
         rvec = euler_to_rvec(self.new_euler_angle)
-        board_wrt_camera = rtvec.to_matrix(rtvec.join(rvec, self.new_tvecs))
+        euler_test = rotVec_to_euler(rvec)
+        # board_wrt_camera = rtvec.to_matrix(rtvec.join(rvec, self.new_tvecs))
+        camera_wrt_board = np.linalg.inv(rtvec.to_matrix(rtvec.join(rvec, self.new_tvecs)))
         if self.currentCamera in self.handEyeGripper:
             if self.currentBoard in self.handEyeGripper[self.currentCamera]:
-                gripper_wrt_board = self.handEyeGripper[self.currentCamera][self.currentBoard]["gripper_wrt_world"]
-                camera_wrt_base = np.linalg.inv(self.handEyeGripper[self.currentCamera][self.currentBoard]["base_wrt_cam"])
-                gripper_wrt_base = gripper_wrt_board @ board_wrt_camera @ camera_wrt_base
+                board_wrt_gripper = np.linalg.inv(self.handEyeGripper[self.currentCamera][self.currentBoard]["gripper_wrt_world"])
+                base_wrt_camera = (self.handEyeGripper[self.currentCamera][self.currentBoard]["base_wrt_cam"])
+                gripper_wrt_base = np.linalg.inv(base_wrt_camera @ camera_wrt_board @ board_wrt_gripper)
+                # gripper_wrt_board = self.handEyeGripper[self.currentCamera][self.currentBoard]["gripper_wrt_world"]
+                # camera_wrt_base = np.linalg.inv(self.handEyeGripper[self.currentCamera][self.currentBoard]["base_wrt_cam"])
+                # gripper_wrt_base = gripper_wrt_board @ board_wrt_camera @ camera_wrt_base
                 move_robot(self.box_attacher, gripper_wrt_base)
                 self.label11.setText('Transformation Found; Press "Show Next image"')
             else:

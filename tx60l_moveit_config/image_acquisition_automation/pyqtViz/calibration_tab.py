@@ -1,5 +1,5 @@
 import os.path
-from cameraWindow import *
+from .cameraWindow import *
 # from calibrtaion_tab import *
 # INFO: QtInteractor can not work with PyQt6
 # PyQt5
@@ -38,7 +38,7 @@ try:
 except ImportError:
     qimage2ndarray = None
 
-from operation_tab import *
+from .operation_tab import *
 import cv2
 
 class Calibration(QWidget):

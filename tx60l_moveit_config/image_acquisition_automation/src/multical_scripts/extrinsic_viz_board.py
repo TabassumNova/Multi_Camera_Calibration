@@ -3,15 +3,15 @@ from src.extrinsic2pyramid.camera_pose_visualizer import CameraPoseVisualizer
 import plotly.graph_objects as go
 import json
 import os
-from dash import Dash, dcc, html, Input, Output,callback
+# from dash import Dash, dcc, html, Input, Output,callback
 import plotly.io as pio
 import io
 from base64 import b64encode
 from src.multical.transform.rtvec import *
-from jupyter_dash import JupyterDash
-from dash import dcc
-from dash import html
-from dash.dependencies import Input, Output
+# from jupyter_dash import JupyterDash
+# from dash import dcc
+# from dash import html
+# from dash.dependencies import Input, Output
 import pickle
 from src.multical.transform import common, rtvec
 
@@ -153,8 +153,9 @@ class Interactive_Extrinsic_Board():
 
 
 if __name__ == '__main__':
+    pass
     # argument : the minimum/maximum value of x, y, z
-    v = Interactive_Extrinsic(base_path)
+    # v = Interactive_Extrinsic(base_path)
 
     # visualizer = CameraPoseVisualizer([-2000, 2000], [-2000, 2000], [-2000, 2000])
     #

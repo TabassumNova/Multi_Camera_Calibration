@@ -1,6 +1,6 @@
 import os.path
-from cameraWindow import *
-from calibrtaion_tab2 import *
+from .cameraWindow import *
+# from calibrtaion_tab2 import *
 # INFO: QtInteractor can not work with PyQt6
 # PyQt5
 from PyQt5.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize, QRect
@@ -38,7 +38,7 @@ try:
 except ImportError:
     qimage2ndarray = None
 
-from calibration_tab import *
+from .calibration_tab import *
 
 class Operation(QWidget):
     def __init__(self):
