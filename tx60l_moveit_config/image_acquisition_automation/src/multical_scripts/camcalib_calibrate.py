@@ -5,11 +5,11 @@ import src.multical.config.workspace as workspace
 if __name__ == '__main__':
 
 
-    pathO = args.PathOpts(image_path="/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/V38")
-    cam = args.CameraOpts(intrinsic_error_limit=1.0)
+    pathO = args.PathOpts(image_path="D:\MY_DRIVE_N\Masters_thesis\Dataset\V35_test")
+    cam = args.CameraOpts(intrinsic_error_limit=0.5, calibration="D:\MY_DRIVE_N\Masters_thesis\Dataset\V35_test\Calibration_handeye.json")
     pose_estimation_method = "solvePnPGeneric"
     runt = args.RuntimeOpts(pose_estimation=pose_estimation_method)
-    opt = args.OptimizerOpts(outlier_threshold=0.5, fix_intrinsic=True, iter=3)
+    opt = args.OptimizerOpts(outlier_threshold=0.5, fix_intrinsic=True, iter=2)
 
     c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
     c.execute()

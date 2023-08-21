@@ -40,13 +40,13 @@ def sparse_points(points):
 
 # invalid_pose = struct(poses=np.eye(4), num_points=0, valid=False, reprojection_error=0, view_angles=[0, 0, 0], inliers=[None])
 
-def valid_pose(t, inliers=[None], error=0, angles=[0, 0, 0]):
-  return struct(poses=t, valid=True, reprojection_error=error, view_angles=angles, inliers=inliers)
+def valid_pose(t, num_points=0, inliers=[None], error=0, angles=[0, 0, 0]):
+  return struct(poses=t, num_points=num_points, valid=True, reprojection_error=error, view_angles=angles, inliers=inliers)
 
 def invalid_pose(inliers=[None]):
   return struct(poses=np.eye(4), num_points=0, valid=False, reprojection_error=0, view_angles=[0, 0, 0], inliers=inliers)
 
-def extract_pose(points, board, camera, method="solvePnPGeneric", show_all_poses=False):
+def extract_pose(points, board, camera, error_limit=1.0, method="solvePnPGeneric", show_all_poses=False):
   detections = sparse_points(points)
   poses, error, inliers0 = board.estimate_pose_points(camera, detections, method=method)
   inliers = np.zeros((points.valid.shape), dtype=bool)
@@ -55,24 +55,26 @@ def extract_pose(points, board, camera, method="solvePnPGeneric", show_all_poses
     inliers[x] = True
   else:
     poses = None
-  if show_all_poses == False and error>1.0:
+  if show_all_poses == False and error>error_limit:
       poses = None
   if poses is not None:
     angles = analyze_view_angle(rtvec.to_matrix(poses))
   else:
     angles = [0, 0, 0]
 
-  return valid_pose(rtvec.to_matrix(poses), inliers, error, list(angles))._extend(num_points=len(np.flatnonzero(inliers)))\
-      if poses is not None else invalid_pose(inliers)
+  # return valid_pose(t=rtvec.to_matrix(poses), inliers=inliers, error=error, angles=list(angles))._extend(num_points=len(detections.ids))\
+  #     if poses is not None else invalid_pose(inliers)
+  return valid_pose(t=rtvec.to_matrix(poses), num_points=len(detections.ids), inliers=inliers, error=error, angles=list(angles))\
+    if poses is not None else invalid_pose(inliers=inliers)
 
-def map_table(f, point_table, boards, cameras, method="solvePnPGeneric", show_all_poses=False):
-  return [[[f(points, board, camera, method, show_all_poses)
+def map_table(f, point_table, boards, cameras, error_limit=1.0, method="solvePnPGeneric", show_all_poses=False):
+  return [[[f(points, board, camera, error_limit, method, show_all_poses)
            for points, board in zip(frame_points._sequence(), boards)]  
              for frame_points in points_camera._sequence()]
                for points_camera, camera in zip(point_table._sequence(), cameras)]
 
-def make_pose_table(point_table, boards, cameras, method="solvePnPGeneric", show_all_poses=False):
-  poses = map_table(extract_pose, point_table, boards, cameras, method=method, show_all_poses=show_all_poses)
+def make_pose_table(point_table, boards, cameras, error_limit=1.0, method="solvePnPGeneric", show_all_poses=False):
+  poses = map_table(extract_pose, point_table, boards, cameras, error_limit, method=method, show_all_poses=show_all_poses)
   return make_nd_table(poses, n = 3)
 
 def make_point_table(detections, boards):
@@ -676,7 +678,7 @@ def estimate_camera_board_poses_old(ws):
   return rel_cam_poses, rel_board_poses, board_selection_matrix
 
 
-def initialise_poses(pose_table, camera_poses=None, board_poses=None, masterCam = 0):
+def initialise_poses_new(pose_table, camera_poses=None, board_poses=None, masterCam = 0):
     # Find relative transforms between cameras and rig poses
   '''
   Created on 15th August
@@ -713,7 +715,7 @@ def initialise_poses(pose_table, camera_poses=None, board_poses=None, masterCam 
 
   return struct(times=times, camera=camera, board=board)
 
-def initialise_poses_org(pose_table, camera_poses=None, board_poses=None):
+def initialise_poses(pose_table, camera_poses=None, board_poses=None):
   '''
   This is te original one
   named on 15th August

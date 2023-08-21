@@ -15,7 +15,7 @@ from dash.dependencies import Input, Output
 import pickle
 from src.multical.transform import common, rtvec
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35_test"
 '''
 Single calibration.json visualization
 '''

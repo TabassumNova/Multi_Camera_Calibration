@@ -18,7 +18,7 @@ import plotly.express as px
 import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):
@@ -68,17 +68,17 @@ class handEye():
 
     def initiate_workspace(self, show_all_poses=False):
         pathO = args.PathOpts(image_path=self.datasetPath)
-        cam = args.CameraOpts(calibration="D:\MY_DRIVE_N\Masters_thesis\Dataset\V38\Calibration_handeye.json",intrinsic_error_limit=0.5)
+        cam = args.CameraOpts(intrinsic_error_limit=1.0)
         # pose_estimation_method = "solvePnPRansac"
         pose_estimation_method = "solvePnPGeneric"
-        runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=show_all_poses)
+        runt = args.RuntimeOpts(pose_estimation=pose_estimation_method)
         opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True, adjust_outliers=False)
         c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
         self.workspace = c.execute_board()
         # self.workspace.pose_table = make_pose_table(self.workspace.point_table, self.workspace.boards,
         #                                             self.workspace.cameras, method="solvePnPRansac")
 
-        self.workspace.point_table.valid = self.workspace.pose_table.inliers
+        # self.workspace.point_table.valid = self.workspace.pose_table.inliers
 
         for c in range(len(self.workspace.names.camera)):
             self.camintrinsic_param.extend(self.workspace.cameras[c].param_vec.tolist())
@@ -429,7 +429,7 @@ class handEye():
         '''
         handEye for Master_cam to Slave_cam
         :param limit_image: number of image allowed for hand eye pair
-               limit_board_image : number of image allowed to choose major board seen by cameras
+               limit_board_image : number of image allowed to choose as major board seen by cameras
         :return:
         '''
         num_cameras = len(self.workspace.names.camera)
@@ -538,35 +538,43 @@ class handEye():
 
         return mean_group_dict
 
-    def calibObj_cluster_mean(self, board=0, limit_pose=1000):
-        # b = Interactive_Extrinsic_Board(self.calib_obj[board])
-        # calibObj_mean = {}
-        master_board = self.workspace.names.board[board]
-        for board_id in self.calib_obj[board].keys():
-            b = self.workspace.names.board[board_id]
-            a0 = np.array(self.calib_obj[board][board_id])
-            if len(a0)>limit_pose:
-                selectedG1 = np.random.choice(np.arange(len(a0)), size=limit_pose)
-                a = np.array([a0[g] for g in selectedG1])
-            else:
-                a = a0
-            if a.size != 0 and len(a)>3:
-                g = common.cluster(a)
-                group = a[g]
-                x = rtvec.to_matrix(common.mean_robust(group))
-                self.calibObj_mean[b] = {}
-                self.calibObj_mean[b]['mean'] = x
-                if len(group)>100:
-                    selectedG = np.random.choice(np.arange(len(group)), size=100)
-                else:
-                    selectedG = np.arange(len(group))
-                self.calibObj_mean[b]['group'] = [rtvec.to_matrix(group[g]) for g in selectedG]
-            else:
-                self.calibObj_mean[b] = {}
-                self.calibObj_mean[b]['mean'] = rtvec.to_matrix(a[0])
-                self.calibObj_mean[b]['group'] = [rtvec.to_matrix(a[idx]) for idx,g in enumerate(a)]
+    def calibObj_cluster_mean(self, board=0, limit_pose=1000, mean_calculation='handEye'):
+        '''
+        This function is for calculating board params
+        '''
 
-        # group = np.array(cam_value2['group'])[common.cluster(cam_value2['extrinsic'])]
+        master_board = self.workspace.names.board[board]
+        if mean_calculation == "multical":
+            for board_id, board_name in enumerate(self.workspace.names.board):
+                self.calibObj_mean[board_name] = {}
+                self.calibObj_mean[board_name]['mean'] = self.board_pose.poses[board_id]
+                self.calibObj_mean[board_name]['group'] = [np.eye(4)]
+        if mean_calculation == "handEye":
+            for board_id in self.calib_obj[board].keys():
+                b = self.workspace.names.board[board_id]
+                a0 = np.array(self.calib_obj[board][board_id])
+                if len(a0)>limit_pose:
+                    selectedG1 = np.random.choice(np.arange(len(a0)), size=limit_pose)
+                    a = np.array([a0[g] for g in selectedG1])
+                else:
+                    a = a0
+                if a.size != 0 and len(a)>3:
+                    g = common.cluster(a)
+                    group = a[g]
+                    x = rtvec.to_matrix(common.mean_robust(group))
+                    self.calibObj_mean[b] = {}
+                    self.calibObj_mean[b]['mean'] = x
+                    if len(group)>100:
+                        selectedG = np.random.choice(np.arange(len(group)), size=100)
+                    else:
+                        selectedG = np.arange(len(group))
+                    self.calibObj_mean[b]['group'] = [rtvec.to_matrix(group[g]) for g in selectedG]
+                else:
+                    self.calibObj_mean[b] = {}
+                    self.calibObj_mean[b]['mean'] = rtvec.to_matrix(a[0])
+                    self.calibObj_mean[b]['group'] = [rtvec.to_matrix(a[idx]) for idx,g in enumerate(a)]
+
+        # For drawing boards
         b = Interactive_Extrinsic_Board(self.calibObj_mean, self.workspace.names.board)
         pass
 
@@ -577,7 +585,7 @@ class handEye():
             handEye_dict = self.handEye_table(master_cam=idx, limit_image=limit_images, num_adjustments=num_adjustments, limit_board_image=limit_board_image)
             self.all_handEye[master_cam] = handEye_dict
 
-        self.calibObj_cluster_mean()
+        self.calibObj_cluster_mean(limit_pose=100, mean_calculation="multical")
 
         mean_calculation = {}
         for cam_name, cam_group in self.all_handEye.items():
@@ -659,6 +667,9 @@ class handEye():
         pass
 
     def handEye_optimization(self):
+        '''
+        For only one-to-one group
+        '''
         def decode_intrinsic(intrinsic_param):
             dist = intrinsic_param[5:10]
             fx, fy, x0, y0, s = intrinsic_param[0], intrinsic_param[1], intrinsic_param[2], intrinsic_param[3], intrinsic_param[4]
@@ -1132,8 +1143,8 @@ def main1(base_path, limit_image=10):
     h = handEye(base_path)
     h.initiate_workspace()
     h.set_gripper_pose()
-    # h.viewPlanRobust()
-    h.viewPlanSimple()
+    h.viewPlanRobust()
+    # h.viewPlanSimple()
 
     # h.export_handEyeGripper(handEye_struct)
     # h.estimate_camera_board_poses()
@@ -1221,9 +1232,9 @@ def main6(base_path, limit_images, num_adjustments):
     pass
 
 if __name__ == '__main__':
-    main1(base_path, limit_image=10)
+    # main1(base_path, limit_image=10)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    # main4(base_path, limit_images=10, num_adjustments=0, limit_board_image=10)
+    main4(base_path, limit_images=6, num_adjustments=0, limit_board_image=6)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass
