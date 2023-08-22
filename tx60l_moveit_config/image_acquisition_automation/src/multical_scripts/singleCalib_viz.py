@@ -81,8 +81,10 @@ class Interactive_calibration():
             R = np.array(calib['camera_poses'][k]['R'])
             t = np.array(calib['camera_poses'][k]['T'])
             if calib_type == 'final':
-                self.camera_pose_final[cam] = matrix.join(R, t)
+                # the final pose from multical masterCam_wrto_slaveCam
+                self.camera_pose_final[cam] = np.linalg.inv(matrix.join(R, t))
             if calib_type == 'initial':
+                # the pose from hand-eye calibration slaveCam_wrto_masterCam
                 self.camera_pose_init[cam] = matrix.join(R, t)
         pass
 
