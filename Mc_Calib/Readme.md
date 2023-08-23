@@ -39,7 +39,7 @@ nvidia-container-cli: initialization error: load library failed: libnvidia-ml.so
 ```
 
 ```    
-Install the nvidia-container-toolkit package (and dependencies) after updating the package listing:
+Install the nvidia-container-toolkit package (and dependencies) (according to https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html):
 
 $ sudo apt-get update
 $ sudo apt-get install -y nvidia-container-toolkit
