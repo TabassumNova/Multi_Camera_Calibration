@@ -5,12 +5,12 @@ from .helpers import make_directory
 from .aravis import Camera, get_device_ids
 import cv2
 
-def start_arv_image_acquisition(self, pose):
+def start_arv_image_acquisition(pose, base_path = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/'):
     cameras = get_device_ids()
     num_cams = len(cameras)
     arv_camera = []
     camera_serial = []
-    base_path = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/'
+
     new_path = []
 
     for cam_idx in range(num_cams):

@@ -223,7 +223,7 @@ class handEye():
         # self.reprojectionError_Calculation_new(handEye_struct)
         # self.test_robotMove(handEye_struct)
 
-        return base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper
+        return base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, image_list
 
     def viewPlanSimple(self, limit_board_image=10):
         '''
@@ -241,11 +241,12 @@ class handEye():
                 board = self.workspace.names.board[board_id]
                 if board not in handEyeGripper_dict[cam]:
                     handEyeGripper_dict[cam][board] = {}
-                base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper = self.handEye_gripper(cam_id, board_id)
+                base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, image_list = self.handEye_gripper(cam_id, board_id)
                 handEyeGripper_dict[cam][board]['base_wrt_cam'] = base_wrt_cam.tolist()
                 handEyeGripper_dict[cam][board]['gripper_wrt_world'] = gripper_wrt_world.tolist()
                 handEyeGripper_dict[cam][board]['camera_wrt_world'] = camera_wrt_world.tolist()
                 handEyeGripper_dict[cam][board]['base_wrt_gripper'] = base_wrt_gripper.tolist()
+                handEyeGripper_dict[cam][board]['image_list'] = image_list.tolist()
 
         json_object = json.dumps(handEyeGripper_dict, indent=4)
         # Writing to sample.json

@@ -46,7 +46,7 @@ def initialise_with_images(ws : Workspace, boards, camera_images,
     #         camera_poses=calib.camera_poses if calib is not None else None
     #     )
     if camera_opts.motion_model == 'calibrate_board':
-        ws.initialise_board(camera_opts, runtime)
+        ws.initialise_board(camera_opts, runtime, error_limit= camera_opts.intrinsic_error_limit)
         pass
     else:
         ws.initialise_poses(

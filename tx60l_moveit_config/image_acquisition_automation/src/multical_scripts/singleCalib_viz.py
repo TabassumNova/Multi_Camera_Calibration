@@ -15,7 +15,7 @@ from dash.dependencies import Input, Output
 import pickle
 from src.multical.transform import common, rtvec
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35_test"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V_38_test_test"
 '''
 Single calibration.json visualization
 '''
@@ -83,6 +83,7 @@ class Interactive_calibration():
             if calib_type == 'final':
                 # the final pose from multical masterCam_wrto_slaveCam
                 self.camera_pose_final[cam] = np.linalg.inv(matrix.join(R, t))
+                # self.camera_pose_final[cam] = (matrix.join(R, t))
             if calib_type == 'initial':
                 # the pose from hand-eye calibration slaveCam_wrto_masterCam
                 self.camera_pose_init[cam] = matrix.join(R, t)

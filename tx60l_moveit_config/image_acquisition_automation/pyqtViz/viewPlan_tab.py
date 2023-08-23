@@ -26,6 +26,7 @@ from PyQt5.QtGui import *
 from src.multical_scripts.board_angle import *
 from src.multical_scripts.handEye_viz import *
 from src.QtImageViewer import *
+from src.aravis_image_acquisition import *
 # from src.aravis_show_image import *
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
@@ -507,5 +508,86 @@ class View_Plan(QWidget):
             self.label11.setText('Transformation Found; Press "Show Next image"')
         else:
             self.label11.setText('Transformation not found')
+
+    def evaluation(self):
+        for i in range(len(self.handEyeGripper[self.currentCamera][self.currentBoard]['camera_wrt_world'])):
+            camera_wrt_board = np.array(
+                self.handEyeGripper[self.currentCamera][self.currentBoard]['camera_wrt_world'][i])
+            if self.currentCamera in self.handEyeGripper:
+                if self.currentBoard in self.handEyeGripper[self.currentCamera]:
+                    board_wrt_gripper = np.linalg.inv(
+                        self.handEyeGripper[self.currentCamera][self.currentBoard]["gripper_wrt_world"])
+                    base_wrt_camera = (self.handEyeGripper[self.currentCamera][self.currentBoard]["base_wrt_cam"])
+                    ZB = matrix.transform(base_wrt_camera, camera_wrt_board)
+                    gripper_wrt_base = np.linalg.inv(matrix.transform(ZB, board_wrt_gripper))
+                    plan = move_robot(self.box_attacher, gripper_wrt_base)
+                    start_arv_image_acquisition(pose=i, base_path=self.saved_path)
+
+        board_num = self.boards.index(self.currentBoard)
+        cam_matrix, cam_dist = np.array(self.cameraIntrinsic['cameras'][self.currentCamera]['K'], dtype=np.float32), \
+                               np.array(self.cameraIntrinsic['cameras'][self.currentCamera]['dist'], dtype=np.float32)
+        ids = self.detection[board_num].ids
+        detected_board = self.boards[board_num]
+        adjusted_points = self.boards_config[detected_board].adjusted_points
+        objpoints = np.array([adjusted_points[a] for a in ids], dtype=np.float32).reshape((-1, 3))
+        x0_rvec = []
+        y0_rvec = []
+        z0_rvec = []
+        x1_rvec = []
+        y1_rvec = []
+        z1_rvec = []
+        x0_tvec = []
+        y0_tvec = []
+        z0_tvec = []
+        x1_tvec = []
+        y1_tvec = []
+        z1_tvec = []
+        for i in range(len(self.handEyeGripper[self.currentCamera][self.currentBoard]['camera_wrt_world'])):
+            camera_wrt_board = np.array(
+                self.handEyeGripper[self.currentCamera][self.currentBoard]['camera_wrt_world'][i])
+            img_path = self.saved_path + '/' + self.currentCamera + '/p' + str(i) + '.png'
+            frame = cv2.imread(img_path)
+            corners, ids, _ = cv2.aruco.detectMarkers(frame[:, :, 0], self.boards_config[detected_board].dictionary,
+                                                      parameters=cv2.aruco.DetectorParameters_create())
+            # corners = np.array(self.detection[board_num].corners, dtype=np.float32).reshape(-1, 2)
+            undistorted = cv2.undistortPoints(corners, cam_matrix, cam_dist, P=cam_matrix)
+            ret, new_rvecs, new_tvecs, new_euler_deg, new_view_angle = board_pose(objpoints,
+                                                                  undistorted, ids, cam_matrix, cam_dist,
+                                                                  method="solvePnP")
+            old_rvecs, old_tvecs = rtvec.split(rtvec.from_matrix(camera_wrt_board))
+            x0_rvec.append(old_rvecs[0])
+            y0_rvec.append(old_rvecs[1])
+            z0_rvec.append(old_rvecs[2])
+            x1_rvec.append(new_rvecs[0])
+            y1_rvec.append(new_rvecs[1])
+            z1_rvec.append(new_rvecs[2])
+            x0_tvec.append(old_tvecs[0])
+            y0_tvec.append(old_tvecs[1])
+            z0_tvec.append(old_tvecs[2])
+            x1_tvec.append(new_tvecs[0])
+            y1_tvec.append(new_tvecs[1])
+            z1_tvec.append(new_tvecs[2])
+
+        final_layout = go.Figure()
+        final_layout.add_trace(
+            go.Scatter3d(
+                x=x0_rvec,
+                y=y0_rvec,
+                z=z0_rvec,
+                mode='markers',textposition="bottom center",
+                name='Icosahedron'
+            )
+        )
+        final_layout.add_trace(
+            go.Scatter3d(
+                x=x1_rvec,
+                y=y1_rvec,
+                z=z1_rvec,
+                mode='markers', textposition="bottom center",
+                name='Cube'
+            )
+        )
+        final_layout.show()
+        pass
        
 

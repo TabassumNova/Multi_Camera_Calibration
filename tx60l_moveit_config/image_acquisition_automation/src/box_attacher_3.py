@@ -117,7 +117,7 @@ class Box_Attacher_3(object):
             orientation = [float(p) for p in data[pose]["orintation (w,x,y,z)"]]
             pose_dict['orientation'] = [orientation[1], orientation[2], orientation[3], orientation[0]]
             move_robot(self, pose_dict)
-            start_arv_image_acquisition(self, int(pose))
+            start_arv_image_acquisition(pose = int(pose))
         pass
     
     def plan_box_param(self, library = 'arv'):
