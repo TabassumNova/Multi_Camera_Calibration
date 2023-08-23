@@ -298,6 +298,7 @@ class View_Plan(QWidget):
         self.box_attacher.add_obstacle("camera_wall_2")
         self.box_attacher.add_obstacle("glass_wall")
         self.box_attacher.add_obstacle("base")
+        self.box_attacher.add_obstacle("roof")
 
         pass
 

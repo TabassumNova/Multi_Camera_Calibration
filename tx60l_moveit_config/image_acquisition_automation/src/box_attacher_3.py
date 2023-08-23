@@ -602,7 +602,7 @@ def view3D(new_x, new_y, new_z, newtext):
                          "glass_wall": {"orientation": [1.0, -1, 0, 1], "size": (0.1, 1.5, 2)},
                          "left_wall": {"orientation": [1.0, 0, 1, 1], "size": (1.5, 0.1, 2)},
                          "base": {"orientation": [1.0, 0, 0, -0.6], "size": (1, 1, 0.1)},
-                         "roof": {"orientation": [1.0, 0, 0, 2.0], "size": (1, 1, 0.1)}}
+                         "roof": {"orientation": [1.0, 0, 0, 1.6], "size": (1, 1, 0.1)}}
 
         scene = self.scene
         rospy.sleep(2)

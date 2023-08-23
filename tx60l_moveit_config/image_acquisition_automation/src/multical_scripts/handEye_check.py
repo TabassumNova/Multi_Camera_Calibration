@@ -18,7 +18,7 @@ import plotly.express as px
 import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
 
-base_path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/V40"
+base_path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/V41"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):
@@ -1078,6 +1078,14 @@ class handEye():
         # new
         return error_list, rms
 
+    def check_Rotation_Orthogonality(self, rotation_matrix):
+        M = rotation_matrix @ rotation_matrix.T
+        check = False
+        x = int(np.linalg.det(M))
+        if x == 1:
+            check = True
+        return check
+
     def master_slave_pose(self, master_cam, master_board, slave_cam, slave_board):
         num_images = len(self.workspace.names.image)
         '''
@@ -1098,13 +1106,16 @@ class handEye():
             if master_valid and slave_valid:
                 master_pose = np.linalg.inv(self.workspace.pose_table.poses[master_cam][idx][master_board])
                 master_R, master_t = matrix.split(master_pose)
+                master_check = self.check_Rotation_Orthogonality(master_R)
                 slave_pose = np.linalg.inv(self.workspace.pose_table.poses[slave_cam][idx][slave_board])
                 slave_R, slave_t = matrix.split(slave_pose)
-                masterR_list.append(master_R)
-                masterT_list.append(master_t)
-                slaveR_list.append(slave_R)
-                slaveT_list.append(slave_t)
-                image_list.append(img)
+                slave_check = self.check_Rotation_Orthogonality(slave_R)
+                if master_check and slave_check:
+                    masterR_list.append(master_R)
+                    masterT_list.append(master_t)
+                    slaveR_list.append(slave_R)
+                    slaveT_list.append(slave_t)
+                    image_list.append(img)
 
         return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list), image_list
 
@@ -1235,9 +1246,9 @@ def main6(base_path, limit_images, num_adjustments):
     pass
 
 if __name__ == '__main__':
-    main1(base_path, limit_image=10)
+    # main1(base_path, limit_image=10)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    # main4(base_path, limit_images=6, num_adjustments=0, limit_board_image=6)
+    main4(base_path, limit_images=10, num_adjustments=0, limit_board_image=10)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass

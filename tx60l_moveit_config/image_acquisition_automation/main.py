@@ -45,7 +45,7 @@ def main():
         box_attacher.add_obstacle("glass_wall")
         # box_attacher.add_obstacle("left_wall")
         box_attacher.add_obstacle("base")
-        # box_attacher.add_obstacle("roof")
+        box_attacher.add_obstacle("roof")
 
 
 
