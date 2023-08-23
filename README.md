@@ -159,3 +159,9 @@ cv2.calibrateRobotWorldHandEye(cam_world_R, cam_world_t, base_gripper_R, base_gr
 cv2.error: OpenCV(4.6.0) /work/ci_py311/opencv-suite_1676837327081/work/modules/calib3d/src/calibration_handeye.cpp:524: error: (-7:Iterations do not converge) Rotation normalization issue: determinant(R) is null in function 'normalizeRotation'
 ```
 **Solution**: check if RR^T = Identity matrix (https://math.stackexchange.com/questions/3292034/normalizing-a-quasi-rotation-matrix)
+
+# PyQt5 Issues
+```
+Backend QtAgg is interactive backend. Turning interactive mode on. qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found. This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.  Available platform plugins are: eglfs, minimal, vkkhrdisplay, xcb, vnc, wayland, minimalegl, wayland-egl, linuxfb, offscreen.
+```
+**Solution**: Problem might come from PyQt5 of Python>=3.6. or matplotlib. Downgrade matplotlib `pip install matplotlib==3.1.0`
