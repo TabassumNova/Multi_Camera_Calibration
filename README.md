@@ -158,3 +158,4 @@ DICT_6X6_1000.json
 cv2.calibrateRobotWorldHandEye(cam_world_R, cam_world_t, base_gripper_R, base_gripper_t, method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH)
 cv2.error: OpenCV(4.6.0) /work/ci_py311/opencv-suite_1676837327081/work/modules/calib3d/src/calibration_handeye.cpp:524: error: (-7:Iterations do not converge) Rotation normalization issue: determinant(R) is null in function 'normalizeRotation'
 ```
+**Solution**: check if RR^T = Identity matrix (https://math.stackexchange.com/questions/3292034/normalizing-a-quasi-rotation-matrix)
