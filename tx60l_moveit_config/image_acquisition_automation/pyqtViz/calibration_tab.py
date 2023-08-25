@@ -40,6 +40,7 @@ except ImportError:
 
 from .operation_tab import *
 import cv2
+import matplotlib.pyplot as plt
 from src.multical_scripts.handEye_check import *
 
 class Calibration(QWidget):
@@ -84,11 +85,17 @@ class Calibration(QWidget):
         self.btnLoad3.clicked.connect(self.loadNext)
         self.btnLoad3.setGeometry(QRect(618, 0, 30, 28))
 
+        self.btnLoad4 = QPushButton(self)
+        self.btnLoad4.setObjectName('Show visualization')
+        self.btnLoad4.setText('Show visualization')
+        self.btnLoad4.clicked.connect(self.showviz)
+        self.btnLoad4.setGeometry(QRect(650, 0, 150, 28))
+
         self.btnLoad5 = QPushButton(self)
-        self.btnLoad5.setObjectName('Show visualization')
-        self.btnLoad5.setText('Show visualization')
-        self.btnLoad5.clicked.connect(self.showviz)
-        self.btnLoad5.setGeometry(QRect(650, 0, 150, 28))
+        self.btnLoad5.setObjectName('Export Matplotlib')
+        self.btnLoad5.setText('Export Matplotlib')
+        self.btnLoad5.clicked.connect(self.export_matplotlib)
+        self.btnLoad5.setGeometry(QRect(800, 0, 140, 28))
 
         self.label1 = QLabel(self)
         self.label1.setObjectName('Pose')
@@ -329,6 +336,36 @@ class Calibration(QWidget):
         camera = str(self.cam_num)
         group = str(self.cam_group)
         self.draw_viz(camera, group)
+
+    def export_matplotlib(self):
+        images = self.handEyeCamera[self.cam_num][str(self.cam_group)]['image_list']
+        masterBoard_angle = self.handEyeCamera[self.cam_num][str(self.cam_group)]['masterBoard_angle']
+        slaveBoard_angle = self.handEyeCamera[self.cam_num][str(self.cam_group)]['slaveBoard_angle']
+        mBoard_x = []
+        mBoard_y = []
+        mBoard_z = []
+        sBoard_x = []
+        sBoard_y = []
+        sBoard_z = []
+        for img in images:
+            mBoard_x.append(masterBoard_angle[img][0])
+            mBoard_y.append(masterBoard_angle[img][1])
+            mBoard_z.append(masterBoard_angle[img][2])
+            sBoard_x.append(slaveBoard_angle[img][0])
+            sBoard_y.append(slaveBoard_angle[img][1])
+            sBoard_z.append(slaveBoard_angle[img][2])
+
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        ax.scatter(mBoard_x, mBoard_y, mBoard_z, marker='o', label='Master Board')
+
+        ax.scatter(sBoard_x, sBoard_y, sBoard_z, marker='^', label='Slave Board')
+        ax.set_xlabel('Roll', fontweight='bold')
+        ax.set_ylabel('Pitch', fontweight='bold')
+        ax.set_zlabel('Yaw', fontweight='bold')
+        ax.legend()
+        plt.show()
+        pass
 
     # def selectCurrentPose(self):
     #     image = self.handEyeCamera[self.cam_num][str(self.cam_group)]['image_list'][self.Current_poseCount]
