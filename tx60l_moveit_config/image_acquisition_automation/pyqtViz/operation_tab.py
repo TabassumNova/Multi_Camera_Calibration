@@ -279,17 +279,19 @@ class Operation(QWidget):
 
     def loadNext(self):
         if self.last_pose_count >= self.pose_count >= 0:
-            self.pose_count += 1
+            # self.pose_count += 1
             self.clearLayout(self.gridLayout1)
             self.set_viewer(gridLayout=self.gridLayout1)
+            self.pose_count += 1
         else:
             self.clearLayout(self.gridLayout1)
         # return 0
 
     def loadPrevious(self):
         if self.pose_count > 0:
-            self.pose_count -= 1
+            # self.pose_count -= 1
             self.clearLayout(self.gridLayout1)
             self.set_viewer(gridLayout=self.gridLayout1)
+            self.pose_count -= 1
         else:
             self.clearLayout(self.gridLayout1)

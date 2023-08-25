@@ -301,14 +301,14 @@ class Calibration(QWidget):
 
 
     def loadNext(self):
-        if self.Last_poseCount-1 > self.Current_poseCount >= 0:
-            self.Current_poseCount += 1
+        if self.Last_poseCount-1 >= self.Current_poseCount >= 0:
             self.clearLayout(self.gridLayout1)
             self.selectionchange(self.group, self.Current_poseCount)
+            self.Current_poseCount += 1
         else:
             self.clearLayout(self.gridLayout1)
             print("Pose end")
-        # return 0
+            self.label1.setText('Pose')
 
     def loadPrevious(self):
         if self.Current_poseCount > 0:
@@ -317,6 +317,7 @@ class Calibration(QWidget):
             self.selectionchange(self.group, self.Current_poseCount)
         else:
             self.clearLayout(self.gridLayout1)
+            self.label1.setText('Pose')
 
     def clearLayout(self, layout):
         while layout.count():
