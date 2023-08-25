@@ -25,8 +25,8 @@ from PyQt5.QtGui import *
 # from PyQt6.QtGui import *
 from src.multical_scripts.board_angle import *
 from src.multical_scripts.handEye_viz import *
-from src.QtImageViewer import *
-from src.aravis_image_acquisition import *
+# from src.QtImageViewer import *
+# from src.aravis_image_acquisition import *
 # from src.aravis_show_image import *
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
@@ -43,7 +43,7 @@ except ImportError:
     qimage2ndarray = None
 
 from .calibration_tab import *
-from src.aravis_show_image import find_cameras, show_image
+# from src.aravis_show_image import find_cameras, show_image
 from functools import partial
 from src.helpers import *
 from src.multical_scripts.camcalib_detect import *
@@ -51,9 +51,9 @@ from src.multical.board import load_config as board_load_config
 from src.multical_scripts import *
 import cv2
 
-import rospy
-from src.box_attacher_3 import *
-from src.data_robot_mover2 import *
+# import rospy
+# from src.box_attacher_3 import *
+# from src.data_robot_mover2 import *
 
 class View_Plan(QWidget):
     def __init__(self):

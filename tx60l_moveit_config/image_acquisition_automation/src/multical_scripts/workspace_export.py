@@ -9,7 +9,7 @@ from structs.struct import struct, to_dicts, transpose_lists
 from src.multical.workspace import *
 import src.multical.workspace as ws
 
-base_path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/V41"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41"
 
 def export_workspace(workspace, path):
     '''
@@ -43,8 +43,8 @@ def main1(datasetPath):
     pathO = args.PathOpts(image_path=datasetPath)
     cam = args.CameraOpts(intrinsic_error_limit=0.5)
     # pose_estimation_method = "solvePnPRansac"
-    pose_estimation_method = "solvePnPGeneric"
-    runt = args.RuntimeOpts(pose_estimation=pose_estimation_method)
+    pose_estimation_method = "solvePnP"
+    runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=True)
     opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True, adjust_outliers=False)
     c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
     workspace = c.execute_board()

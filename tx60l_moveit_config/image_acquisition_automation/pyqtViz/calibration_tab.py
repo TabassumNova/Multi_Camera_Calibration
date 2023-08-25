@@ -229,7 +229,7 @@ class Calibration(QWidget):
                 self.last_pose_count = len(self.images)
                 for file in files:
                     if file == 'calibration.detections.pkl':
-                        pickle_file = ws.Workspace.load(os.path.join(self.folder_path, 'calibration.detections.pkl'))
+                        pickle_file = pickle.load(open(os.path.join(self.folder_path, 'calibration.detections.pkl'),'rb'))
                         self.detectedPoints = pickle_file.detected_points
                     if file == "calibration.json":
                         intrinsic_path = os.path.join(self.folder_path, 'calibration.json')
@@ -237,6 +237,7 @@ class Calibration(QWidget):
                     if file == "handEyeCamera.json":
                         handEye_path = os.path.join(self.folder_path, "handEyeCamera.json")
                         self.handEyeCamera = json.load(open(handEye_path))
+        pass
 
 
     def loadNext(self):

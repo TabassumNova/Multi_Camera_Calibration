@@ -39,6 +39,7 @@ except ImportError:
     qimage2ndarray = None
 
 from .calibration_tab import *
+from src.QtImageViewer import *
 
 class Operation(QWidget):
     def __init__(self):
@@ -248,31 +249,33 @@ class Operation(QWidget):
 
     def workspace_load(self):
         for path, subdirs, files in os.walk((self.folder_path)):
-            if "workspace.pkl" not in files:
-                print('No "workspace.pkl" file found; Run workspace_export.py')
             if path == self.folder_path:
-                workspace_path = os.path.join(self.folder_path, [f for f in files if f == "workspace.pkl"][0])
-                self.workspace = pickle.load(open( workspace_path, "rb"))
-                self.cameras = self.workspace.names.camera
-                self.images = self.workspace.names.image
-                self.boards = self.workspace.names.board
-                self.last_pose_count = len(self.images)
+                if "workspace.pkl" not in files:
+                    print('No "workspace.pkl" file found; Run workspace_export.py')
+                else:
+                    workspace_path = os.path.join(self.folder_path, [f for f in files if f == "workspace.pkl"][0])
+                    self.workspace = pickle.load(open( workspace_path, "rb"))
+                    self.cameras = self.workspace.names.camera
+                    self.images = self.workspace.names.image
+                    self.boards = self.workspace.names.board
+                    self.last_pose_count = len(self.images)
                 if 'calibration.detections.pkl' not in files:
                     print('No "calibration.detections.pkl" file found')
+                else:
+                    pickle_file = pickle.load(open(os.path.join(self.folder_path, 'calibration.detections.pkl'), 'rb'))
+                    self.detectedPoints = pickle_file.detected_points
                 if "calibration.json" not in files:
                     print('No "calibration.json" file found')
+                else:
+                    intrinsic_path = os.path.join(self.folder_path, 'calibration.json')
+                    self.intrinsic = json.load(open(intrinsic_path))
                 if "handEyeCamera.json" not in files:
                     print('No "handEyeCamera.json" file found; Run main4 of handEye_check.py')
-                for file in files:
-                    if file == 'calibration.detections.pkl':
-                        pickle_file = ws.Workspace.load(os.path.join(self.folder_path, 'calibration.detections.pkl'))
-                        self.detectedPoints = pickle_file.detected_points
-                    if file == "calibration.json":
-                        intrinsic_path = os.path.join(self.folder_path, 'calibration.json')
-                        self.intrinsic = json.load(open(intrinsic_path))
-                    if file == "handEyeCamera.json":
-                        handEye_path = os.path.join(self.folder_path, "handEyeCamera.json")
-                        self.handEyeCamera = json.load(open(handEye_path))
+                else:
+                    handEye_path = os.path.join(self.folder_path, "handEyeCamera.json")
+                    self.handEyeCamera = json.load(open(handEye_path))
+
+        pass
 
     def loadNext(self):
         if self.last_pose_count >= self.pose_count >= 0:

@@ -68,7 +68,8 @@ class MyTabWidget(QWidget):
         self.tab1 = Operation()
         self.tab2 = Calibration()
         self.tab3 = QWidget()
-        self.tab4 = View_Plan()
+        # self.tab4 = View_Plan()
+        self.tab4 = QWidget()
         self.tab5 = QWidget()
         # self.tabs.resize(300, 200)
         # Add tabs

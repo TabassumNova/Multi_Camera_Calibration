@@ -63,15 +63,16 @@ def estimate_pose_points(board, camera, detections, method="solvePnPGeneric"):
             inliers = inliers1.reshape((1,-1))[0].tolist()
 
     elif method == "solvePnP":
-        valid, rvec, tvec = cv2.solvePnP(board.points[detections.ids], undistorted, camera.intrinsic, camera.dist)
+        valid, rvec0, tvec0 = cv2.solvePnP(board.points[detections.ids], undistorted, camera.intrinsic, camera.dist)
         error = np.zeros((2, 1))
-        inliers = [None]
+        rvec, tvec = [rvec0], [tvec0]
+        inliers = np.arange(len(detections.ids)).reshape((1,-1))[0].tolist()
 
     elif method == "solvePnP_P3P":
         objPoints = board.points[detections.ids].astype('float32')
         ret, rvecs, tvecs = cv2.solveP3P(objPoints[0:3,:], undistorted[0:3,:], camera.intrinsic, camera.dist, flags=cv2.SOLVEPNP_P3P)
         error = np.zeros((2, 1))
-        inliers = [None]
+        inliers = np.arange(len(objPoints)).reshape((1,-1))[0].tolist()
 
 
     if not valid:

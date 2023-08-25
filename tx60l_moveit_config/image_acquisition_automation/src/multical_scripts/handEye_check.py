@@ -18,7 +18,7 @@ import plotly.express as px
 import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
 
-base_path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/V41"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):
@@ -70,8 +70,8 @@ class handEye():
         pathO = args.PathOpts(image_path=self.datasetPath)
         cam = args.CameraOpts(calibration=self.intrinsicPath,intrinsic_error_limit=1.0)
         # pose_estimation_method = "solvePnPRansac"
-        pose_estimation_method = "solvePnPGeneric"
-        runt = args.RuntimeOpts(pose_estimation=pose_estimation_method)
+        pose_estimation_method = "solvePnP"
+        runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=True)
         opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True, adjust_outliers=False)
         c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
         self.workspace = c.execute_board()
@@ -428,7 +428,7 @@ class handEye():
         for cam in range(0, num_cameras):
             handEye_dict[cam] = self.handEye_table(master_cam=cam)
 
-    def handEye_table(self, master_cam=0, limit_image=2, num_adjustments=5, limit_board_image=2):
+    def handEye_table(self, master_cam=0, limit_image=2, num_adjustments=5, limit_board_image=2, calculate_handeye=True):
         '''
         handEye for Master_cam to Slave_cam
         :param limit_image: number of image allowed for hand eye pair
@@ -455,11 +455,17 @@ class handEye():
                     if len(image_list)>limit_image:
                         # board_wrt_boardM, slave_wrt_master, world_wrt_camera, \
                         # base_wrt_gripper, err, err2 = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
-                        print("MasterCam: ",master_cam, " MasterB: ", boardM, " SlaveCam: ", slave_cam, " SlaveB: ", boardS, " images: ", image_list)
-                        slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, \
-                        estimated_slaveB_slaveCam, err, err2 = self.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
+                        print("Group: ",serial,"MasterCam: ",master_cam, " MasterB: ", boardM, " SlaveCam: ", slave_cam, " SlaveB: ", boardS, " images: ", image_list)
+                        if calculate_handeye:
+                            slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, \
+                            estimated_slaveB_slaveCam, err, err2 = self.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
+                        else:
+                            slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, \
+                            estimated_slaveB_slaveCam, err, err2 = np.eye(4), np.eye(4), np.tile(np.eye(4), (len(image_list),1,1)),\
+                                                        np.tile(np.eye(4), (len(image_list),1,1)), \
+                                                                   np.tile(np.eye(4), (len(image_list),1,1)), 0, 0
 
-                        ## for board pose
+                            ## for board pose
                         if boardM not in self.calib_obj:
                             self.calib_obj[boardM] = {}
                         if boardS not in self.calib_obj[boardM]:
@@ -581,11 +587,11 @@ class handEye():
         b = Interactive_Extrinsic_Board(self.calibObj_mean, self.workspace.names.board)
         pass
 
-    def calc_camPose_param(self, limit_images, num_adjustments, limit_board_image):
+    def calc_camPose_param(self, limit_images, num_adjustments, limit_board_image, calculate_handeye):
         cameras = self.workspace.names.camera
         # cameras = ['08320217']
         for idx, master_cam in enumerate(cameras):
-            handEye_dict = self.handEye_table(master_cam=idx, limit_image=limit_images, num_adjustments=num_adjustments, limit_board_image=limit_board_image)
+            handEye_dict = self.handEye_table(master_cam=idx, limit_image=limit_images, num_adjustments=num_adjustments, limit_board_image=limit_board_image, calculate_handeye=calculate_handeye)
             self.all_handEye[master_cam] = handEye_dict
 
         self.calibObj_cluster_mean(limit_pose=100, mean_calculation="multical")
@@ -1078,12 +1084,15 @@ class handEye():
         # new
         return error_list, rms
 
-    def check_Rotation_Orthogonality(self, rotation_matrix):
+    def check_Rotation_Orthogonality(self, rotation_matrix, img):
         M = rotation_matrix @ rotation_matrix.T
         check = False
         x = int(np.linalg.det(M))
         if x == 1:
             check = True
+        else:
+            pass
+            # print('non orthogonal image: ', img)
         return check
 
     def master_slave_pose(self, master_cam, master_board, slave_cam, slave_board):
@@ -1106,16 +1115,21 @@ class handEye():
             if master_valid and slave_valid:
                 master_pose = np.linalg.inv(self.workspace.pose_table.poses[master_cam][idx][master_board])
                 master_R, master_t = matrix.split(master_pose)
-                master_check = self.check_Rotation_Orthogonality(master_R)
+                master_check = self.check_Rotation_Orthogonality(master_R, img)
                 slave_pose = np.linalg.inv(self.workspace.pose_table.poses[slave_cam][idx][slave_board])
                 slave_R, slave_t = matrix.split(slave_pose)
-                slave_check = self.check_Rotation_Orthogonality(slave_R)
-                if master_check and slave_check:
-                    masterR_list.append(master_R)
-                    masterT_list.append(master_t)
-                    slaveR_list.append(slave_R)
-                    slaveT_list.append(slave_t)
-                    image_list.append(img)
+                slave_check = self.check_Rotation_Orthogonality(slave_R, img)
+                masterR_list.append(master_R)
+                masterT_list.append(master_t)
+                slaveR_list.append(slave_R)
+                slaveT_list.append(slave_t)
+                image_list.append(img)
+                # if master_check and slave_check:
+                #     masterR_list.append(master_R)
+                #     masterT_list.append(master_t)
+                #     slaveR_list.append(slave_R)
+                #     slaveT_list.append(slave_t)
+                #     image_list.append(img)
 
         return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list), image_list
 
@@ -1222,11 +1236,11 @@ def main3(base_path, limit_images, num_adjustments):
     h.export_handEye_Camera()
     pass
 
-def main4(base_path, limit_images, num_adjustments, limit_board_image):
+def main4(base_path, limit_images, num_adjustments, limit_board_image, calculate_handeye):
 
     h = handEye(base_path)
     h.initiate_workspace()
-    h.calc_camPose_param(limit_images, num_adjustments, limit_board_image)
+    h.calc_camPose_param(limit_images, num_adjustments, limit_board_image, calculate_handeye)
     h.export_handEye_Camera()
     # h.check_cluster_reprojectionerr()
 
@@ -1248,7 +1262,7 @@ def main6(base_path, limit_images, num_adjustments):
 if __name__ == '__main__':
     # main1(base_path, limit_image=10)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    main4(base_path, limit_images=10, num_adjustments=0, limit_board_image=10)
+    main4(base_path, limit_images=10, num_adjustments=0, limit_board_image=10, calculate_handeye=True)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass
