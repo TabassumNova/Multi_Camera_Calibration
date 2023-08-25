@@ -330,7 +330,8 @@ class handEye():
         for idx, cam in enumerate(self.workspace.names.camera):
             self.camera_color[cam] = colors[idx]
 
-    def hand_eye_robot_world(self, cam_world_R, cam_world_t, base_gripper_R, base_gripper_t):
+    @staticmethod
+    def hand_eye_robot_world(cam_world_R, cam_world_t, base_gripper_R, base_gripper_t):
         base_cam_r, base_cam_t, gripper_world_r, gripper_world_t = \
             cv2.calibrateRobotWorldHandEye(cam_world_R, cam_world_t, base_gripper_R, base_gripper_t, method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH)
 

@@ -40,6 +40,7 @@ except ImportError:
 
 from .operation_tab import *
 import cv2
+from src.multical_scripts.handEye_check import *
 
 class Calibration(QWidget):
     def __init__(self):
@@ -59,6 +60,7 @@ class Calibration(QWidget):
         self.detectedPoints = None
         self.intrinsic = None
         self.selected_pose = []
+        self.image_checkBox = {}
 
         self.btnLoad1 = QPushButton(self)
         self.btnLoad1.setObjectName('Load')
@@ -82,17 +84,11 @@ class Calibration(QWidget):
         self.btnLoad3.clicked.connect(self.loadNext)
         self.btnLoad3.setGeometry(QRect(618, 0, 30, 28))
 
-        self.btnLoad4 = QPushButton(self)
-        self.btnLoad4.setObjectName('Select Current Pose')
-        self.btnLoad4.setText('Select Current Pose')
-        self.btnLoad4.clicked.connect(self.selectCurrentPose)
-        self.btnLoad4.setGeometry(QRect(650, 0, 180, 28))
-
         self.btnLoad5 = QPushButton(self)
         self.btnLoad5.setObjectName('Show visualization')
         self.btnLoad5.setText('Show visualization')
         self.btnLoad5.clicked.connect(self.showviz)
-        self.btnLoad5.setGeometry(QRect(830, 0, 150, 28))
+        self.btnLoad5.setGeometry(QRect(650, 0, 150, 28))
 
         self.label1 = QLabel(self)
         self.label1.setObjectName('Pose')
@@ -100,35 +96,39 @@ class Calibration(QWidget):
         self.label1.setStyleSheet("border: 1px solid black;")
         self.label1.setGeometry(QRect(525, 0, 93, 28))
 
-        self.label2 = QLabel(self)
-        self.label2.setObjectName('Selected poses')
-        self.label2.setText('Selected poses')
-        self.label2.setStyleSheet("border: 1px solid black;")
-        self.label2.setGeometry(QRect(0, 30, 1880, 28))
-
         self.btnLoad6 = QPushButton(self)
-        self.btnLoad6.setObjectName('Calibrate Selected poses')
-        self.btnLoad6.setText('Calibrate Selected poses')
+        self.btnLoad6.setObjectName('Hand-Eye Calibration')
+        self.btnLoad6.setText('Hand-Eye Calibration')
         self.btnLoad6.clicked.connect(self.handEye_Calibration)
-        self.btnLoad6.setGeometry(QRect(0, 60, 150, 28))
+        self.btnLoad6.setGeometry(QRect(0, 100, 150, 28))
 
         self.label3 = QLabel(self)
         self.label3.setObjectName('Result')
         self.label3.setText('Result')
         self.label3.setStyleSheet("border: 1px solid black;")
-        self.label3.setGeometry(QRect(153, 60, 200, 28))
+        self.label3.setGeometry(QRect(153, 100, 200, 28))
 
         # Grid for images
         self.gridLayoutWidget1 = QWidget(self)
-        self.gridLayoutWidget1.setGeometry(QRect(0, 100, 1880, 500))
+        self.gridLayoutWidget1.setGeometry(QRect(0, 130, 1880, 500))
         self.gridLayoutWidget1.setObjectName("gridLayoutWidget")
         self.gridLayout1 = QGridLayout(self.gridLayoutWidget1)
         self.gridLayout1.setContentsMargins(0, 0, 0, 0)
         self.gridLayout1.setObjectName("gridLayout")
 
+        # Grid for image check boxes
+        self.gridLayoutWidget2 = QWidget(self)
+        self.gridLayoutWidget2.setGeometry(QRect(0, 30, 1880, 60))
+        self.gridLayoutWidget2.setObjectName("gridLayoutWidget")
+        self.gridLayout2 = QGridLayout(self.gridLayoutWidget2)
+        self.gridLayout2.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout2.setObjectName("gridLayout")
+
+
+
         # Grid for table
         self.gridLayoutWidget3 = QWidget(self)
-        self.gridLayoutWidget3.setGeometry(QRect(0, 600, 700, 700))
+        self.gridLayoutWidget3.setGeometry(QRect(0, 630, 700, 700))
         self.gridLayoutWidget3.setObjectName("gridLayoutWidget")
         self.gridLayout3 = QGridLayout(self.gridLayoutWidget3)
         self.gridLayout3.setContentsMargins(0, 0, 0, 0)
@@ -139,7 +139,33 @@ class Calibration(QWidget):
         self.setLayout(self.layout)
 
     def handEye_Calibration(self):
-        pass
+        master_cam = self.workspace.names.camera.index(self.cam_num)
+        m_board = self.handEyeCamera[self.cam_num][str(self.cam_group)]['master_board']
+        master_board = self.workspace.names.board.index(m_board)
+        s_cam = self.handEyeCamera[self.cam_num][str(self.cam_group)]['slave_cam']
+        slave_cam = self.workspace.names.camera.index(s_cam)
+        s_board = self.handEyeCamera[self.cam_num][str(self.cam_group)]['slave_board']
+        slave_board = self.workspace.names.board.index(s_board)
+        masterR_list = []
+        masterT_list = []
+        slaveR_list = []
+        slaveT_list = []
+        for img in self.selected_pose:
+            img_id = self.workspace.names.image.index(img)
+            master_pose = np.linalg.inv(self.workspace.pose_table.poses[master_cam][img_id][master_board])
+            master_R, master_t = matrix.split(master_pose)
+            slave_pose = np.linalg.inv(self.workspace.pose_table.poses[slave_cam][img_id][slave_board])
+            slave_R, slave_t = matrix.split(slave_pose)
+            masterR_list.append(master_R)
+            masterT_list.append(master_t)
+            slaveR_list.append(slave_R)
+            slaveT_list.append(slave_t)
+
+        h = handEye(self.folder_path)
+        slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, \
+        estimated_slaveB_slaveCam, err, err2 = h.hand_eye_robot_world(np.array(masterR_list),
+                                                                      np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list))
+        self.label3.setText('handeye possible')
 
     def group_decode(self, group):
         group_num = {}
@@ -152,6 +178,8 @@ class Calibration(QWidget):
         pass
 
     def selectionchange(self, group, poseCount=0):
+        self.clearLayout(self.gridLayout1)
+        self.clearLayout(self.gridLayout2)
         if poseCount == 0:
             self.Current_poseCount = 0
         self.cam_num, self.cam_group = self.group_decode(group)
@@ -164,6 +192,20 @@ class Calibration(QWidget):
         slave_cam = handEye_Cam["slave_cam"]
         slave_board = handEye_Cam["slave_board"]
         image_list = handEye_Cam["image_list"]
+        ## add image check box
+        select_allImage = QCheckBox(text='Select all')
+        select_allImage.stateChanged.connect(partial(self.seletedImage, 'all'))
+        select_allImage.setGeometry(QRect(0, 60, 30, 28))
+        self.gridLayout2.addWidget(select_allImage, 0, 0)
+        for idx, img in enumerate(image_list):
+            self.image_checkBox[img] = QCheckBox(text=img)
+            self.image_checkBox[img].stateChanged.connect(partial(self.seletedImage, img))
+            self.image_checkBox[img].setGeometry(QRect(0, 60, 30, 28))
+            if idx<15:
+                self.gridLayout2.addWidget(self.image_checkBox[img], 0, idx+1)
+            else:
+                self.gridLayout2.addWidget(self.image_checkBox[img], 1, idx-15 + 1)
+        ## end
         master_path = os.path.join(self.folder_path, master_cam, image_list[poseCount])
         slave_path = os.path.join(self.folder_path, slave_cam, image_list[poseCount])
         pose = 'Pose '+ image_list[poseCount][1:-4]
@@ -171,11 +213,28 @@ class Calibration(QWidget):
         imageLabel1 = self.image_load(master_path, master_cam, master_board, image_list[poseCount])
         imageLabel2 = self.image_load(slave_path, slave_cam, slave_board, image_list[poseCount])
         # self.clearLayout(layout)
-        self.gridLayout1.addWidget(imageLabel1, 0, 0)
-        self.gridLayout1.addWidget(imageLabel2, 0, 1)
+        self.gridLayout1.addWidget(imageLabel1, 1, 0)
+        self.gridLayout1.addWidget(imageLabel2, 1, 1)
 
         self.calibrationTab_Table()
         # print(self.group)
+        pass
+
+    def seletedImage(self, image):
+        handEye_Cam = self.handEyeCamera[self.cam_num][str(self.cam_group)]
+        if image == 'all':
+            image_list = handEye_Cam["image_list"]
+            self.selected_pose = image_list
+            state = [self.image_checkBox[img].setChecked(True) for img in image_list]
+        else:
+            state = self.image_checkBox[image].isChecked()
+            if state:
+                if image not in self.selected_pose:
+                    self.selected_pose.append(image)
+            else:
+                if image in self.selected_pose:
+                    self.selected_pose.remove(image)
+
         pass
 
     def calibrationTab_Table(self):
@@ -217,6 +276,7 @@ class Calibration(QWidget):
                 for k in cam_value.keys():
                     text = "Cam" + cam_num + " Group-" + str(k)
                     self.cb.addItem(text)
+        pass
 
     def workspace_load(self):
         for path, subdirs, files in os.walk((self.folder_path)):
@@ -269,12 +329,12 @@ class Calibration(QWidget):
         group = str(self.cam_group)
         self.draw_viz(camera, group)
 
-    def selectCurrentPose(self):
-        image = self.handEyeCamera[self.cam_num][str(self.cam_group)]['image_list'][self.Current_poseCount]
-        if image not in self.selected_pose:
-            self.selected_pose.append(image)
-        self.label2.setText(str(self.selected_pose))
-        print(self.selected_pose, self.cam_num, self.cam_group)
+    # def selectCurrentPose(self):
+    #     image = self.handEyeCamera[self.cam_num][str(self.cam_group)]['image_list'][self.Current_poseCount]
+    #     if image not in self.selected_pose:
+    #         self.selected_pose.append(image)
+    #     self.label2.setText(str(self.selected_pose))
+    #     print(self.selected_pose, self.cam_num, self.cam_group)
 
     def draw_viz(self, master_cam, group):
         masterBoard_angles = self.handEyeCamera[master_cam][group]['masterBoard_angle']
