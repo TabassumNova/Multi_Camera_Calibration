@@ -68,6 +68,16 @@ def estimate_pose_points(board, camera, detections, method="solvePnPGeneric"):
         rvec, tvec = [rvec0], [tvec0]
         inliers = np.arange(len(detections.ids)).reshape((1,-1))[0].tolist()
 
+        ## new error
+        # flags = 1
+        # image_size = camera.image_size
+        # print(undistorted)
+        # print('principal point: ', camera.principle_point)
+        # err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended([board.points[detections.ids].copy()], [undistorted.copy()],
+        #                                                                       image_size, camera.intrinsic, camera.dist,
+        #                                                                       flags=flags)
+        # error = error_perView
+
     elif method == "solvePnP_P3P":
         objPoints = board.points[detections.ids].astype('float32')
         ret, rvecs, tvecs = cv2.solveP3P(objPoints[0:3,:], undistorted[0:3,:], camera.intrinsic, camera.dist, flags=cv2.SOLVEPNP_P3P)

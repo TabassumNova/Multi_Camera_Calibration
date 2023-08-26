@@ -68,9 +68,9 @@ class handEye():
 
     def initiate_workspace(self, show_all_poses=False):
         pathO = args.PathOpts(image_path=self.datasetPath)
-        cam = args.CameraOpts(calibration=self.intrinsicPath,intrinsic_error_limit=1.0)
+        cam = args.CameraOpts(calibration=self.intrinsicPath, intrinsic_error_limit=1.0)
         # pose_estimation_method = "solvePnPRansac"
-        pose_estimation_method = "solvePnP"
+        pose_estimation_method = "solvePnPGeneric"
         runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=True)
         opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True, adjust_outliers=False)
         c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
@@ -1263,7 +1263,7 @@ def main6(base_path, limit_images, num_adjustments):
 if __name__ == '__main__':
     # main1(base_path, limit_image=10)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    main4(base_path, limit_images=10, num_adjustments=0, limit_board_image=10, calculate_handeye=True)
+    main4(base_path, limit_images=10, num_adjustments=0, limit_board_image=10, calculate_handeye=False)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass

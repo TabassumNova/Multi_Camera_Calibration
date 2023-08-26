@@ -43,7 +43,7 @@ def main1(datasetPath):
     pathO = args.PathOpts(image_path=datasetPath)
     cam = args.CameraOpts(intrinsic_error_limit=0.5)
     # pose_estimation_method = "solvePnPRansac"
-    pose_estimation_method = "solvePnP"
+    pose_estimation_method = "solvePnPGeneric"
     runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=True)
     opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True, adjust_outliers=False)
     c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
