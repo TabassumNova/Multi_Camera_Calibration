@@ -144,7 +144,7 @@ DICT_6X6_1000.json
     - pip install opencv-contrib-python-headless==4.6.0.66
 - `cv2.solvePnPGeneric` sometimes show irrelevent results
     - take 3/5 pictures of the same poses. Calculate pose. Take average of the poses
-    - change pose estimation function to `cv2.solvePnP`
+    - `cv2.solvePnP` and `cv2.solvePnPGeneric` both are taking solvePnP_Iterative method as default
 
 - openCV >= 4.6 (Python>= 3.6): 
     - solvePnPGeneric/ solvePnP working
