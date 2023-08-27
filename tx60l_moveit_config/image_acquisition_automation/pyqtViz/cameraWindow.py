@@ -62,7 +62,8 @@ try:
     import qimage2ndarray
 except ImportError:
     qimage2ndarray = None
-
+from src.QtImageViewer import *
+from src.multical.transform.rtvec import *
 
 class CameraWindow(QWidget):
     """
@@ -73,10 +74,14 @@ class CameraWindow(QWidget):
         super().__init__()
 
         self.base_path = base_path
-        self.workspace = workspace
-        self.cameras = self.workspace.names.camera
-        self.images = self.workspace.names.image
-        self.boards = self.workspace.names.board
+        self.workspace = None
+        self.cameras = None
+        self.images = None
+        self.boards = None
+        self.initial_calibration = None
+        self.intrinsic = None
+        self.workspace_load()
+
         self.layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
         self.tab_num = {}
@@ -91,10 +96,11 @@ class CameraWindow(QWidget):
         self.btnLoad3 = {}
         self.folder_path = {}
         self.viewer = {}
-        self.pose_count = 0
+        self.pose_count = {}
         self.last_pose_count = len(self.images)
         self.table = {}
         self.cell_clicked = None
+        self.cb = {}
         for idx, cam in enumerate(self.cameras):
             self.tab_num[cam] = QWidget()
             self.tabs.addTab(self.tab_num[cam], cam)
@@ -102,22 +108,6 @@ class CameraWindow(QWidget):
 
             self.current_camera = cam
             self.folder_path[cam] = os.path.join(self.base_path, cam)
-
-            self.btnLoad1 = QPushButton(self.tab_num[cam])
-            self.btnLoad1.setObjectName('<')
-            self.btnLoad1.setText('<')
-            self.btnLoad1.setGeometry(QRect(0, 0, 30, 28))
-
-            self.btnLoad2[cam] = QPushButton(self.tab_num[cam])
-            self.btnLoad2[cam].setObjectName('Load')
-            self.btnLoad2[cam].setText('Load')
-
-            self.btnLoad2[cam].setGeometry(QRect(30, 0, 93, 28))
-
-            self.btnLoad3[cam] = QPushButton(self.tab_num[cam])
-            self.btnLoad3[cam].setObjectName('>')
-            self.btnLoad3[cam].setText('>')
-            self.btnLoad3[cam].setGeometry(QRect(123, 0, 30, 28))
 
             # Grid for images
             self.gridLayoutWidget1[cam] = QWidget(self.tab_num[cam])
@@ -146,45 +136,18 @@ class CameraWindow(QWidget):
             # add table widget
             self.table[cam] = QTableWidget()
             self.table[cam].cellClicked.connect(partial(self.cell_was_clicked, cam, self.gridLayout1[cam]))
-            # self.gridLayout3[cam].addWidget(self.table[cam])
 
-            # self.set_viewer(self.gridLayout1[cam])
-            self.set_viewer(cam, self.gridLayout1[cam], self.folder_path[cam], self.images[self.pose_count],
+            self.pose_count[cam] = 0
+            self.set_image_dropDown(cam)
+            self.set_viewer(cam, self.gridLayout1[cam], self.folder_path[cam], self.images[self.pose_count[cam]],
                             self.table[cam], self.gridLayout3[cam], self.gridLayout2[cam])
-            # self.btnLoad2[cam].clicked.connect(partial(self.set_viewer, self.gridLayout1[cam], self.folder_path[cam],
-            #                                            self.images[self.pose_count]))
-            self.btnLoad1.clicked.connect(partial(self.loadPrevious, cam, self.gridLayout1[cam],
-                                                  self.folder_path[cam], self.table[cam], self.gridLayout3[cam], self.gridLayout2[cam]))
-            self.btnLoad3[cam].clicked.connect(partial(self.loadNext, cam, self.gridLayout1[cam],
-                                                       self.folder_path[cam], self.table[cam], self.gridLayout3[cam], self.gridLayout2[cam]))
+
 
             self.tab_num[cam].setLayout(self.tab_num[cam].layout)
 
 
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
-
-    def loadNext(self, cam, gridLayout, folder_path, table, tableLayout, label_Layout):
-        if self.last_pose_count >= self.pose_count >= 0:
-            self.pose_count += 1
-            self.clearLayout(gridLayout)
-            # self.clearLayout(tableLayout)
-            self.set_viewer(cam, gridLayout, folder_path, self.images[self.pose_count], table, tableLayout, label_Layout)
-        else:
-            self.clearLayout(gridLayout)
-            # self.clearLayout(tableLayout)
-        pass
-
-    def loadPrevious(self, cam, gridLayout, folder_path, table, tableLayout, label_layout):
-        if self.pose_count > 0:
-            self.pose_count -= 1
-            self.clearLayout(gridLayout)
-            # self.clearLayout(tableLayout)
-            self.set_viewer(cam, gridLayout, folder_path, self.images[self.pose_count], table, tableLayout, label_layout)
-        else:
-            self.clearLayout(gridLayout)
-            # self.clearLayout(tableLayout)
-        pass
 
     def create_ImageViewer(self):
         viewer = QtImageViewer()
@@ -207,48 +170,31 @@ class CameraWindow(QWidget):
         v = os.path.join(folder_path, image_name)
         viewer.open(v)
         gridLayout.addWidget(viewer, 0, 0)
-        self.clearLayout(label_Layout)
-        label1 = QLabel()
-        label1.setText('Pose')
-        label1.setFont(QFont("Times", 10, QFont.Bold))
-        label1.setAlignment(Qt.AlignCenter)
-        label_Layout.addWidget(label1, 2, 0)
 
-        label = QLabel()
-        label.setText(self.images[self.pose_count])
-        label.setAlignment(Qt.AlignCenter)
-        label_Layout.addWidget(label, 2, 1)
-
-        label2 = QLabel()
-        label2.setText('Search pose')
-        label2.setFont(QFont("Times", 10, QFont.Bold))
-        label2.setAlignment(Qt.AlignCenter)
-        label_Layout.addWidget(label2, 2, 2)
-
-        self.label3 = QLineEdit(self)
-        self.label3.textChanged.connect(self.textchanged)
-        self.label3.setAlignment(Qt.AlignCenter)
-        label_Layout.addWidget(self.label3, 2, 3)
-
-        # label4 = QPushButton()
-        # label4.setText('Ok')
-        # label4.clicked.connect(partial(self.clickMethod, self.label3.text()))
-        # label_Layout.addWidget(label4, 2, 4)
         pass
 
-    def textchanged(self, text):
+    def selectionchange(self, cam, group):
+        print('group: ',group)
+        self.pose_count[cam] = group
+        self.clearLayout(self.gridLayout1[cam])
+        self.set_viewer(cam, self.gridLayout1[cam], self.folder_path[cam], self.images[self.pose_count[cam]],
+                    self.table[cam], self.gridLayout3[cam], self.gridLayout2[cam])
         pass
-        # self.pose_count = int(text)-1
-        # self.set_viewer(self.current_camera, self.gridLayout1[self.current_camera], self.folder_path[self.current_camera], self.images[self.pose_count],
-        #                 self.table[self.current_camera], self.gridLayout3[self.current_camera], self.gridLayout2[self.current_camera])
+
+    def set_image_dropDown(self, cam):
+        self.cb[cam] = QComboBox(self)
+        self.cb[cam].setGeometry(QRect(0, 0, 150, 28))
+        self.cb[cam].currentIndexChanged.connect(partial(self.selectionchange, cam))
+
+        self.gridLayout2[cam].addWidget(self.cb[cam], 2, 0)
+        for img in self.images:
+            self.cb[cam].addItem(str(img))
         pass
 
     def set_viewer(self, cam, imageLayout, folder_path, image_name, table, tableLayout, label_Layout):
         # self.viewer[self.current_camera] = self.create_ImageViewer()
         viewer = self.create_ImageViewer()
         self.open_ImageViewer(imageLayout, viewer, folder_path, image_name, label_Layout)
-        # self.add_cameraLabel(gridLayout)
-        # self.add_3d_scatter()
         self.add_table_widget(cam, table, tableLayout)
 
     def cell_was_clicked(self, cam, layout, row, column):
@@ -263,13 +209,36 @@ class CameraWindow(QWidget):
         # row = table.currentRow()
         pass
 
+    def draw_corners(self, frame, corners):
+        for c in corners:
+            x = tuple(c.astype('int'))
+            frame = cv2.circle(frame, x, radius=0, color=(0, 0, 255), thickness=30)
+        return frame
+
+    def draw_corner_axes(self, frame, cam, board):
+        cam_id = self.cameras.index(cam)
+        board_id = self.boards.index(board)
+        img_id = self.pose_count[cam]
+        corners_ids = np.flatnonzero(self.workspace.point_table.valid[cam_id][img_id][board_id])
+        corners = [self.workspace.point_table.points[cam_id][img_id][board_id][c] for c in corners_ids]
+        #
+        cam_matrix = np.array(self.initial_calibration['cameras'][cam]['K'])
+        cam_dist = np.array(self.initial_calibration['cameras'][cam]['dist'])
+        rtvecs = from_matrix(np.array(self.workspace.pose_table.poses[cam_id][img_id][board_id]))
+        marker_length = self.workspace.boards[board_id].marker_length
+        rvecs, tvecs = split(rtvecs)
+        frame = self.draw_corners(frame, corners)
+        cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvecs, tvecs, 0.1, thickness=20)
+        return frame
+
     def show_board(self, cam, board, layout):
-        image_path = os.path.join(self.folder_path[cam], self.images[self.pose_count])
+        image_path = os.path.join(self.folder_path[cam], self.images[self.pose_count[cam]])
         print(image_path)
         frame = cv2.imread(image_path)
-        h, w, ch = frame.shape
+        frame1 = self.draw_corner_axes(frame, cam, board)
+        h, w, ch = frame1.shape
         bytes_per_line = ch * w
-        convert_to_Qt_format = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        convert_to_Qt_format = QImage(frame1.data, w, h, bytes_per_line, QImage.Format_RGB888)
         p = convert_to_Qt_format.scaled(1100, 1100, Qt.KeepAspectRatio)
         imageLabel = QLabel()
         x = QPixmap.fromImage(p)
@@ -277,9 +246,7 @@ class CameraWindow(QWidget):
         imageLabel.setPixmap(x)
         self.clearLayout(layout)
         layout.addWidget(imageLabel)
-        ## add corner detection and frameaxes
-        # cv2.aruco.drawDetectedMarkers(frame, corners)
-        # cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvecs, tvecs, 0.1)
+
         pass
 
 
@@ -294,10 +261,10 @@ class CameraWindow(QWidget):
         camera_id = self.cameras.index(cam)
         for board in self.boards:
             board_id = self.boards.index(board)
-            num_points = self.workspace.pose_table.num_points[camera_id][self.pose_count][board_id]
+            num_points = self.workspace.pose_table.num_points[camera_id][self.pose_count[cam]][board_id]
             repo_error = "{:.2f}".format(
-                self.workspace.pose_table.reprojection_error[camera_id][self.pose_count][board_id])
-            viewAngles = [float("{:.2f}".format(angle)) for angle in (self.workspace.pose_table.view_angles[camera_id][self.pose_count][board_id])]
+                self.workspace.pose_table.reprojection_error[camera_id][self.pose_count[cam]][board_id])
+            viewAngles = [float("{:.2f}".format(angle)) for angle in (self.workspace.pose_table.view_angles[camera_id][self.pose_count[cam]][board_id])]
 
             item1 = QTableWidgetItem()
             item2 = QTableWidgetItem()
@@ -336,12 +303,14 @@ class CameraWindow(QWidget):
         self.set_viewer()
 
     def workspace_load(self):
-        for path, subdirs, files in os.walk((self.folder_path)):
-            if path == self.folder_path:
-                workspace_path = os.path.join(self.folder_path, [f for f in files if f == "workspace.pkl"][0])
-                self.tab1_workspace = pickle.load(open(workspace_path, "rb"))
-                self.tab1_cameras = self.tab1_workspace.names.camera
-                self.tab1_images = self.tab1_workspace.names.image
-                self.tab1_boards = self.tab1_workspace.names.board
-                self.last_pose_count = len(self.tab1_images)
+        for path, subdirs, files in os.walk((self.base_path)):
+            if path == self.base_path:
+                workspace_path = os.path.join(self.base_path, [f for f in files if f == "workspace.pkl"][0])
+                self.workspace = pickle.load(open(workspace_path, "rb"))
+                self.cameras = self.workspace.names.camera
+                self.images = self.workspace.names.image
+                self.boards = self.workspace.names.board
+                if "Calibration_handeye.json" in files:
+                    path = os.path.join(self.base_path, "Calibration_handeye.json")
+                    self.initial_calibration = json.load(open(path))
 

@@ -427,6 +427,7 @@ class Calibration(QWidget):
         final_layout.show()
         pass
 
+
     def draw_corners(self, frame, corners):
         for c in corners:
             x = tuple(c.astype('int'))
