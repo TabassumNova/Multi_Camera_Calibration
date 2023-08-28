@@ -7,6 +7,7 @@
     - docker pull bailool/mc-calib-dev 
     - xhost +si:localuser:root
     - docker run \
+            --runtime=nvidia
             -ti --rm \
             --network host \
             --gpus all \
