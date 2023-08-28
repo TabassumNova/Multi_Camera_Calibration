@@ -7,6 +7,7 @@
     - docker pull bailool/mc-calib-dev 
     - xhost +si:localuser:root
     - docker run \
+            --runtime=nvidia
             -ti --rm \
             --network host \
             --gpus all \
@@ -38,8 +39,9 @@ nvidia-container-cli: initialization error: load library failed: libnvidia-ml.so
 
 ```
 
-```    
-Install the nvidia-container-toolkit package (and dependencies) (according to https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html/):
+    
+Install the nvidia-container-toolkit package (and dependencies) (according to https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html):
+```
 
 $ sudo apt-get update
 $ sudo apt-get install -y nvidia-container-toolkit
