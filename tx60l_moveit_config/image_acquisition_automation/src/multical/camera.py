@@ -29,7 +29,7 @@ from structs.struct import split_list
 
 
 class Camera(Parameters):
-  def __init__(self, image_size, intrinsic, dist, model='standard', fix_aspect=False, has_skew=False, error_perview=None, reprojection_error_limit=0.5):
+  def __init__(self, image_size, intrinsic, dist, model='standard', fix_aspect=False, has_skew=False, error_perview=None, reprojection_error_limit=0.5, intrinsic_dataset={}):
 
     assert model in Camera.model,\
         f"unknown camera model {model} options are {list(self.model.keys())}"
@@ -43,6 +43,7 @@ class Camera(Parameters):
     self.has_skew = has_skew
     self.error_perview = error_perview
     self.reprojection_error_limit = reprojection_error_limit
+    self.intrinsic_dataset = intrinsic_dataset
 
   model = struct(
       standard=0,
@@ -96,15 +97,19 @@ class Camera(Parameters):
                                                                             flags=flags)
       err = float("{:.2f}".format(err))
       threshold = np.quantile(error_perView, 0.95)
-      inliers = [(i) for i in range(0, len(error_perView)) if error_perView[i]<threshold]
+      inliers = [(i) for i, err in enumerate(error_perView) if err<threshold]
       points.object_points = np.array([points.object_points[i] for i in inliers], dtype=object)
       points.corners = np.array([points.corners[i] for i in inliers], dtype=object)
+      points.ids = np.array([points.ids[i] for i in inliers], dtype=object)
+      points.board_offset = np.array([points.board_offset[i] for i in inliers], dtype=object)
+      points.image_ids = np.array([points.image_ids[i] for i in inliers], dtype=object)
       info(f"RMS={err:.2f}, Number of views={len(error_perView)}")
     ## new
     # err, K, dist, r, t,_,_,error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners, image_size, None, None, criteria=criteria, flags=flags)
 
     return Camera(intrinsic=K, dist=dist, image_size=image_size,
-                  model=model, fix_aspect=fix_aspect, has_skew=has_skew, error_perview=error_perView), err
+                  model=model, fix_aspect=fix_aspect, has_skew=has_skew, error_perview=error_perView,
+                  intrinsic_dataset={'board_ids': list(points.board_offset), 'image_ids':list(points.image_ids)}), err
 
   @staticmethod
   def cam_calibrate(points, image_size, criteria, flags, cam_matrix=None, cam_dist=None):
@@ -228,15 +233,17 @@ class Camera(Parameters):
     return Camera(**d)
 
 
-def board_correspondences(board, detections):
+def board_correspondences(board_id, board, detections):
   non_empty = [d for d in detections if board.has_min_detections(d)]
+  img_ids = [id for id, d in enumerate(detections) if board.has_min_detections(d)]
   if len(non_empty) == 0:
-    return struct(corners = [], object_points=[], ids=[])
+    return struct(corners = [], object_points=[], ids=[], board_offset= [], image_ids=[])
 
   detections = transpose_structs(non_empty)
   return detections._extend(
       object_points=[board.points[ids].astype(np.float32) for ids in detections.ids],
-      corners=[corners.astype(np.float32) for corners in detections.corners]
+      corners=[corners.astype(np.float32) for corners in detections.corners],
+      board_offset=list(np.ones(len(img_ids))*board_id), image_ids=img_ids
   )
 
 
@@ -276,8 +283,10 @@ def top_detection_coverage(detections, k, image_size, approx_bins=10, jitter=0.1
 def calibration_points(boards, detections):
 
   board_detections = transpose_lists(detections)
-  board_points = [board_correspondences(board, detections) for board, detections
-                  in zip(boards, board_detections)]
+  # board_points = [board_correspondences(board, detections) for board, detections
+  #                 in zip(boards, board_detections)]
+  board_points = [board_correspondences(board_id, board, detections) for board_id, (board, detections)
+                  in enumerate(zip(boards, board_detections))]
 
   return reduce(operator.add, board_points)
 

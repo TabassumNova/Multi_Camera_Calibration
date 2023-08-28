@@ -17,6 +17,8 @@ from functools import partial
 import json
 from pathlib import Path
 from multiprocessing import Process, Manager
+import plotly.graph_objects as go
+import plotly.express as px
 
 # import rospy
 import sys
@@ -78,9 +80,12 @@ class CameraWindow(QWidget):
         self.cameras = None
         self.images = None
         self.boards = None
+        self.intrinsic_boards = None
         self.initial_calibration = None
         self.intrinsic = None
+        self.intrinsic_dataset = {}
         self.workspace_load()
+        self.view = 'pose_table'
 
         self.layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
@@ -109,6 +114,36 @@ class CameraWindow(QWidget):
             self.current_camera = cam
             self.folder_path[cam] = os.path.join(self.base_path, cam)
 
+            self.btnLoad1 = QPushButton(self.tab_num[cam])
+            self.btnLoad1.setObjectName('Load Intrinsic')
+            self.btnLoad1.setText('Load Intrinsic')
+            self.btnLoad1.clicked.connect(partial(self.load_intrinsic, cam))
+            self.btnLoad1.setGeometry(QRect(0, 0, 120, 28))
+
+            self.btnLoad2 = QPushButton(self.tab_num[cam])
+            self.btnLoad2.setObjectName('Load Pose-table')
+            self.btnLoad2.setText('Load Pose-table')
+            self.btnLoad2.clicked.connect(partial(self.load_poseTable, cam))
+            self.btnLoad2.setGeometry(QRect(120, 0, 120, 28))
+
+            self.btnLoad3 = QPushButton(self.tab_num[cam])
+            self.btnLoad3.setObjectName('Rotation Viz')
+            self.btnLoad3.setText('Rotation Viz')
+            self.btnLoad3.clicked.connect(partial(self.rotation_viz, cam))
+            self.btnLoad3.setGeometry(QRect(240, 0, 120, 28))
+
+            self.btnLoad4 = QPushButton(self.tab_num[cam])
+            self.btnLoad4.setObjectName('Translation Viz')
+            self.btnLoad4.setText('Translation Viz')
+            self.btnLoad4.clicked.connect(partial(self.translation_viz, cam))
+            self.btnLoad4.setGeometry(QRect(360, 0, 120, 28))
+
+            self.btnLoad5 = QPushButton(self.tab_num[cam])
+            self.btnLoad5.setObjectName('Point spread')
+            self.btnLoad5.setText('Point spread')
+            self.btnLoad5.clicked.connect(partial(self.point_spread, cam))
+            self.btnLoad5.setGeometry(QRect(480, 0, 120, 28))
+
             # Grid for images
             self.gridLayoutWidget1[cam] = QWidget(self.tab_num[cam])
             self.gridLayoutWidget1[cam].setGeometry(QRect(0, 50, 1100, 900))
@@ -133,21 +168,176 @@ class CameraWindow(QWidget):
             self.gridLayout3[cam].setContentsMargins(0, 0, 0, 0)
             self.gridLayout3[cam].setObjectName("gridLayout")
 
-            # add table widget
-            self.table[cam] = QTableWidget()
-            self.table[cam].cellClicked.connect(partial(self.cell_was_clicked, cam, self.gridLayout1[cam]))
-
-            self.pose_count[cam] = 0
-            self.set_image_dropDown(cam)
-            self.set_viewer(cam, self.gridLayout1[cam], self.folder_path[cam], self.images[self.pose_count[cam]],
-                            self.table[cam], self.gridLayout3[cam], self.gridLayout2[cam])
-
-
-            self.tab_num[cam].setLayout(self.tab_num[cam].layout)
-
-
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
+
+    def point_spread(self, cam):
+        x = []
+        y = []
+        z = []
+        img_name = []
+        if self.view == 'intrinsic':
+            for img in self.intrinsic_dataset[cam].keys():
+                for board in self.intrinsic_dataset[cam][img]:
+                    cam_id = self.cameras.index(cam)
+                    img_id = self.images.index(img)
+                    board_id = self.boards.index(board)
+                    ids = np.flatnonzero(self.workspace.point_table.valid[cam_id][img_id][board_id])
+                    point_table = self.workspace.point_table.points[cam_id][img_id][board_id][ids]
+                    point_x = [point[0] for point in point_table]
+                    point_y = [point[1] for point in point_table]
+                    x.extend(point_x)
+                    y.extend(point_y)
+                    img_name.append(img)
+        elif self.view == 'pose_table':
+            for img in self.images:
+                for board in self.boards:
+                    cam_id = self.cameras.index(cam)
+                    img_id = self.images.index(img)
+                    board_id = self.boards.index(board)
+                    if self.workspace.pose_table.valid[cam_id][img_id][board_id]:
+                        ids = np.flatnonzero(self.workspace.point_table.valid[cam_id][img_id][board_id])
+                        point_table = self.workspace.point_table.points[cam_id][img_id][board_id][ids]
+                        point_x = [point[0] for point in point_table]
+                        point_y = [point[1] for point in point_table]
+                        x.extend(point_x)
+                        y.extend(point_y)
+                        img_name.append(img)
+
+        fig = px.scatter(x=x, y=y)
+        fig.show()
+
+    def rotation_viz(self, cam):
+        roll = []
+        pitch = []
+        yaw = []
+        img_name = []
+        if self.view == 'intrinsic':
+            for img in self.intrinsic_dataset[cam].keys():
+                for board in self.intrinsic_dataset[cam][img]:
+                    cam_id = self.cameras.index(cam)
+                    img_id = self.images.index(img)
+                    board_id = self.boards.index(board)
+                    view_angles = self.workspace.pose_table.view_angles[cam_id][img_id][board_id]
+                    roll.append(view_angles[0])
+                    pitch.append(view_angles[1])
+                    # yaw.append(view_angles[2])
+                    yaw.append(0)
+                    img_name.append(img)
+        elif self.view == 'pose_table':
+            for img in self.images:
+                for board in self.boards:
+                    cam_id = self.cameras.index(cam)
+                    img_id = self.images.index(img)
+                    board_id = self.boards.index(board)
+                    if self.workspace.pose_table.valid[cam_id][img_id][board_id]:
+                        view_angles = self.workspace.pose_table.view_angles[cam_id][img_id][board_id]
+                        roll.append(view_angles[0])
+                        pitch.append(view_angles[1])
+                        # yaw.append(view_angles[2])
+                        yaw.append(0)
+                        img_name.append(img)
+
+        final_layout = go.Figure()
+        final_layout.add_trace(
+            go.Scatter3d(
+                x=roll,
+                y=pitch,
+                z=yaw,
+                mode='markers',
+                text=img_name, textposition="bottom center",
+            )
+        )
+        final_layout.update_layout(scene=dict(
+            xaxis_title='Roll',
+            yaxis_title='Pitch',
+            zaxis_title='Yaw'))
+        final_layout.show()
+        pass
+
+    def translation_viz(self, cam):
+        x = []
+        y = []
+        z = []
+        img_name = []
+        if self.view == 'intrinsic':
+            for img in self.intrinsic_dataset[cam].keys():
+                for board in self.intrinsic_dataset[cam][img]:
+                    cam_id = self.cameras.index(cam)
+                    img_id = self.images.index(img)
+                    board_id = self.boards.index(board)
+                    pose_table = self.workspace.pose_table.poses[cam_id][img_id][board_id]
+                    _, tvec = split(from_matrix(pose_table))
+                    x.append(tvec[0])
+                    y.append(tvec[1])
+                    z.append(tvec[2])
+                    img_name.append(img)
+        elif self.view == 'pose_table':
+            for img in self.images:
+                for board in self.boards:
+                    cam_id = self.cameras.index(cam)
+                    img_id = self.images.index(img)
+                    board_id = self.boards.index(board)
+                    if self.workspace.pose_table.valid[cam_id][img_id][board_id]:
+                        pose_table = self.workspace.pose_table.poses[cam_id][img_id][board_id]
+                        _, tvec = split(from_matrix(pose_table))
+                        x.append(tvec[0])
+                        y.append(tvec[1])
+                        z.append(tvec[2])
+                        img_name.append(img)
+
+        final_layout = go.Figure()
+        final_layout.add_trace(
+            go.Scatter3d(
+                x=x,
+                y=y,
+                z=z,
+                mode='markers',
+                text=img_name, textposition="bottom center",
+            )
+        )
+        final_layout.update_layout(scene=dict(
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title='Z'))
+        final_layout.show()
+
+    def load_intrinsic(self, cam):
+        self.clearLayout(self.gridLayout1[cam])
+        self.clearLayout(self.gridLayout2[cam])
+        self.clearLayout(self.gridLayout3[cam])
+
+        self.view = 'intrinsic'
+        self.table[cam] = QTableWidget()
+        self.table[cam].cellClicked.connect(partial(self.cell_was_clicked, cam, self.gridLayout1[cam]))
+
+        first_im = list(self.intrinsic_dataset[cam].keys())[0]
+        self.pose_count[cam] = self.images.index(first_im)
+        self.set_image_dropDown(cam)
+        self.set_viewer(cam, self.gridLayout1[cam], self.folder_path[cam], self.images[self.pose_count[cam]],
+                        self.table[cam], self.gridLayout3[cam], self.gridLayout2[cam])
+
+        self.tab_num[cam].setLayout(self.tab_num[cam].layout)
+
+        pass
+
+    def load_poseTable(self, cam):
+        self.clearLayout(self.gridLayout1[cam])
+        self.clearLayout(self.gridLayout2[cam])
+        self.clearLayout(self.gridLayout3[cam])
+
+        self.view = 'pose_table'
+        # add table widget
+        self.table[cam] = QTableWidget()
+        self.table[cam].cellClicked.connect(partial(self.cell_was_clicked, cam, self.gridLayout1[cam]))
+
+        self.pose_count[cam] = 0
+        self.set_image_dropDown(cam)
+        self.set_viewer(cam, self.gridLayout1[cam], self.folder_path[cam], self.images[self.pose_count[cam]],
+                        self.table[cam], self.gridLayout3[cam], self.gridLayout2[cam])
+
+        self.tab_num[cam].setLayout(self.tab_num[cam].layout)
+        pass
 
     def create_ImageViewer(self):
         viewer = QtImageViewer()
@@ -171,11 +361,18 @@ class CameraWindow(QWidget):
         viewer.open(v)
         gridLayout.addWidget(viewer, 0, 0)
 
-        pass
+
+    def group_decode(self, cam, group):
+        images = list(self.intrinsic_dataset[cam].keys())
+        current_img = images[group]
+        self.pose_count[cam] = self.images.index(current_img)
 
     def selectionchange(self, cam, group):
         print('group: ',group)
-        self.pose_count[cam] = group
+        if self.view == 'pose_table':
+            self.pose_count[cam] = group
+        if self.view == 'intrinsic':
+            self.group_decode(cam, group)
         self.clearLayout(self.gridLayout1[cam])
         self.set_viewer(cam, self.gridLayout1[cam], self.folder_path[cam], self.images[self.pose_count[cam]],
                     self.table[cam], self.gridLayout3[cam], self.gridLayout2[cam])
@@ -186,8 +383,20 @@ class CameraWindow(QWidget):
         self.cb[cam].setGeometry(QRect(0, 0, 150, 28))
         self.cb[cam].currentIndexChanged.connect(partial(self.selectionchange, cam))
 
-        self.gridLayout2[cam].addWidget(self.cb[cam], 2, 0)
-        for img in self.images:
+        self.label1 = QLabel(self.tab_num[cam])
+        self.label1.setObjectName(self.view)
+        self.label1.setText(self.view)
+        self.label1.setStyleSheet("border: 1px solid black;")
+        self.label1.setGeometry(QRect(240, 0, 120, 28))
+        self.gridLayout2[cam].addWidget(self.label1, 2, 0)
+
+        self.gridLayout2[cam].addWidget(self.cb[cam], 2, 1)
+
+        if self.view == 'pose_table':
+            images = self.images
+        elif self.view == 'intrinsic':
+            images = self.intrinsic_dataset[cam].keys()
+        for img in images:
             self.cb[cam].addItem(str(img))
         pass
 
@@ -247,10 +456,6 @@ class CameraWindow(QWidget):
         self.clearLayout(layout)
         layout.addWidget(imageLabel)
 
-        pass
-
-
-
     def add_table_widget(self, cam, table, tableLayout):
         table.setRowCount(len(self.boards))
         table.setColumnCount(4)
@@ -261,10 +466,16 @@ class CameraWindow(QWidget):
         camera_id = self.cameras.index(cam)
         for board in self.boards:
             board_id = self.boards.index(board)
+            img_name = self.images[self.pose_count[cam]]
+
             num_points = self.workspace.pose_table.num_points[camera_id][self.pose_count[cam]][board_id]
             repo_error = "{:.2f}".format(
                 self.workspace.pose_table.reprojection_error[camera_id][self.pose_count[cam]][board_id])
             viewAngles = [float("{:.2f}".format(angle)) for angle in (self.workspace.pose_table.view_angles[camera_id][self.pose_count[cam]][board_id])]
+
+            if self.view == 'intrinsic':
+                if board not in self.intrinsic_dataset[cam][img_name]:
+                    num_points = 0
 
             item1 = QTableWidgetItem()
             item2 = QTableWidgetItem()
@@ -295,12 +506,8 @@ class CameraWindow(QWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-        # self.clearLayout(tableLayout)
         tableLayout.addWidget(table)
 
-    def open_dir_dialog(self):
-        # self.workspace_load()
-        self.set_viewer()
 
     def workspace_load(self):
         for path, subdirs, files in os.walk((self.base_path)):
@@ -313,4 +520,13 @@ class CameraWindow(QWidget):
                 if "Calibration_handeye.json" in files:
                     path = os.path.join(self.base_path, "Calibration_handeye.json")
                     self.initial_calibration = json.load(open(path))
+                if "intrinsic_dataset.json" in files:
+                    path = os.path.join(self.base_path, "intrinsic_dataset.json")
+                    dataset = json.load(open(path))
+                    for cam_id, cam in enumerate(self.cameras):
+                        self.intrinsic_dataset[cam] = {}
+                        for id, img in enumerate(dataset[cam]['images']):
+                            if img not in self.intrinsic_dataset[cam]:
+                                self.intrinsic_dataset[cam][img] = []
+                            self.intrinsic_dataset[cam][img].append(dataset[cam]['boards'][id])
 

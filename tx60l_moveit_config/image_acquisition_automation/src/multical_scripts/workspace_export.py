@@ -11,7 +11,7 @@ import src.multical.workspace as ws
 
 base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41"
 
-def export_workspace(workspace, path):
+def export_workspace(ws, path):
     '''
     ########### For json dict ##############
     new_workspace_dict = {}
@@ -37,7 +37,30 @@ def export_workspace(workspace, path):
 
     workspace_pickle = os.path.join(path, "workspace.pkl")
     with open(workspace_pickle, "wb") as file:
-        pickle.dump(workspace, file)
+        pickle.dump(ws, file)
+
+def camera_intrinsic_dataset(ws, path):
+    intrinsic_dataset = {}
+
+    for cam_id, cam in enumerate(ws.names.camera):
+        intrinsic_dataset[cam] = {}
+        board_list = []
+        image_list = []
+        for idx, board_id in enumerate(ws.cameras[cam_id].intrinsic_dataset['board_ids']):
+            board_list.append(ws.names.board[int(board_id)])
+            image_id = ws.cameras[cam_id].intrinsic_dataset['image_ids'][idx]
+            image_list.append(ws.names.image[int(image_id)])
+            pass
+        intrinsic_dataset[cam]['boards'] = board_list
+        intrinsic_dataset[cam]['images'] = image_list
+
+    json_object = json.dumps(intrinsic_dataset, indent=4)
+    # Writing to sample.json
+    json_path = os.path.join(path, "intrinsic_dataset.json")
+    with open(json_path, "w") as outfile:
+        outfile.write(json_object)
+    pass
+
 
 def main1(datasetPath):
     pathO = args.PathOpts(image_path=datasetPath)
@@ -55,4 +78,5 @@ if __name__ == '__main__':
 
     ws = main1(base_path)
     export_workspace(ws, base_path)
+    camera_intrinsic_dataset(ws, base_path)
     pass
