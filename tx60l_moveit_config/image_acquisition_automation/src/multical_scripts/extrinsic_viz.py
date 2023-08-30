@@ -15,7 +15,7 @@ from src.multical.transform.rtvec import *
 import pickle
 from src.multical.transform import common, rtvec
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\isohedron\V31"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41"
 '''
 for camera extrinsic visualization
 '''

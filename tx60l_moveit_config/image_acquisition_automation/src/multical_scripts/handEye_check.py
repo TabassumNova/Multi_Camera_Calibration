@@ -17,8 +17,9 @@ from src.multical_scripts.extrinsic_viz import *
 import plotly.express as px
 import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
+from sklearn.cluster import MeanShift
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):
@@ -1096,6 +1097,34 @@ class handEye():
             # print('non orthogonal image: ', img)
         return check
 
+    def check_handEye_Cluster(self, master_rvec, slave_rvec, image_list, cluster_bandwidth=8, element_limit=2):
+
+        deleted_ImageId = []
+        for vec in [master_rvec, slave_rvec]:
+            master_mean_shift = MeanShift().fit(np.array(vec))
+            meanshift_classification = master_mean_shift.predict(np.array(vec))
+            unique_cluster = np.unique(np.array(meanshift_classification))
+            meanshift_cluster = unique_cluster.shape[0]
+            for c in unique_cluster:
+                count = list(meanshift_classification).count(c)
+                if count < element_limit:
+                    array = np.array(meanshift_classification)
+                    index = np.where(array == c)[0]
+                    for idx in index:
+                        if not deleted_ImageId:
+                            deleted_ImageId.append(idx)
+                        elif idx not in deleted_ImageId:
+                            deleted_ImageId.append(idx)
+                    # deleted_ImageId.extend(list(index))
+
+        if deleted_ImageId:
+            for i in sorted(deleted_ImageId, reverse=True):
+                del image_list[i]
+
+        return image_list
+
+        pass
+
     def master_slave_pose(self, master_cam, master_board, slave_cam, slave_board):
         num_images = len(self.workspace.names.image)
         '''
@@ -1109,7 +1138,10 @@ class handEye():
         slaveR_list = []
         slaveT_list = []
         image_list = []
-
+        master_rvec_list = []
+        slave_rvec_list = []
+        masterTransformation_dict = {}
+        slaveTransformation_dict = {}
         for idx, img in enumerate(self.workspace.names.image):
             master_valid = self.workspace.pose_table.valid[master_cam][idx][master_board]
             slave_valid = self.workspace.pose_table.valid[slave_cam][idx][slave_board]
@@ -1120,17 +1152,27 @@ class handEye():
                 slave_pose = np.linalg.inv(self.workspace.pose_table.poses[slave_cam][idx][slave_board])
                 slave_R, slave_t = matrix.split(slave_pose)
                 slave_check = self.check_Rotation_Orthogonality(slave_R, img)
-                masterR_list.append(master_R)
-                masterT_list.append(master_t)
-                slaveR_list.append(slave_R)
-                slaveT_list.append(slave_t)
+                master_rvec, master_tvec = rtvec.split(rtvec.from_matrix(master_pose))
+                slave_rvec, slave_tvec = rtvec.split(rtvec.from_matrix(slave_pose))
+                master_rvec_list.append(master_rvec)
+                slave_rvec_list.append(slave_rvec)
+                # masterR_list.append(master_R)
+                # masterT_list.append(master_t)
+                # slaveR_list.append(slave_R)
+                # slaveT_list.append(slave_t)
                 image_list.append(img)
-                # if master_check and slave_check:
-                #     masterR_list.append(master_R)
-                #     masterT_list.append(master_t)
-                #     slaveR_list.append(slave_R)
-                #     slaveT_list.append(slave_t)
-                #     image_list.append(img)
+                masterTransformation_dict[img] = master_pose
+                slaveTransformation_dict[img] = slave_pose
+
+        if len(image_list)>6:
+            final_image_list = self.check_handEye_Cluster(master_rvec_list, slave_rvec_list, image_list)
+            for img in final_image_list:
+                mR, mT = matrix.split(masterTransformation_dict[img])
+                sR, sT = matrix.split(slaveTransformation_dict[img])
+                masterR_list.append(mR)
+                masterT_list.append(mT)
+                slaveR_list.append(sR)
+                slaveT_list.append(sT)
 
         return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list), image_list
 

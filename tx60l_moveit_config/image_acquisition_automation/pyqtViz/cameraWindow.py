@@ -306,19 +306,25 @@ class CameraWindow(QWidget):
         self.clearLayout(self.gridLayout1[cam])
         self.clearLayout(self.gridLayout2[cam])
         self.clearLayout(self.gridLayout3[cam])
+        if self.intrinsic_dataset:
+            self.view = 'intrinsic'
+            self.table[cam] = QTableWidget()
+            self.table[cam].cellClicked.connect(partial(self.cell_was_clicked, cam, self.gridLayout1[cam]))
 
-        self.view = 'intrinsic'
-        self.table[cam] = QTableWidget()
-        self.table[cam].cellClicked.connect(partial(self.cell_was_clicked, cam, self.gridLayout1[cam]))
+            first_im = list(self.intrinsic_dataset[cam].keys())[0]
+            self.pose_count[cam] = self.images.index(first_im)
+            self.set_image_dropDown(cam)
+            self.set_viewer(cam, self.gridLayout1[cam], self.folder_path[cam], self.images[self.pose_count[cam]],
+                            self.table[cam], self.gridLayout3[cam], self.gridLayout2[cam])
 
-        first_im = list(self.intrinsic_dataset[cam].keys())[0]
-        self.pose_count[cam] = self.images.index(first_im)
-        self.set_image_dropDown(cam)
-        self.set_viewer(cam, self.gridLayout1[cam], self.folder_path[cam], self.images[self.pose_count[cam]],
-                        self.table[cam], self.gridLayout3[cam], self.gridLayout2[cam])
-
-        self.tab_num[cam].setLayout(self.tab_num[cam].layout)
-
+            self.tab_num[cam].setLayout(self.tab_num[cam].layout)
+        else:
+            self.label1 = QLabel(self.tab_num[cam])
+            self.label1.setObjectName(self.view)
+            self.label1.setText('Error: Intrinsic calculated from another dataset')
+            self.label1.setStyleSheet("border: 1px solid black;")
+            self.label1.setGeometry(QRect(240, 0, 120, 28))
+            self.gridLayout2[cam].addWidget(self.label1, 2, 0)
         pass
 
     def load_poseTable(self, cam):

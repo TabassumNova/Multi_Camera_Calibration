@@ -9,7 +9,7 @@ from structs.struct import struct, to_dicts, transpose_lists
 from src.multical.workspace import *
 import src.multical.workspace as ws
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41"
+
 
 def export_workspace(ws, path):
     '''
@@ -62,9 +62,12 @@ def camera_intrinsic_dataset(ws, path):
     pass
 
 
-def main1(datasetPath):
+def main1(datasetPath, calibration_path):
     pathO = args.PathOpts(image_path=datasetPath)
-    cam = args.CameraOpts(intrinsic_error_limit=0.5)
+    if calibration_path:
+        cam = args.CameraOpts(calibration=calibration_path,intrinsic_error_limit=0.5)
+    else:
+        cam = args.CameraOpts(intrinsic_error_limit=0.5)
     # pose_estimation_method = "solvePnPRansac"
     pose_estimation_method = "solvePnPGeneric"
     runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=True)
@@ -75,8 +78,10 @@ def main1(datasetPath):
     return workspace
 
 if __name__ == '__main__':
-
-    ws = main1(base_path)
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38"
+    calibration_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38\calibration.json"
+    ws = main1(base_path, calibration_path)
     export_workspace(ws, base_path)
-    camera_intrinsic_dataset(ws, base_path)
+    if not calibration_path:
+        camera_intrinsic_dataset(ws, base_path)
     pass

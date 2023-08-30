@@ -449,6 +449,7 @@ class Calibration(QWidget):
         ## add corner detection and frameaxes
         frame = self.draw_corners(frame, corners)
 
+        print(path, 'rvec: ', rvecs)
         cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvecs, tvecs, 0.1, thickness=20)
         h, w, ch = frame.shape
         bytes_per_line = ch * w
