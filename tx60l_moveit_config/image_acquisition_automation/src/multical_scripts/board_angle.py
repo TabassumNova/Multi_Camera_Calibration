@@ -198,7 +198,8 @@ def initiate_workspace(datasetPath, intrinsicPath):
     pathO = args.PathOpts(image_path=datasetPath)
     cam = args.CameraOpts(motion_model="calibrate_board",
                           calibration=intrinsicPath, intrinsic_error_limit=10)
-    runt = args.RuntimeOpts()
+    pose_estimation_method = "solvePnPGeneric"
+    runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=True, detected_point_subset=20)
     opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True)
     c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
     workspace = c.execute_new()

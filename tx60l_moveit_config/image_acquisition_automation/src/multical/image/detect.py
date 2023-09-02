@@ -37,14 +37,14 @@ def load_images(filenames, prefix=None, **map_options):
 
     return parmap_lists(load_image, filenames, **map_options)
 
-def detect_image(image, boards):
+def detect_image(image, boards, detected_point_subset):
 
-  return [board.detect(image) for board in boards]
+  return [board.detect(image,random_point_num=detected_point_subset) for board in boards]
 
-def detect_images(boards, images, **map_options):
+def detect_images(boards, images, detected_point_subset, **map_options):
   info(boards)
-  detect = partial(detect_image, boards=boards)
-  # print("detect_images: ", detect)
+  detect = partial(detect_image, boards=boards, detected_point_subset=detected_point_subset)
+
   return parmap_lists(detect, images, **map_options, pool=Pool)
 
 

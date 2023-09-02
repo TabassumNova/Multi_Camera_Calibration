@@ -19,7 +19,7 @@ import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
 from sklearn.cluster import MeanShift
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):
@@ -430,7 +430,7 @@ class handEye():
         for cam in range(0, num_cameras):
             handEye_dict[cam] = self.handEye_table(master_cam=cam)
 
-    def handEye_table(self, master_cam=0, limit_image=2, num_adjustments=5, limit_board_image=2, calculate_handeye=True):
+    def handEye_table(self, master_cam=0, limit_image=2, num_adjustments=5, limit_board_image=2, calculate_handeye=True, check_cluster=True):
         '''
         handEye for Master_cam to Slave_cam
         :param limit_image: number of image allowed for hand eye pair
@@ -452,7 +452,7 @@ class handEye():
 
                 for boardS in slave_boards:
                     masterR, masterT, slaveR, slaveT, image_list = self.master_slave_pose(master_cam, boardM,
-                                                                                     slave_cam, boardS)
+                                                                                     slave_cam, boardS, check_cluster)
 
                     if len(image_list)>limit_image:
                         # board_wrt_boardM, slave_wrt_master, world_wrt_camera, \
@@ -589,11 +589,13 @@ class handEye():
         b = Interactive_Extrinsic_Board(self.calibObj_mean, self.workspace.names.board)
         pass
 
-    def calc_camPose_param(self, limit_images, num_adjustments, limit_board_image, calculate_handeye):
+    def calc_camPose_param(self, limit_images, num_adjustments, limit_board_image, calculate_handeye, check_cluster):
         cameras = self.workspace.names.camera
         # cameras = ['08320217']
         for idx, master_cam in enumerate(cameras):
-            handEye_dict = self.handEye_table(master_cam=idx, limit_image=limit_images, num_adjustments=num_adjustments, limit_board_image=limit_board_image, calculate_handeye=calculate_handeye)
+            handEye_dict = self.handEye_table(master_cam=idx, limit_image=limit_images,
+                                              num_adjustments=num_adjustments, limit_board_image=limit_board_image,
+                                              calculate_handeye=calculate_handeye, check_cluster=check_cluster)
             self.all_handEye[master_cam] = handEye_dict
 
         self.calibObj_cluster_mean(limit_pose=100, mean_calculation="multical")
@@ -1125,7 +1127,7 @@ class handEye():
 
         pass
 
-    def master_slave_pose(self, master_cam, master_board, slave_cam, slave_board):
+    def master_slave_pose(self, master_cam, master_board, slave_cam, slave_board, check_cluster = True):
         num_images = len(self.workspace.names.image)
         '''
         For Master_cam to Slave_cam
@@ -1156,23 +1158,24 @@ class handEye():
                 slave_rvec, slave_tvec = rtvec.split(rtvec.from_matrix(slave_pose))
                 master_rvec_list.append(master_rvec)
                 slave_rvec_list.append(slave_rvec)
-                # masterR_list.append(master_R)
-                # masterT_list.append(master_t)
-                # slaveR_list.append(slave_R)
-                # slaveT_list.append(slave_t)
+                masterR_list.append(master_R)
+                masterT_list.append(master_t)
+                slaveR_list.append(slave_R)
+                slaveT_list.append(slave_t)
                 image_list.append(img)
                 masterTransformation_dict[img] = master_pose
                 slaveTransformation_dict[img] = slave_pose
 
-        if len(image_list)>6:
-            final_image_list = self.check_handEye_Cluster(master_rvec_list, slave_rvec_list, image_list)
-            for img in final_image_list:
-                mR, mT = matrix.split(masterTransformation_dict[img])
-                sR, sT = matrix.split(slaveTransformation_dict[img])
-                masterR_list.append(mR)
-                masterT_list.append(mT)
-                slaveR_list.append(sR)
-                slaveT_list.append(sT)
+        if check_cluster:
+            if len(image_list)>6:
+                final_image_list = self.check_handEye_Cluster(master_rvec_list, slave_rvec_list, image_list)
+                for img in final_image_list:
+                    mR, mT = matrix.split(masterTransformation_dict[img])
+                    sR, sT = matrix.split(slaveTransformation_dict[img])
+                    masterR_list.append(mR)
+                    masterT_list.append(mT)
+                    slaveR_list.append(sR)
+                    slaveT_list.append(sT)
 
         return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list), image_list
 
@@ -1279,11 +1282,11 @@ def main3(base_path, limit_images, num_adjustments):
     h.export_handEye_Camera()
     pass
 
-def main4(base_path, limit_images, num_adjustments, limit_board_image, calculate_handeye):
+def main4(base_path, limit_images, num_adjustments, limit_board_image, calculate_handeye, check_cluster):
 
     h = handEye(base_path)
     h.initiate_workspace()
-    h.calc_camPose_param(limit_images, num_adjustments, limit_board_image, calculate_handeye)
+    h.calc_camPose_param(limit_images, num_adjustments, limit_board_image, calculate_handeye, check_cluster)
     h.export_handEye_Camera()
     # h.check_cluster_reprojectionerr()
 
@@ -1305,7 +1308,7 @@ def main6(base_path, limit_images, num_adjustments):
 if __name__ == '__main__':
     # main1(base_path, limit_image=10)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    main4(base_path, limit_images=10, num_adjustments=0, limit_board_image=10, calculate_handeye=False)
+    main4(base_path, limit_images=10, num_adjustments=0, limit_board_image=10, calculate_handeye=True, check_cluster=True)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass

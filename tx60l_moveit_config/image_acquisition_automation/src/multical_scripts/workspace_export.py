@@ -78,8 +78,9 @@ def main1(datasetPath, calibration_path):
     return workspace
 
 if __name__ == '__main__':
-    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38"
-    calibration_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38\calibration.json"
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41"
+    calibration_path = None
+    # calibration_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38\calibration.json"
     ws = main1(base_path, calibration_path)
     export_workspace(ws, base_path)
     if not calibration_path:

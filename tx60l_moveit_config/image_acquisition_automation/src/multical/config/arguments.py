@@ -48,6 +48,7 @@ class RuntimeOpts:
   seed : int = 0 # Seed for repeatable runs
   pose_estimation: str = choice("solvePnPRansac", "solvePnPGeneric", "solvePnP", "solvePnP_P3P", default="solvePnPGeneric")
   show_all_poses: bool = False  # poses that crosses reprojection error limit also
+  detected_point_subset: int = 0
 
 @dataclass 
 class OptimizerOpts:

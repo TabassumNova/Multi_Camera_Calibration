@@ -40,6 +40,7 @@ except ImportError:
 
 from .operation_tab import *
 import cv2
+import math
 import matplotlib.pyplot as plt
 from src.multical_scripts.handEye_check import *
 
@@ -52,6 +53,7 @@ class Calibration(QWidget):
         self.Last_poseCount = 0
 
         self.cb = QComboBox(self)
+        self.cb1 = QComboBox(self)
         self.handEyeCamera = None
         self.workspace = None
         self.folder_path = None
@@ -62,6 +64,7 @@ class Calibration(QWidget):
         self.intrinsic = None
         self.selected_pose = []
         self.image_checkBox = {}
+        self.camera_groups = {}
 
         self.btnLoad1 = QPushButton(self)
         self.btnLoad1.setObjectName('Load')
@@ -96,6 +99,9 @@ class Calibration(QWidget):
         self.btnLoad5.setText('Export Matplotlib')
         self.btnLoad5.clicked.connect(self.export_matplotlib)
         self.btnLoad5.setGeometry(QRect(800, 0, 140, 28))
+
+        self.cb1.setGeometry(QRect(940, 0, 400, 28))
+        self.cb1.currentIndexChanged.connect(self.selectionchange2)
 
         self.label1 = QLabel(self)
         self.label1.setObjectName('Pose')
@@ -183,6 +189,77 @@ class Calibration(QWidget):
             if group in group_num[cam_num]:
                 return cam_num, np.where(group_num[cam_num]==group)[0][0]
         pass
+
+
+    def selectionchange2(self, group):
+        camera_num = self.workspace.sizes.camera
+        master_cam_id = math.floor(group/camera_num)
+        slave_cam_id = group - master_cam_id*camera_num
+        master_cam = self.workspace.names.camera[master_cam_id]
+        slave_cam = self.workspace.names.camera[slave_cam_id]
+        if self.camera_groups:
+            camera_groups = self.camera_groups[master_cam][slave_cam]
+
+            print(master_cam, slave_cam)
+
+            master_x = []
+            master_y = []
+            master_z = []
+            master_name = []
+            slave_x = []
+            slave_y = []
+            slave_z = []
+            slave_name = []
+            final_layout = go.Figure()
+            for group in camera_groups.keys():
+                master_x = []
+                master_y = []
+                master_z = []
+                master_name = []
+                slave_x = []
+                slave_y = []
+                slave_z = []
+                slave_name = []
+                for k in camera_groups[group]['masterBoard_angle'].keys():
+                    master_x.append(camera_groups[group]['masterBoard_angle'][k][0])
+                    master_y.append(camera_groups[group]['masterBoard_angle'][k][1])
+                    master_z.append(camera_groups[group]['masterBoard_angle'][k][2])
+                    master_name.append(group)
+                    slave_x.append(camera_groups[group]['slaveBoard_angle'][k][0])
+                    slave_y.append(camera_groups[group]['slaveBoard_angle'][k][1])
+                    slave_z.append(camera_groups[group]['slaveBoard_angle'][k][2])
+                    slave_name.append(group)
+
+                nameM = 'M-' + master_cam + ' group-' + str(group)
+
+                final_layout.add_trace(
+                    go.Scatter3d(
+                        x=master_x,
+                        y=master_y,
+                        z=master_z,
+                        mode='markers',
+                        text=master_name, textposition="bottom center",
+                        name=nameM
+                    )
+                )
+                nameS = 'S-' + slave_cam + ' group-' + str(group)
+                final_layout.add_trace(
+                    go.Scatter3d(
+                        x=slave_x,
+                        y=slave_y,
+                        z=slave_z,
+                        mode='markers',
+                        text=slave_name, textposition="bottom center",
+                        name=nameS
+                    )
+                )
+            final_layout.update_layout(scene=dict(
+                xaxis_title='Roll',
+                yaxis_title='Pitch',
+                zaxis_title='Yaw'))
+            final_layout.show()
+
+
 
     def selectionchange(self, group, poseCount=0):
         self.clearLayout(self.gridLayout1)
@@ -283,6 +360,29 @@ class Calibration(QWidget):
                 for k in cam_value.keys():
                     text = "Cam" + cam_num + " Group-" + str(k)
                     self.cb.addItem(text)
+
+        for cam_id0, cam_name0 in enumerate(self.workspace.names.camera):
+            for cam_id1, cam_name1 in enumerate(self.workspace.names.camera):
+                text = 'camM-'+ cam_name0 + '_to_' + 'camS-' + cam_name1
+                self.cb1.addItem(text)
+
+        self.organize_camGroups()
+        pass
+
+    def organize_camGroups(self):
+        for cam_id0, cam_name0 in enumerate(self.workspace.names.camera):
+            self.camera_groups[cam_name0] = {}
+            for i, group_name in enumerate(self.handEyeCamera[cam_name0]):
+                slave_cam = self.handEyeCamera[cam_name0][group_name]['slave_cam']
+                if slave_cam not in self.camera_groups[cam_name0].keys():
+                    self.camera_groups[cam_name0][slave_cam] = {}
+                    # group = 0
+                self.camera_groups[cam_name0][slave_cam][group_name] = {}
+                self.camera_groups[cam_name0][slave_cam][group_name]['masterBoard_angle'] = \
+                                                self.handEyeCamera[cam_name0][group_name]['masterBoard_angle']
+                self.camera_groups[cam_name0][slave_cam][group_name]['slaveBoard_angle'] = \
+                                                self.handEyeCamera[cam_name0][group_name]['slaveBoard_angle']
+
         pass
 
     def workspace_load(self):
@@ -367,12 +467,6 @@ class Calibration(QWidget):
         plt.show()
         pass
 
-    # def selectCurrentPose(self):
-    #     image = self.handEyeCamera[self.cam_num][str(self.cam_group)]['image_list'][self.Current_poseCount]
-    #     if image not in self.selected_pose:
-    #         self.selected_pose.append(image)
-    #     self.label2.setText(str(self.selected_pose))
-    #     print(self.selected_pose, self.cam_num, self.cam_group)
 
     def draw_viz(self, master_cam, group):
         masterBoard_angles = self.handEyeCamera[master_cam][group]['masterBoard_angle']
@@ -447,10 +541,10 @@ class Calibration(QWidget):
         marker_length = self.workspace.boards[board_id].marker_length
         rvecs, tvecs = split(rtvecs)
         ## add corner detection and frameaxes
-        frame = self.draw_corners(frame, corners)
-
         print(path, 'rvec: ', rvecs)
         cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvecs, tvecs, 0.1, thickness=20)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = self.draw_corners(frame, corners)
         h, w, ch = frame.shape
         bytes_per_line = ch * w
         convert_to_Qt_format = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888)

@@ -32,7 +32,7 @@ import pickle
 import json
 import cv2
 
-def detect_boards_cached(boards, images, detections_file, cache_key, load_cache=True, j=cpu_count()):
+def detect_boards_cached(boards, images, detections_file, cache_key, load_cache=True, j=cpu_count(), detected_point_subset=0):
   assert isinstance(boards, list)
 
   detected_points = (try_load_detections(
@@ -40,7 +40,7 @@ def detect_boards_cached(boards, images, detections_file, cache_key, load_cache=
 
   if detected_points is None:
     info("Detecting boards..")
-    detected_points = image.detect.detect_images(boards, images, j=j)
+    detected_points = image.detect.detect_images(boards, images, detected_point_subset=detected_point_subset, j=j)
     # print("detected_points: ", detected_points)
 
     info(f"Writing detection cache to {detections_file}")
@@ -142,7 +142,7 @@ class Workspace:
       return path.join(self.output_path, f"{self.name}.detections.pkl")
 
 
-    def detect_boards(self, boards, load_cache=True, j=cpu_count()):
+    def detect_boards(self, boards, load_cache=True, j=cpu_count(), detected_point_subset= 0):
         assert self.boards is None, "detect_boards: boards already set"
         assert self.images is not None, "detect_boards: no images loaded, first use add_camera_images"
 
@@ -152,7 +152,7 @@ class Workspace:
         cache_key = self.fields("filenames", "boards", "image_sizes")
 
         self.detected_points = detect_boards_cached(self.boards, self.images, 
-          self.detections_file, cache_key, load_cache, j=j)
+          self.detections_file, cache_key, load_cache, j=j, detected_point_subset=detected_point_subset)
 
         self.point_table = tables.make_point_table(self.detected_points, self.boards)
         info("Detected point counts:")

@@ -91,13 +91,26 @@ class CharucoBoard(Parameters, Board):
       return self.__str__()      
 
 
-  def detect(self, image):
+  def detect(self, image, random_point_num = 0):
     corners, ids, _ = cv2.aruco.detectMarkers(image, 
       self.board.dictionary, parameters=aruco_config(self.aruco_params))     
     if ids is None: return empty_detection
 
     _, corners, ids = cv2.aruco.interpolateCornersCharuco(
         corners, ids, image, self.board)
+
+    # for selecting subset of points
+    if random_point_num and corners is not None:
+      corner_num = len(corners)
+      # print(corner_num)
+      if corner_num > random_point_num:
+        select = np.random.choice(corner_num, random_point_num)
+        corners = corners[select]
+        ids = ids[select]
+    #     print('random_point_detect')
+    # else:
+    #   print('random_point:' , random_point_num)
+    #   pass
     
     if ids is None: return empty_detection
     return struct(corners = corners.squeeze(1), ids = ids.squeeze(1))

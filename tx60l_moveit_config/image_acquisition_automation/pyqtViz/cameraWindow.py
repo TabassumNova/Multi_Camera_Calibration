@@ -15,6 +15,7 @@ import time
 from functools import partial
 # from QtImageViewer import *
 import json
+from matplotlib import pyplot as plt
 from pathlib import Path
 from multiprocessing import Process, Manager
 import plotly.graph_objects as go
@@ -144,6 +145,12 @@ class CameraWindow(QWidget):
             self.btnLoad5.clicked.connect(partial(self.point_spread, cam))
             self.btnLoad5.setGeometry(QRect(480, 0, 120, 28))
 
+            self.btnLoad6 = QPushButton(self.tab_num[cam])
+            self.btnLoad6.setObjectName('Plot histogram')
+            self.btnLoad6.setText('Plot histogram')
+            self.btnLoad6.clicked.connect(partial(self.plot_hist, cam))
+            self.btnLoad6.setGeometry(QRect(600, 0, 150, 28))
+
             # Grid for images
             self.gridLayoutWidget1[cam] = QWidget(self.tab_num[cam])
             self.gridLayoutWidget1[cam].setGeometry(QRect(0, 50, 1100, 900))
@@ -170,6 +177,23 @@ class CameraWindow(QWidget):
 
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
+
+    def plot_hist(self, cam):
+        cam_path = os.path.join(self.base_path, cam)
+        images = []
+        for file in os.listdir(cam_path):
+            file_path = os.path.join(cam_path, file)
+            img0 = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+            # new_size = (int((img0.shape[0]+1)/2), int((img0.shape[1]+1)/2))
+            img1 = cv2.pyrDown(img0)
+            img2 = cv2.pyrDown(img1)
+            images.extend(list(img2.ravel()))
+            plt.hist(images, 256, [0, 256])
+            plt.show()
+            pass
+        plt.hist(images, 256, [0, 256])
+        plt.show()
+        pass
 
     def point_spread(self, cam):
         x = []
@@ -439,12 +463,14 @@ class CameraWindow(QWidget):
         #
         cam_matrix = np.array(self.initial_calibration['cameras'][cam]['K'])
         cam_dist = np.array(self.initial_calibration['cameras'][cam]['dist'])
-        rtvecs = from_matrix(np.array(self.workspace.pose_table.poses[cam_id][img_id][board_id]))
+        rtvecs = from_matrix(self.workspace.pose_table.poses[cam_id][img_id][board_id])
         marker_length = self.workspace.boards[board_id].marker_length
         rvecs, tvecs = split(rtvecs)
-        frame = self.draw_corners(frame, corners)
         cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvecs, tvecs, 0.1, thickness=20)
-        return frame
+        frame1 = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame2 = self.draw_corners(frame1, corners)
+
+        return frame2
 
     def show_board(self, cam, board, layout):
         image_path = os.path.join(self.folder_path[cam], self.images[self.pose_count[cam]])
