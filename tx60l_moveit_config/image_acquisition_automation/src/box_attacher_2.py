@@ -76,6 +76,7 @@ class Box_Attacher_2(object):
     self.planning_frame = move_group.get_planning_frame()
     self.eef_link = move_group.get_end_effector_link()
     self.group_names = robot.get_group_names()
+    self.attached_list = []
 
 
   def find_attached(self, obj_name):
@@ -325,24 +326,28 @@ class Box_Attacher_2(object):
     print("[SCENE] Y-Pos: " + str(wpose.position.y))
     print("[SCENE] Z-Pos: " + str(wpose.position.z))
 
-  def replace_box(self, attached_list, stl = True, object_name='test_stl', size = (0.2, 0.2, 0.2), stl_file_name = 'Baugruppe.stl'):
+  def replace_box(self, box_name='raptor_box', size = (0.2, 0.2, 0.2), stl_file_name = ''):    
     necessary = True
 
-    for obj in attached_list:
+    for obj in self.attached_list:
       attached_obj = self.find_attached(obj_name=obj)
       if obj in attached_obj:
         self.detach_box(obj)
         self.remove_box(obj)
+        self.attached_list.remove(obj)
 
-    if stl:
-      self.attach_stl(stl_name=object_name, filename=stl_file_name)
+    if stl_file_name:
+      obj = stl_file_name.split('/')[-1].split('.')[0]
+      self.attached_list.append(obj)
+      self.attach_stl(stl_name=obj, filename=stl_file_name)
 
-    if necessary and not size == (0,0,0) and not stl:
-      if self.add_box(size, box_name=object_name):
-        self.attach_box(box_name=object_name)
+    if necessary and not size == (0,0,0) and not stl_file_name:
+      if self.add_box(size, box_name=box_name):
+        self.attach_box(box_name=box_name)
+        self.attached_list.append(box_name)
         print ("[SCENE] Box should be attached right now!")
       else:
-        self.remove_box(box_name=object_name)
+        self.remove_box(box_name=box_name)
         print ("[SCENE] Error at Box attachement")
 
   def build_faps_obstacles(self): 
