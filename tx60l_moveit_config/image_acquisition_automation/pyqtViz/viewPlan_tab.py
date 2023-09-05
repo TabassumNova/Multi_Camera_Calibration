@@ -25,9 +25,9 @@ from PyQt5.QtGui import *
 # from PyQt6.QtGui import *
 from src.multical_scripts.board_angle import *
 from src.multical_scripts.handEye_viz import *
-# from src.QtImageViewer import *
-# from src.aravis_image_acquisition import *
-# from src.aravis_show_image import *
+from src.QtImageViewer import *
+from src.aravis_image_acquisition import *
+from src.aravis_show_image import *
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
     import numpy as np
@@ -43,7 +43,7 @@ except ImportError:
     qimage2ndarray = None
 
 from .calibration_tab import *
-# from src.aravis_show_image import find_cameras, show_image
+from src.aravis_show_image import find_cameras, show_image
 from functools import partial
 from src.helpers import *
 from src.multical_scripts.camcalib_detect import *
@@ -51,9 +51,9 @@ from src.multical.board import load_config as board_load_config
 from src.multical_scripts import *
 import cv2
 
-# import rospy
-# from src.box_attacher_3 import *
-# from src.data_robot_mover2 import *
+import rospy
+from src.box_attacher_3 import *
+from src.data_robot_mover2 import *
 
 class View_Plan(QWidget):
     def __init__(self):
@@ -439,12 +439,12 @@ class View_Plan(QWidget):
         self.euler_angle = euler_deg
         self.new_tvecs = self.tvecs
         self.new_euler_angle = self.euler_angle
-        self.label3.setText('X= '+ str(tvecs[0]))
-        self.label4.setText('Y= '+str(tvecs[1]))
-        self.label5.setText('Z= ' + str(tvecs[2]))
-        self.label7.setText('X= ' + str(euler_deg[0]))
-        self.label8.setText('Y= ' + str(euler_deg[1]))
-        self.label9.setText('Z= ' + str(euler_deg[2]))
+        self.label3.setText('X= '+ str("{:.2f}".format(tvecs[0])))
+        self.label4.setText('Y= '+ str("{:.2f}".format(tvecs[1])))
+        self.label5.setText('Z= ' + str("{:.2f}".format(tvecs[2])))
+        self.label7.setText('X= ' + str("{:.2f}".format(euler_deg[0])))
+        self.label8.setText('Y= ' + str("{:.2f}".format(euler_deg[1])))
+        self.label9.setText('Z= ' + str("{:.2f}".format(euler_deg[2])))
         pass
 
     def create_Matrix(self, action, operator):
@@ -453,37 +453,37 @@ class View_Plan(QWidget):
                 self.new_tvecs[0] += 0.01
             if operator == '-':
                 self.new_tvecs[0] -= 0.01
-            self.label3.setText('X= ' + str(self.new_tvecs[0]))
+            self.label3.setText('X= ' + str("{:.2f}".format(self.new_tvecs[0])))
         if action == 'Translation_Y':
             if operator == '+':
                 self.new_tvecs[1] += 0.01
             if operator == '-':
                 self.new_tvecs[1] -= 0.01
-            self.label4.setText('Y= ' + str(self.new_tvecs[1]))
+            self.label4.setText('Y= ' + str("{:.2f}".format(self.new_tvecs[1])))
         if action == 'Translation_Z':
             if operator == '+':
                 self.new_tvecs[2] += 0.01
             if operator == '-':
                 self.new_tvecs[2] -= 0.01
-            self.label5.setText('Z= ' + str(self.new_tvecs[2]))
+            self.label5.setText('Z= ' + str("{:.2f}".format(self.new_tvecs[2])))
         if action == 'Rotation_X':
             if operator == '+':
                 self.new_euler_angle[0] += 5
             if operator == '-':
                 self.new_euler_angle[0] -= 5
-            self.label7.setText('X= ' + str(self.new_euler_angle[0]))
+            self.label7.setText('X= ' + str("{:.2f}".format(self.new_euler_angle[0])))
         if action == 'Rotation_Y':
             if operator == '+':
                 self.new_euler_angle[1] += 5
             if operator == '-':
                 self.new_euler_angle[1] -= 5
-            self.label8.setText('Y= ' + str(self.new_euler_angle[1]))
+            self.label8.setText('Y= ' + str("{:.2f}".format(self.new_euler_angle[1])))
         if action == 'Rotation_Z':
             if operator == '+':
                 self.new_euler_angle[2] += 5
             if operator == '-':
                 self.new_euler_angle[2] -= 5
-            self.label9.setText('Z= ' + str(self.new_euler_angle[2]))
+            self.label9.setText('Z= ' + str("{:.2f}".format(self.new_euler_angle[2])))
 
     def move_board(self):
         plan = False

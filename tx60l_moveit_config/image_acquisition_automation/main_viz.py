@@ -7,7 +7,7 @@
 import os.path
 from pyqtViz.cameraWindow import *
 # from calibrtaion_tab2 import *
-# from src.aravis_show_image import *
+from src.aravis_show_image import *
 # INFO: QtInteractor can not work with PyQt6
 # PyQt5
 from PyQt5.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize, QRect
@@ -67,17 +67,17 @@ class MyTabWidget(QWidget):
 
         self.tab1 = Operation()
         self.tab2 = Calibration()
-        self.tab3 = QWidget()
-        # self.tab4 = View_Plan()
-        self.tab4 = QWidget()
-        self.tab5 = QWidget()
+        # self.tab3 = QWidget()
+        self.tab4 = View_Plan()
+        # self.tab4 = QWidget()
+        # self.tab5 = QWidget()
         # self.tabs.resize(300, 200)
         # Add tabs
         self.tabs.addTab(self.tab1, "Operation")
         self.tabs.addTab(self.tab2, "Calibration")
-        self.tabs.addTab(self.tab3, "Measurement Setup")
+        # self.tabs.addTab(self.tab3, "Measurement Setup")
         self.tabs.addTab(self.tab4, "View_Plan")
-        self.tabs.addTab(self.tab5, "Settings")
+        # self.tabs.addTab(self.tab5, "Settings")
 
         self.new_window = None
         # Add tabs to widget
