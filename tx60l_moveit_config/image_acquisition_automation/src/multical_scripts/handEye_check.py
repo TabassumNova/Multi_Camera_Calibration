@@ -1,6 +1,7 @@
 import math
 
 import numpy as np
+from numba import cuda, jit
 from src.extrinsic2pyramid.camera_pose_visualizer import CameraPoseVisualizer
 import src.multical.app.calibrate as calibrate
 import src.multical.config.arguments as args
@@ -430,6 +431,7 @@ class handEye():
         for cam in range(0, num_cameras):
             handEye_dict[cam] = self.handEye_table(master_cam=cam)
 
+    # @jit(target_backend='cuda')
     def handEye_table(self, master_cam=0, limit_image=2, num_adjustments=5, limit_board_image=2, calculate_handeye=True, check_cluster=True):
         '''
         handEye for Master_cam to Slave_cam
@@ -444,64 +446,82 @@ class handEye():
         serial = 0
         master_boards = [b for b in range(0, num_boards) if self.workspace.pose_table.valid[master_cam][:, b].sum() > limit_board_image]
         for slave_cam in range(0, num_cameras):
-            slave_boards = [b for b in range(0, num_boards) if self.workspace.pose_table.valid[slave_cam][:, b].sum() > limit_board_image]
+            if slave_cam != master_cam:
+                slave_boards = [b for b in range(0, num_boards) if self.workspace.pose_table.valid[slave_cam][:, b].sum() > limit_board_image]
 
-            for boardM in master_boards:
-                # if boardM not in self.board_pose:
-                #     self.board_pose[boardM] = {}
+                for boardM in master_boards:
+                    # if boardM not in self.board_pose:
+                    #     self.board_pose[boardM] = {}
 
-                for boardS in slave_boards:
-                    masterR, masterT, slaveR, slaveT, image_list = self.master_slave_pose(master_cam, boardM,
-                                                                                     slave_cam, boardS, check_cluster)
+                    for boardS in slave_boards:
+                        masterR, masterT, slaveR, slaveT, image_list = self.master_slave_pose(master_cam, boardM,
+                                                                                         slave_cam, boardS, check_cluster)
 
-                    if len(image_list)>limit_image:
-                        # board_wrt_boardM, slave_wrt_master, world_wrt_camera, \
-                        # base_wrt_gripper, err, err2 = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
-                        print("Group: ",serial,"MasterCam: ",master_cam, " MasterB: ", boardM, " SlaveCam: ", slave_cam, " SlaveB: ", boardS, " images: ", image_list)
-                        if calculate_handeye:
-                            slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, \
-                            estimated_slaveB_slaveCam, err, err2 = self.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
-                        else:
-                            slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, \
-                            estimated_slaveB_slaveCam, err, err2 = np.eye(4), np.eye(4), np.tile(np.eye(4), (len(image_list),1,1)),\
-                                                        np.tile(np.eye(4), (len(image_list),1,1)), \
-                                                                   np.tile(np.eye(4), (len(image_list),1,1)), 0, 0
+                        if len(image_list)>limit_image:
+                            # board_wrt_boardM, slave_wrt_master, world_wrt_camera, \
+                            # base_wrt_gripper, err, err2 = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
+                            print("Group: ",serial,"MasterCam: ",master_cam, " MasterB: ", boardM, " SlaveCam: ", slave_cam, " SlaveB: ", boardS, " images: ", image_list)
+                            if calculate_handeye:
+                                slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, \
+                                estimated_slaveB_slaveCam, err, err2 = self.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
+                            else:
+                                slaveCam_wrt_masterCam, slaveB_wrt_masterB, masterCam_wrt_masterB, slaveCam_wrt_slaveB, \
+                                estimated_slaveB_slaveCam, err, err2 = np.eye(4), np.eye(4), np.tile(np.eye(4), (len(image_list),1,1)),\
+                                                            np.tile(np.eye(4), (len(image_list),1,1)), \
+                                                                       np.tile(np.eye(4), (len(image_list),1,1)), 0, 0
 
-                            ## for board pose
-                        if boardM not in self.calib_obj:
-                            self.calib_obj[boardM] = {}
-                        if boardS not in self.calib_obj[boardM]:
-                            self.calib_obj[boardM][boardS] = []
-                            self.calib_obj[boardM][boardS].append(rtvec.from_matrix(slaveB_wrt_masterB))
-                        else:
-                            self.calib_obj[boardM][boardS].append(rtvec.from_matrix(slaveB_wrt_masterB))
-                        if boardS in self.calib_obj and boardM in self.calib_obj[boardS]:
-                            poses = [rtvec.from_matrix(np.linalg.inv(rtvec.to_matrix(p))) for p in self.calib_obj[boardS][boardM]]
-                            self.calib_obj[boardM][boardS] += poses
-                        ##
+                                ## for board pose
+                            if boardM not in self.calib_obj:
+                                self.calib_obj[boardM] = {}
+                            if boardS not in self.calib_obj[boardM]:
+                                self.calib_obj[boardM][boardS] = []
+                                self.calib_obj[boardM][boardS].append(rtvec.from_matrix(slaveB_wrt_masterB))
+                            else:
+                                self.calib_obj[boardM][boardS].append(rtvec.from_matrix(slaveB_wrt_masterB))
+                            if boardS in self.calib_obj and boardM in self.calib_obj[boardS]:
+                                poses = [rtvec.from_matrix(np.linalg.inv(rtvec.to_matrix(p))) for p in self.calib_obj[boardS][boardM]]
+                                self.calib_obj[boardM][boardS] += poses
+                            ##
 
-                        _, initial_error = self.reprojectionError_calculation(slave_cam, boardS, estimated_slaveB_slaveCam, image_list)
-                        # error = sum(reprojection_error)/len(reprojection_error)
+                            _, initial_error = self.reprojectionError_calculation(slave_cam, boardS, estimated_slaveB_slaveCam, image_list)
+                            # error = sum(reprojection_error)/len(reprojection_error)
 
-                        print("initial reprojection error: ", initial_error)
-                        masterBoard_angle, slaveBoard_angle, masterBoard_error, slaveBoard_error = self.collect_pose_angles(master_cam, boardM, slave_cam, boardS, image_list)
-                        final_error = self.optimization(slave_cam, boardS, image_list,
-                                                    slaveCam_wrt_masterCam, slaveB_wrt_masterB,
-                                                    masterCam_wrt_masterB, slaveCam_wrt_slaveB, num_adjustments=num_adjustments)
-                        handEye_dict[serial] = to_dicts(struct(master_cam=self.workspace.names.camera[master_cam],
-                                                    master_board=self.workspace.names.board[boardM],
-                                                    slave_cam = self.workspace.names.camera[slave_cam],
-                                                    slave_board=self.workspace.names.board[boardS],
-                                                    masterCam_wrt_masterB=masterCam_wrt_masterB.tolist(),
-                                                    boardS_wrto_boardM=slaveB_wrt_masterB.tolist(),
-                                                    slaveCam_wrto_masterCam=slaveCam_wrt_masterCam.tolist(),
-                                                    slaveCam_wrto_slaveB = slaveCam_wrt_slaveB.tolist(),
-                                                    estimated_slaveB_slaveCam = estimated_slaveB_slaveCam.tolist(),
-                                                    initial_reprojection_error=str(initial_error), final_reprojection_error=str(final_error),
-                                                    image_list=image_list, masterBoard_angle=masterBoard_angle,
-                                                    slaveBoard_angle=slaveBoard_angle, masterBoard_error=masterBoard_error,
-                                                    slaveBoard_error=slaveBoard_error))
-                        serial += 1
+                            print("initial reprojection error: ", initial_error)
+                            masterBoard_angle, slaveBoard_angle, masterBoard_error, slaveBoard_error = self.collect_pose_angles(master_cam, boardM, slave_cam, boardS, image_list)
+                            final_error = self.optimization(slave_cam, boardS, image_list,
+                                                        slaveCam_wrt_masterCam, slaveB_wrt_masterB,
+                                                        masterCam_wrt_masterB, slaveCam_wrt_slaveB, num_adjustments=num_adjustments)
+                            handEye_dict[serial] = to_dicts(struct(master_cam=self.workspace.names.camera[master_cam],
+                                                        master_board=self.workspace.names.board[boardM],
+                                                        slave_cam = self.workspace.names.camera[slave_cam],
+                                                        slave_board=self.workspace.names.board[boardS],
+                                                        masterCam_wrt_masterB=masterCam_wrt_masterB.tolist(),
+                                                        boardS_wrto_boardM=slaveB_wrt_masterB.tolist(),
+                                                        slaveCam_wrto_masterCam=slaveCam_wrt_masterCam.tolist(),
+                                                        slaveCam_wrto_slaveB = slaveCam_wrt_slaveB.tolist(),
+                                                        estimated_slaveB_slaveCam = estimated_slaveB_slaveCam.tolist(),
+                                                        initial_reprojection_error=str(initial_error), final_reprojection_error=str(final_error),
+                                                        image_list=image_list, masterBoard_angle=masterBoard_angle,
+                                                        slaveBoard_angle=slaveBoard_angle, masterBoard_error=masterBoard_error,
+                                                        slaveBoard_error=slaveBoard_error))
+                            serial += 1
+            # else:
+            #     handEye_dict[serial] = to_dicts(struct(master_cam=[],
+            #                                            master_board=[],
+            #                                            slave_cam=[],
+            #                                            slave_board=[],
+            #                                            masterCam_wrt_masterB=[],
+            #                                            boardS_wrto_boardM=slaveB_wrt_masterB.tolist(),
+            #                                            slaveCam_wrto_masterCam=slaveCam_wrt_masterCam.tolist(),
+            #                                            slaveCam_wrto_slaveB=slaveCam_wrt_slaveB.tolist(),
+            #                                            estimated_slaveB_slaveCam=estimated_slaveB_slaveCam.tolist(),
+            #                                            initial_reprojection_error=str(initial_error),
+            #                                            final_reprojection_error=str(final_error),
+            #                                            image_list=image_list, masterBoard_angle=masterBoard_angle,
+            #                                            slaveBoard_angle=slaveBoard_angle,
+            #                                            masterBoard_error=masterBoard_error,
+            #                                            slaveBoard_error=slaveBoard_error))
+
 
         return handEye_dict
 
@@ -517,6 +537,44 @@ class handEye():
             masterBoard_error[img] = self.workspace.pose_table.reprojection_error[master_cam][img_idx][boardM]
             slaveBoard_error[img] = self.workspace.pose_table.reprojection_error[slave_cam][img_idx][boardS]
         return masterBoard_angle, slaveBoard_angle, masterBoard_error, slaveBoard_error
+
+    def density_map(self, mean_calculation):
+        mean_group_dict = {}
+        for cam1, cam_value1 in mean_calculation.items():
+            mean_group_dict[cam1] = {}
+            mean_group_dict[cam1][cam1] = {}
+            mean_group_dict[cam1][cam1]['extrinsic'] = np.eye(4).tolist()
+            mean_group_dict[cam1][cam1]['group'] = [0]
+            for cam2, cam_value2 in cam_value1.items():
+                x = []
+                y = []
+                z = []
+                group_name = []
+                if cam2 != cam1:
+                    if len(cam_value2['group']) > 2:
+                        for idx, group_id in cam_value2['group']:
+                            tvec = cam_value2['extrinsic'][idx][3:]
+                            x.append(tvec[0])
+                            y.append(tvec[1])
+                            z.append(tvec[2])
+                            group_name.append(group_id)
+                        xyz = np.vstack([x, y, z])
+                        kde = stats.gaussian_kde(xyz)
+                        density = kde(xyz)
+                        max_idx = np.argmax(density)
+                        max_group = group_name[max_idx]
+                        mean_group_dict[cam1][cam2]['extrinsic'] = rtvec.to_matrix(cam_value2['extrinsic'][max_idx]).tolist()
+                        mean_group_dict[cam1][cam2]['group'] = [max_group]
+                        mean_group_dict[cam1][cam2]['boards'] = [[self.all_handEye[cam1][max_group]['master_board'],
+                                                                              self.all_handEye[cam1][max_group]['slave_board']]]
+                    else:
+                        mean_group_dict[cam1][cam2] = {}
+                        mean_group_dict[cam1][cam2]['group'] = cam_value2['group']
+                        mean_group_dict[cam1][cam2]['extrinsic'] = rtvec.to_matrix(cam_value2['extrinsic'][0])
+                        mean_group_dict[cam1][cam2]['boards'] = []
+                        for g in cam_value2['group']:
+                            mean_group_dict[cam1][cam2]['boards'].append([self.all_handEye[cam1][g]['master_board'],
+                                                                          self.all_handEye[cam1][g]['slave_board']])
 
     def show_cluster_mean(self, mean_calculation):
         mean_group_dict = {}
@@ -619,7 +677,10 @@ class handEye():
                     mean_calculation[cam_name][slave_cam]['extrinsic'] = np.concatenate((mean_calculation[cam_name][slave_cam]['extrinsic'],
                                                                             from_matrix(slave_extrinsic).reshape(
                                                                                 (1, -1))), axis=0)
+        # for k-means cluster
         self.cam_pose = self.show_cluster_mean(mean_calculation)
+        # for density mapping
+        # self.cam_pose = self.density_map()
         for master, master_value in self.cam_pose.items():
             self.campose_param[master] = []
             for slave in self.workspace.names.camera:

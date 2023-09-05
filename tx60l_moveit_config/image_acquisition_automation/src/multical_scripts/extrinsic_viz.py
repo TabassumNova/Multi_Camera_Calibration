@@ -14,8 +14,12 @@ from src.multical.transform.rtvec import *
 # from dash.dependencies import Input, Output
 import pickle
 from src.multical.transform import common, rtvec
+from scipy import stats
+from mayavi import mlab
+import pandas as pd
+import plotly.express as px
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41"
 '''
 for camera extrinsic visualization
 '''
@@ -29,12 +33,48 @@ class Interactive_Extrinsic():
         self.groups = {}
         self.select_group()
         self.draw_groups()
+        self.draw_heat_map()
         pass
 
     def set_Cam_color(self):
         colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'lime', 'pink', 'teal', 'darkcyan', 'violet', 'brown', 'indigo']
         for idx, cam in enumerate(self.workspace.names.camera):
             self.camera_color[cam] = colors[idx]
+
+    def draw_heat_map(self):
+        for cam_name, cam_value in self.groups.items():
+            for key, group in cam_value.items():
+                x = []
+                y = []
+                z = []
+                group_name = []
+                master_cam, slave_cam = key.split('_')
+                if master_cam[1:] != slave_cam[1:]:
+                    for key2, value in group.items():
+                        master_extrinsic = np.eye(4)
+                        slave_extrinsic = np.array(value['slaveCam_wrto_masterCam'])
+                        rvec, tvec = split(as_rtvec(slave_extrinsic))
+                        x.append(tvec[0])
+                        y.append(tvec[1])
+                        z.append(tvec[2])
+                        group_name.append(key2)
+                    xyz = np.vstack([x, y, z])
+                    kde = stats.gaussian_kde(xyz)
+                    density = kde(xyz)
+                    max_idx = np.argmax(density)
+                    max_group = group_name[max_idx]
+                    print(key, ' : ', max_group)
+                    # figure = mlab.figure('DensityPlot')
+                    # pts = mlab.points3d(x, y, z, density, scale_mode='none', scale_factor=0.07)
+                    # mlab.axes()
+                    # mlab.show()
+                    data = {'x': x, 'y': y, 'z': z, 'density': density}
+                    df = pd.DataFrame(data)
+                    fig = px.scatter_3d(df, x='x', y='y', z='z',
+                                        color='density', text=group_name)
+                    fig.show()
+                pass
+        pass
 
     def draw_groups(self):
         all_fig = []
