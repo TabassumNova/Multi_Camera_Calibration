@@ -65,9 +65,9 @@ def camera_intrinsic_dataset(ws, path):
 def main1(datasetPath, calibration_path):
     pathO = args.PathOpts(image_path=datasetPath)
     if calibration_path:
-        cam = args.CameraOpts(calibration=calibration_path,intrinsic_error_limit=0.5)
+        cam = args.CameraOpts(calibration=calibration_path,intrinsic_error_limit=1.0)
     else:
-        cam = args.CameraOpts(intrinsic_error_limit=0.5)
+        cam = args.CameraOpts(intrinsic_error_limit=1.0)
     # pose_estimation_method = "solvePnPRansac"
     pose_estimation_method = "solvePnPGeneric"
     runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=True)
@@ -78,7 +78,7 @@ def main1(datasetPath, calibration_path):
     return workspace
 
 if __name__ == '__main__':
-    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V43"
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38"
     calibration_path = None
     # calibration_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38\calibration.json"
     ws = main1(base_path, calibration_path)

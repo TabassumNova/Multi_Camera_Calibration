@@ -26,8 +26,8 @@ from PyQt5.QtGui import *
 from src.multical_scripts.board_angle import *
 from src.multical_scripts.handEye_viz import *
 from src.QtImageViewer import *
-from src.aravis_image_acquisition import *
-from src.aravis_show_image import *
+# from src.aravis_image_acquisition import *
+# from src.aravis_show_image import *
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
     import numpy as np

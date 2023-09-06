@@ -70,7 +70,7 @@ class CameraPoseVisualizer:
         z = [polygon[2] for vertice in meshes for polygon in vertice]
 
         data = go.Mesh3d(x=x, y=y, z=z, color=color,
-                         opacity=0.50, showlegend=show_legend,
+                         showlegend=show_legend,
                          hovertemplate=hover_template, name=name)
         # data=go.Mesh3d(x=x, y=y, z=z, color='blue', opacity=0.50)
         # fig.show()

@@ -20,7 +20,7 @@ import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
 from sklearn.cluster import MeanShift
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):
@@ -505,22 +505,7 @@ class handEye():
                                                         slaveBoard_angle=slaveBoard_angle, masterBoard_error=masterBoard_error,
                                                         slaveBoard_error=slaveBoard_error))
                             serial += 1
-            # else:
-            #     handEye_dict[serial] = to_dicts(struct(master_cam=[],
-            #                                            master_board=[],
-            #                                            slave_cam=[],
-            #                                            slave_board=[],
-            #                                            masterCam_wrt_masterB=[],
-            #                                            boardS_wrto_boardM=slaveB_wrt_masterB.tolist(),
-            #                                            slaveCam_wrto_masterCam=slaveCam_wrt_masterCam.tolist(),
-            #                                            slaveCam_wrto_slaveB=slaveCam_wrt_slaveB.tolist(),
-            #                                            estimated_slaveB_slaveCam=estimated_slaveB_slaveCam.tolist(),
-            #                                            initial_reprojection_error=str(initial_error),
-            #                                            final_reprojection_error=str(final_error),
-            #                                            image_list=image_list, masterBoard_angle=masterBoard_angle,
-            #                                            slaveBoard_angle=slaveBoard_angle,
-            #                                            masterBoard_error=masterBoard_error,
-            #                                            slaveBoard_error=slaveBoard_error))
+
 
 
         return handEye_dict
@@ -538,6 +523,14 @@ class handEye():
             slaveBoard_error[img] = self.workspace.pose_table.reprojection_error[slave_cam][img_idx][boardS]
         return masterBoard_angle, slaveBoard_angle, masterBoard_error, slaveBoard_error
 
+    def export_mean_cameras(self):
+        filename = os.path.join(self.base_path, "meanCameras.json")
+        json_object = json.dumps((self.cam_pose), indent=4)
+        # Writing to sample.json
+        with open(filename, "w") as outfile:
+            outfile.write(json_object)
+        pass
+
     def density_map(self, mean_calculation):
         mean_group_dict = {}
         for cam1, cam_value1 in mean_calculation.items():
@@ -552,7 +545,7 @@ class handEye():
                 group_name = []
                 if cam2 != cam1:
                     if len(cam_value2['group']) > 2:
-                        for idx, group_id in cam_value2['group']:
+                        for idx, group_id in enumerate(cam_value2['group']):
                             tvec = cam_value2['extrinsic'][idx][3:]
                             x.append(tvec[0])
                             y.append(tvec[1])
@@ -563,6 +556,7 @@ class handEye():
                         density = kde(xyz)
                         max_idx = np.argmax(density)
                         max_group = group_name[max_idx]
+                        mean_group_dict[cam1][cam2] = {}
                         mean_group_dict[cam1][cam2]['extrinsic'] = rtvec.to_matrix(cam_value2['extrinsic'][max_idx]).tolist()
                         mean_group_dict[cam1][cam2]['group'] = [max_group]
                         mean_group_dict[cam1][cam2]['boards'] = [[self.all_handEye[cam1][max_group]['master_board'],
@@ -570,11 +564,12 @@ class handEye():
                     else:
                         mean_group_dict[cam1][cam2] = {}
                         mean_group_dict[cam1][cam2]['group'] = cam_value2['group']
-                        mean_group_dict[cam1][cam2]['extrinsic'] = rtvec.to_matrix(cam_value2['extrinsic'][0])
+                        mean_group_dict[cam1][cam2]['extrinsic'] = rtvec.to_matrix(cam_value2['extrinsic'][0]).tolist()
                         mean_group_dict[cam1][cam2]['boards'] = []
                         for g in cam_value2['group']:
                             mean_group_dict[cam1][cam2]['boards'].append([self.all_handEye[cam1][g]['master_board'],
                                                                           self.all_handEye[cam1][g]['slave_board']])
+        return mean_group_dict
 
     def show_cluster_mean(self, mean_calculation):
         mean_group_dict = {}
@@ -678,9 +673,10 @@ class handEye():
                                                                             from_matrix(slave_extrinsic).reshape(
                                                                                 (1, -1))), axis=0)
         # for k-means cluster
-        self.cam_pose = self.show_cluster_mean(mean_calculation)
+        # self.cam_pose = self.show_cluster_mean(mean_calculation)
         # for density mapping
-        # self.cam_pose = self.density_map()
+        self.cam_pose = self.density_map(mean_calculation)
+        self.export_mean_cameras()
         for master, master_value in self.cam_pose.items():
             self.campose_param[master] = []
             for slave in self.workspace.names.camera:
@@ -1249,13 +1245,6 @@ class handEye():
         pass
         v = Interactive_Extrinsic(base_path)
 
-    # def export_campose2(self):
-    #     filename = os.path.join(base_path, "campose2.json")
-    #     json_object = json.dumps((self.cam_pose2), indent=4)
-    #     # Writing to sample.json
-    #     with open(filename, "w") as outfile:
-    #         outfile.write(json_object)
-    #     pass
 
     def export_camera_board_param(self):
         param = {}
@@ -1369,7 +1358,7 @@ def main6(base_path, limit_images, num_adjustments):
 if __name__ == '__main__':
     # main1(base_path, limit_image=10)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    main4(base_path, limit_images=10, num_adjustments=0, limit_board_image=10, calculate_handeye=True, check_cluster=True)
+    main4(base_path, limit_images=6, num_adjustments=0, limit_board_image=6, calculate_handeye=True, check_cluster=False)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass
