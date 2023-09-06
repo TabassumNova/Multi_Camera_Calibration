@@ -5,18 +5,14 @@ def main():
     rospy.init_node('box_attacher_2_node', anonymous=True)
     try:
         box_attacher = Box_Attacher_2()
-        # define the attached objects name
-        object_list = ['stl1', 'stl2', 'box1']
 
         stl_file_name = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/data/gripper_sample1.stl'
-        box_attacher.replace_box(attached_list=object_list, object_name='stl1', stl_file_name=stl_file_name) 
+        box_attacher.replace_box(stl_file_name=stl_file_name) 
 
-        stl = False
-        size = (0.25, 0.25, 0.25)
-        box_attacher.replace_box(attached_list=object_list, object_name='box1', stl=stl, size=size)
+        box_attacher.replace_box()
 
         stl_file_name = '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/data/gripper_sample.stl'
-        box_attacher.replace_box(attached_list=object_list, object_name='stl2', stl_file_name=stl_file_name) 
+        box_attacher.replace_box(stl_file_name=stl_file_name) 
 
 
 
