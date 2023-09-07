@@ -21,7 +21,7 @@ from multiprocessing import Process, Manager
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
-
+from src.multical_scripts.extrinsic_viz import *
 # import rospy
 import sys
 # from src.aravis_show_image import find_cameras, show_image
@@ -129,15 +129,15 @@ class CameraWindow(QWidget):
             self.btnLoad2.setGeometry(QRect(120, 0, 120, 28))
 
             self.btnLoad3 = QPushButton(self.tab_num[cam])
-            self.btnLoad3.setObjectName('Rotation-Translation Viz')
-            self.btnLoad3.setText('Rotation-Translation Viz')
+            self.btnLoad3.setObjectName('Rt Viz')
+            self.btnLoad3.setText('Rt Viz')
             self.btnLoad3.clicked.connect(partial(self.rotation_translation_viz))
             self.btnLoad3.setGeometry(QRect(240, 0, 120, 28))
 
             self.btnLoad4 = QPushButton(self.tab_num[cam])
-            self.btnLoad4.setObjectName('Translation Viz')
-            self.btnLoad4.setText('Translation Viz')
-            self.btnLoad4.clicked.connect(partial(self.translation_viz, cam))
+            self.btnLoad4.setObjectName('Extrinsic Viz')
+            self.btnLoad4.setText('extrinsic Viz')
+            self.btnLoad4.clicked.connect(partial(self.extrinsic_viz, cam))
             self.btnLoad4.setGeometry(QRect(360, 0, 120, 28))
 
             self.btnLoad5 = QPushButton(self.tab_num[cam])
@@ -300,52 +300,8 @@ class CameraWindow(QWidget):
 
         pass
 
-    def translation_viz(self, cam):
-        x = []
-        y = []
-        z = []
-        img_name = []
-        if self.view == 'intrinsic':
-            for img in self.intrinsic_dataset[cam].keys():
-                for board in self.intrinsic_dataset[cam][img]:
-                    cam_id = self.cameras.index(cam)
-                    img_id = self.images.index(img)
-                    board_id = self.boards.index(board)
-                    pose_table = self.workspace.pose_table.poses[cam_id][img_id][board_id]
-                    _, tvec = split(from_matrix(pose_table))
-                    x.append(tvec[0])
-                    y.append(tvec[1])
-                    z.append(tvec[2])
-                    img_name.append(img)
-        elif self.view == 'pose_table':
-            for img in self.images:
-                for board in self.boards:
-                    cam_id = self.cameras.index(cam)
-                    img_id = self.images.index(img)
-                    board_id = self.boards.index(board)
-                    if self.workspace.pose_table.valid[cam_id][img_id][board_id]:
-                        pose_table = self.workspace.pose_table.poses[cam_id][img_id][board_id]
-                        _, tvec = split(from_matrix(pose_table))
-                        x.append(tvec[0])
-                        y.append(tvec[1])
-                        z.append(tvec[2])
-                        img_name.append(img)
-
-        final_layout = go.Figure()
-        final_layout.add_trace(
-            go.Scatter3d(
-                x=x,
-                y=y,
-                z=z,
-                mode='markers',
-                text=img_name, textposition="bottom center",
-            )
-        )
-        final_layout.update_layout(scene=dict(
-            xaxis_title='X',
-            yaxis_title='Y',
-            zaxis_title='Z'))
-        final_layout.show()
+    def extrinsic_viz(self, cam):
+        i = Interactive_Extrinsic(self.base_path)
 
     def load_intrinsic(self, cam):
         self.clearLayout(self.gridLayout1[cam])
