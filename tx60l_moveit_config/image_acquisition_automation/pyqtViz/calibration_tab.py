@@ -12,6 +12,8 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QSpinBox, QWidget, QPushB
     QHBoxLayout, QGridLayout, QLineEdit, QLabel, QTabWidget, QScrollArea, QTextBrowser, QCheckBox
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+import pandas as pd
+import plotly.express as px
 # from PyQt6.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize, QRect
 # from PyQt6.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen, QColor
 # from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
@@ -51,9 +53,10 @@ class Calibration(QWidget):
         self.layout = QVBoxLayout(self)
         self.Current_poseCount = 0
         self.Last_poseCount = 0
-
+        self.camera_color = {}
         self.cb = QComboBox(self)
         self.cb1 = QComboBox(self)
+        self.cb2 = QComboBox(self)
         self.handEyeCamera = None
         self.workspace = None
         self.folder_path = None
@@ -100,8 +103,11 @@ class Calibration(QWidget):
         self.btnLoad5.clicked.connect(self.export_matplotlib)
         self.btnLoad5.setGeometry(QRect(800, 0, 140, 28))
 
-        self.cb1.setGeometry(QRect(940, 0, 400, 28))
+        self.cb1.setGeometry(QRect(940, 0, 250, 28))
         self.cb1.currentIndexChanged.connect(self.selectionchange2)
+
+        self.cb2.setGeometry(QRect(1190, 0, 250, 28))
+        self.cb2.currentIndexChanged.connect(self.selectionchange3)
 
         self.label1 = QLabel(self)
         self.label1.setObjectName('Pose')
@@ -192,6 +198,9 @@ class Calibration(QWidget):
 
 
     def selectionchange2(self, group):
+        '''
+        this shows scatter plot of rvec
+        '''
         camera_num = self.workspace.sizes.camera
         master_cam_id = math.floor(group/camera_num)
         slave_cam_id = group - master_cam_id*camera_num
@@ -202,14 +211,6 @@ class Calibration(QWidget):
 
             print(master_cam, slave_cam)
 
-            master_x = []
-            master_y = []
-            master_z = []
-            master_name = []
-            slave_x = []
-            slave_y = []
-            slave_z = []
-            slave_name = []
             final_layout = go.Figure()
             for group in camera_groups.keys():
                 master_x = []
@@ -259,7 +260,97 @@ class Calibration(QWidget):
                 zaxis_title='Yaw'))
             final_layout.show()
 
+    def set_Cam_color(self):
+        colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'lime', 'pink', 'teal', 'darkcyan', 'violet', 'brown', 'indigo']
+        for idx, cam in enumerate(self.workspace.names.camera):
+            self.camera_color[cam] = colors[idx]
 
+    def selectionchange3(self, group):
+        '''
+        shows magnitude of rvec and tvec
+        '''
+        camera_num = self.workspace.sizes.camera
+        master_cam = self.workspace.names.camera[group]
+        if self.camera_groups:
+            angle_dict = {}
+            translation_dict = {}
+            angle_dict[master_cam] = []
+            translation_dict[master_cam] = []
+            camera_groups = self.camera_groups[master_cam]
+            for slave_cam, groups in camera_groups.items():
+                angle_dict[slave_cam] = []
+                translation_dict[slave_cam] = []
+                img_list = []
+                for g in groups:
+                    all_images = camera_groups[slave_cam][g]['masterBoard_pose']
+                    for img in all_images:
+                        if img not in img_list:
+                            # img_list.append(img)
+                            master_pose = np.array(camera_groups[slave_cam][g]['masterBoard_pose'][img])
+                            slave_pose = np.array(camera_groups[slave_cam][g]['slaveBoard_pose'][img])
+                            r, t = (matrix.split(master_pose))
+                            # rotation_deg = R.magnitude(R.from_matrix(r)) * 180.0 / math.pi
+                            rvec, tvec = split(from_matrix(master_pose))
+                            rotation_deg = np.linalg.norm([rvec[0], rvec[1]])* 180.0 / math.pi
+                            translation = np.linalg.norm(t)
+                            angle_dict[master_cam].append(rotation_deg)
+                            translation_dict[master_cam].append(translation)
+                            r, t = (matrix.split(slave_pose))
+                            # rotation_deg = R.magnitude(R.from_matrix(r)) * 180.0 / math.pi
+                            rvec, tvec = split(from_matrix(slave_pose))
+                            rotation_deg = np.linalg.norm([rvec[0], rvec[1]])* 180.0 / math.pi
+                            translation = np.linalg.norm(t)
+                            angle_dict[slave_cam].append(rotation_deg)
+                            translation_dict[slave_cam].append(translation)
+
+            x_rot = []
+            y_rot = []
+            colour_rot = []
+            x_T = []
+            y_T = []
+            colour_T = []
+            for cam_id, cam_name in enumerate(self.workspace.names.camera):
+                if cam_name in angle_dict.keys():
+                    y_rot.extend(angle_dict[cam_name])
+                    x_rot.extend([cam_name]*len(angle_dict[cam_name]))
+                    colour_rot.extend([cam_name]*len(angle_dict[cam_name]))
+                    y_T.extend(translation_dict[cam_name])
+                    x_T.extend([cam_name] * len(translation_dict[cam_name]))
+                    colour_T.extend([cam_name] * len(translation_dict[cam_name]))
+                else:
+                    y_rot.append(0)
+                    x_rot.append(cam_name)
+                    colour_rot.append(cam_name)
+                    y_T.append(0)
+                    x_T.append(cam_name)
+                    colour_T.append(cam_name)
+            folder = self.folder_path[-3:]
+            data = {'x': x_rot, 'y': y_rot, 'cameras':colour_rot}
+            df = pd.DataFrame(data)
+            fig = px.scatter(df, x='x', y='y', color='cameras',
+                    labels={"x": "Cameras",
+                     "y": "Calibration Board Rotation(degrees)",
+                     "cameras": "Cameras"},
+                    width=1000, height=1000)
+            fig.update_traces(marker_size=10)
+            fig.update_layout(legend=dict(font=dict(size=20)))
+            fig.update_layout(font={'size': 20}, title=folder + '-MasterCam-'+master_cam)
+            fig.show()
+
+            # translation
+            data = {'x': x_T, 'y': y_T, 'cameras': colour_T}
+            df = pd.DataFrame(data)
+            fig = px.scatter(df, x='x', y='y', color='cameras',
+                             labels={"x": "Cameras",
+                                     "y": "Translation(meter)",
+                                     "cameras": "Cameras"},
+                             width=1000, height=1000)
+            fig.update_traces(marker_size=10)
+            fig.update_layout(legend=dict(font=dict(size=20)))
+            fig.update_layout(font={'size': 20}, title=folder+ ' MasterCam-'+master_cam)
+            fig.show()
+
+        pass
 
     def selectionchange(self, group, poseCount=0):
         self.clearLayout(self.gridLayout1)
@@ -362,6 +453,8 @@ class Calibration(QWidget):
                     self.cb.addItem(text)
 
         for cam_id0, cam_name0 in enumerate(self.workspace.names.camera):
+            text = 'MasterCam- '+cam_name0
+            self.cb2.addItem(text)
             for cam_id1, cam_name1 in enumerate(self.workspace.names.camera):
                 text = 'camM-'+ cam_name0 + '_to_' + 'camS-' + cam_name1
                 self.cb1.addItem(text)
@@ -382,6 +475,10 @@ class Calibration(QWidget):
                                                 self.handEyeCamera[cam_name0][group_name]['masterBoard_angle']
                 self.camera_groups[cam_name0][slave_cam][group_name]['slaveBoard_angle'] = \
                                                 self.handEyeCamera[cam_name0][group_name]['slaveBoard_angle']
+                self.camera_groups[cam_name0][slave_cam][group_name]['masterBoard_pose'] = \
+                    self.handEyeCamera[cam_name0][group_name]['masterBoard_pose']
+                self.camera_groups[cam_name0][slave_cam][group_name]['slaveBoard_pose'] = \
+                    self.handEyeCamera[cam_name0][group_name]['slaveBoard_pose']
 
         pass
 
@@ -394,6 +491,7 @@ class Calibration(QWidget):
                 self.images = self.workspace.names.image
                 self.boards = self.workspace.names.board
                 self.last_pose_count = len(self.images)
+                self.set_Cam_color()
                 for file in files:
                     if file == 'calibration.detections.pkl':
                         pickle_file = pickle.load(open(os.path.join(self.folder_path, 'calibration.detections.pkl'),'rb'))

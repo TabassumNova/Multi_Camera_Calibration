@@ -20,7 +20,7 @@ import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
 from sklearn.cluster import MeanShift
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):
@@ -67,6 +67,32 @@ class handEye():
                     self.handEyeGripper = os.path.join(self.base_path, name)
                 self.handEyeGripper = os.path.join(self.base_path, "handEyeGripper.json")
 
+    def export_workspace(self):
+        workspace_pickle = os.path.join(self.base_path, "workspace.pkl")
+        with open(workspace_pickle, "wb") as file:
+            pickle.dump(self.workspace, file)
+
+    def camera_intrinsic_dataset(self):
+        intrinsic_dataset = {}
+
+        for cam_id, cam in enumerate(self.workspace.names.camera):
+            intrinsic_dataset[cam] = {}
+            board_list = []
+            image_list = []
+            for idx, board_id in enumerate(self.workspace.cameras[cam_id].intrinsic_dataset['board_ids']):
+                board_list.append(self.workspace.names.board[int(board_id)])
+                image_id = self.workspace.cameras[cam_id].intrinsic_dataset['image_ids'][idx]
+                image_list.append(self.workspace.names.image[int(image_id)])
+                pass
+            intrinsic_dataset[cam]['boards'] = board_list
+            intrinsic_dataset[cam]['images'] = image_list
+
+        json_object = json.dumps(intrinsic_dataset, indent=4)
+        # Writing to sample.json
+        json_path = os.path.join(self.base_path, "intrinsic_dataset.json")
+        with open(json_path, "w") as outfile:
+            outfile.write(json_object)
+        pass
 
     def initiate_workspace(self, show_all_poses=False):
         pathO = args.PathOpts(image_path=self.datasetPath)
@@ -77,10 +103,9 @@ class handEye():
         opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True, adjust_outliers=False)
         c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
         self.workspace = c.execute_board()
-        # self.workspace.pose_table = make_pose_table(self.workspace.point_table, self.workspace.boards,
-        #                                             self.workspace.cameras, method="solvePnPRansac")
-
-        # self.workspace.point_table.valid = self.workspace.pose_table.inliers
+        self.export_workspace()
+        if not self.intrinsicPath:
+            self.camera_intrinsic_dataset()
 
         for c in range(len(self.workspace.names.camera)):
             self.camintrinsic_param.extend(self.workspace.cameras[c].param_vec.tolist())
@@ -487,7 +512,7 @@ class handEye():
                             # error = sum(reprojection_error)/len(reprojection_error)
 
                             print("initial reprojection error: ", initial_error)
-                            masterBoard_angle, slaveBoard_angle, masterBoard_error, slaveBoard_error = self.collect_pose_angles(master_cam, boardM, slave_cam, boardS, image_list)
+                            masterBoard_pose, slaveBoard_pose, masterBoard_angle, slaveBoard_angle, masterBoard_error, slaveBoard_error = self.collect_pose_angles(master_cam, boardM, slave_cam, boardS, image_list)
                             final_error = self.optimization(slave_cam, boardS, image_list,
                                                         slaveCam_wrt_masterCam, slaveB_wrt_masterB,
                                                         masterCam_wrt_masterB, slaveCam_wrt_slaveB, num_adjustments=num_adjustments)
@@ -501,7 +526,8 @@ class handEye():
                                                         slaveCam_wrto_slaveB = slaveCam_wrt_slaveB.tolist(),
                                                         estimated_slaveB_slaveCam = estimated_slaveB_slaveCam.tolist(),
                                                         initial_reprojection_error=str(initial_error), final_reprojection_error=str(final_error),
-                                                        image_list=image_list, masterBoard_angle=masterBoard_angle,
+                                                        image_list=image_list, masterBoard_pose=masterBoard_pose,
+                                                        slaveBoard_pose=slaveBoard_pose, masterBoard_angle=masterBoard_angle,
                                                         slaveBoard_angle=slaveBoard_angle, masterBoard_error=masterBoard_error,
                                                         slaveBoard_error=slaveBoard_error))
                             serial += 1
@@ -511,17 +537,21 @@ class handEye():
         return handEye_dict
 
     def collect_pose_angles(self, master_cam, boardM, slave_cam, boardS, image_list):
+        masterBoard_pose = {}
+        slaveBoard_pose = {}
         masterBoard_angle = {}
         slaveBoard_angle = {}
         masterBoard_error = {}
         slaveBoard_error = {}
         for img in image_list:
             img_idx = self.workspace.names.image.index(img)
+            masterBoard_pose[img] = self.workspace.pose_table.poses[master_cam][img_idx][boardM].tolist()
+            slaveBoard_pose[img] = self.workspace.pose_table.poses[slave_cam][img_idx][boardS].tolist()
             masterBoard_angle[img] = self.workspace.pose_table.view_angles[master_cam][img_idx][boardM].tolist()
             slaveBoard_angle[img] = self.workspace.pose_table.view_angles[slave_cam][img_idx][boardS].tolist()
             masterBoard_error[img] = self.workspace.pose_table.reprojection_error[master_cam][img_idx][boardM]
             slaveBoard_error[img] = self.workspace.pose_table.reprojection_error[slave_cam][img_idx][boardS]
-        return masterBoard_angle, slaveBoard_angle, masterBoard_error, slaveBoard_error
+        return masterBoard_pose, slaveBoard_pose, masterBoard_angle, slaveBoard_angle, masterBoard_error, slaveBoard_error
 
     def export_mean_cameras(self):
         filename = os.path.join(self.base_path, "meanCameras.json")

@@ -20,6 +20,7 @@ from pathlib import Path
 from multiprocessing import Process, Manager
 import plotly.graph_objects as go
 import plotly.express as px
+import pandas as pd
 
 # import rospy
 import sys
@@ -128,9 +129,9 @@ class CameraWindow(QWidget):
             self.btnLoad2.setGeometry(QRect(120, 0, 120, 28))
 
             self.btnLoad3 = QPushButton(self.tab_num[cam])
-            self.btnLoad3.setObjectName('Rotation Viz')
-            self.btnLoad3.setText('Rotation Viz')
-            self.btnLoad3.clicked.connect(partial(self.rotation_viz, cam))
+            self.btnLoad3.setObjectName('Rotation-Translation Viz')
+            self.btnLoad3.setText('Rotation-Translation Viz')
+            self.btnLoad3.clicked.connect(partial(self.rotation_translation_viz))
             self.btnLoad3.setGeometry(QRect(240, 0, 120, 28))
 
             self.btnLoad4 = QPushButton(self.tab_num[cam])
@@ -231,52 +232,72 @@ class CameraWindow(QWidget):
         fig = px.scatter(x=x, y=y)
         fig.show()
 
-    def rotation_viz(self, cam):
+    def rotation_translation_viz(self):
         roll = []
         pitch = []
         yaw = []
         img_name = []
+        rotation_list = []
+        camera_list = []
+        translation_list = []
         if self.view == 'intrinsic':
-            for img in self.intrinsic_dataset[cam].keys():
-                for board in self.intrinsic_dataset[cam][img]:
-                    cam_id = self.cameras.index(cam)
-                    img_id = self.images.index(img)
-                    board_id = self.boards.index(board)
-                    view_angles = self.workspace.pose_table.view_angles[cam_id][img_id][board_id]
-                    roll.append(view_angles[0])
-                    pitch.append(view_angles[1])
-                    # yaw.append(view_angles[2])
-                    yaw.append(0)
-                    img_name.append(img)
-        elif self.view == 'pose_table':
-            for img in self.images:
-                for board in self.boards:
-                    cam_id = self.cameras.index(cam)
-                    img_id = self.images.index(img)
-                    board_id = self.boards.index(board)
-                    if self.workspace.pose_table.valid[cam_id][img_id][board_id]:
-                        view_angles = self.workspace.pose_table.view_angles[cam_id][img_id][board_id]
-                        roll.append(view_angles[0])
-                        pitch.append(view_angles[1])
-                        # yaw.append(view_angles[2])
-                        yaw.append(0)
-                        img_name.append(img)
+            for cam in self.workspace.names.camera:
+                for img in self.intrinsic_dataset[cam].keys():
+                    for board in self.intrinsic_dataset[cam][img]:
+                        cam_id = self.cameras.index(cam)
+                        img_id = self.images.index(img)
+                        board_id = self.boards.index(board)
+                        pose = self.workspace.pose_table.poses[cam_id][img_id][board_id]
+                        r, t = (matrix.split(pose))
+                        rvec, tvec = split(from_matrix(pose))
+                        rotation_deg = np.linalg.norm([rvec[0], rvec[1]]) * 180.0 / math.pi
+                        translation = np.linalg.norm(t)
+                        rotation_list.append(rotation_deg)
+                        translation_list.append(translation)
+                        camera_list.append(cam)
 
-        final_layout = go.Figure()
-        final_layout.add_trace(
-            go.Scatter3d(
-                x=roll,
-                y=pitch,
-                z=yaw,
-                mode='markers',
-                text=img_name, textposition="bottom center",
-            )
-        )
-        final_layout.update_layout(scene=dict(
-            xaxis_title='Roll',
-            yaxis_title='Pitch',
-            zaxis_title='Yaw'))
-        final_layout.show()
+        elif self.view == 'pose_table':
+            for cam in self.workspace.names.camera:
+                for img in self.images:
+                    for board in self.boards:
+                        cam_id = self.cameras.index(cam)
+                        img_id = self.images.index(img)
+                        board_id = self.boards.index(board)
+                        if self.workspace.pose_table.valid[cam_id][img_id][board_id]:
+                            pose = self.workspace.pose_table.poses[cam_id][img_id][board_id]
+                            r, t = (matrix.split(pose))
+                            rvec, tvec = split(from_matrix(pose))
+                            rotation_deg = np.linalg.norm([rvec[0], rvec[1]]) * 180.0 / math.pi
+                            translation = np.linalg.norm(t)
+                            rotation_list.append(rotation_deg)
+                            translation_list.append(translation)
+                            camera_list.append(cam)
+
+        folder = self.base_path[-3:]
+        data = {'x': camera_list, 'y': rotation_list, 'cameras': camera_list}
+        df = pd.DataFrame(data)
+        fig = px.scatter(df, x='x', y='y', color='cameras',
+                         labels={"x": "Cameras",
+                                 "y": "Calibration Board Rotation(degrees)",
+                                 "cameras": "Cameras"},
+                         width=1000, height=1000)
+        fig.update_traces(marker_size=10)
+        fig.update_layout(legend=dict(font=dict(size=20)))
+        fig.update_layout(font={'size': 20}, title=folder+'-'+self.view)
+        fig.show()
+
+        data = {'x': camera_list, 'y': translation_list, 'cameras': camera_list}
+        df = pd.DataFrame(data)
+        fig = px.scatter(df, x='x', y='y', color='cameras',
+                         labels={"x": "Cameras",
+                                 "y": "Translation(meters)",
+                                 "cameras": "Cameras"},
+                         width=1000, height=1000)
+        fig.update_traces(marker_size=10)
+        fig.update_layout(legend=dict(font=dict(size=20)))
+        fig.update_layout(font={'size': 20}, title=folder+'-'+self.view)
+        fig.show()
+
         pass
 
     def translation_viz(self, cam):
@@ -551,6 +572,9 @@ class CameraWindow(QWidget):
                 self.boards = self.workspace.names.board
                 if "Calibration_handeye.json" in files:
                     path = os.path.join(self.base_path, "Calibration_handeye.json")
+                    self.initial_calibration = json.load(open(path))
+                elif "Calibration_handeye.json" not in files and 'calibration.json' in files:
+                    path = os.path.join(self.base_path, "calibration.json")
                     self.initial_calibration = json.load(open(path))
                 if "intrinsic_dataset.json" in files:
                     path = os.path.join(self.base_path, "intrinsic_dataset.json")

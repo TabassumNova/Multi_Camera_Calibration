@@ -19,7 +19,7 @@ from mayavi import mlab
 import pandas as pd
 import plotly.express as px
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41"
 '''
 for camera extrinsic visualization
 '''
@@ -36,7 +36,7 @@ class Interactive_Extrinsic():
         # self.num_group = len(self.handEye)
         self.groups = {}
         self.select_group()
-        self.draw_heat_map()
+        # self.draw_heat_map()
         self.draw_groups()
         pass
 
@@ -87,11 +87,12 @@ class Interactive_Extrinsic():
             # # all_fig = []
             # add annotation
             final_layout = go.Figure()
+            folder = self.base_path[-3:]
             final_layout.add_annotation(dict(font=dict(color='black', size=20),
                                     x=0,
                                     y=0.12,
                                     showarrow=False,
-                                    text=cam_name,
+                                    text=folder + '-' + cam_name,
                                     textangle=0,
                                     xanchor='left',
                                     xref="paper",
@@ -108,10 +109,6 @@ class Interactive_Extrinsic():
                     # name = key + "_" + key2
                     name = "Master : " + master_cam + "\n" + "Slave: " + slave_cam + "\n" + "Group: " + "\n" + key2
 
-                    if len(group) > 2:
-                        c = group[key2]['density']
-                    else:
-                        c = 'yellow'
                     data = visualizer.extrinsic2pyramid(master_extrinsic, color=self.camera_color[master_cam],
                                                         focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False, hover_template=master_cam)
                     data1 = visualizer.extrinsic2pyramid(slave_extrinsic, color=self.camera_color[slave_cam],
