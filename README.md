@@ -164,6 +164,13 @@ cv2.error: OpenCV(4.6.0) /work/ci_py311/opencv-suite_1676837327081/work/modules/
 ```
 **Solution:** Remove the outlier image
 
+# scipy issues
+- Error from stats.gaussian_kde(values)
+    ```
+    numpy.linalg.LinAlgError: 3-th leading minor of the array is not positive definite
+    ```
+    **Solution**: values should have more than 3 groups
+
 # PyQt5 Issues
 ```
 Backend QtAgg is interactive backend. Turning interactive mode on. qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found. This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.  Available platform plugins are: eglfs, minimal, vkkhrdisplay, xcb, vnc, wayland, minimalegl, wayland-egl, linuxfb, offscreen.
