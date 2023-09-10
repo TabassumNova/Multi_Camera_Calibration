@@ -22,6 +22,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 from src.multical_scripts.extrinsic_viz import *
+from src.multical_scripts.singleCalib_viz import *
 # import rospy
 import sys
 # from src.aravis_show_image import find_cameras, show_image
@@ -86,6 +87,7 @@ class CameraWindow(QWidget):
         self.initial_calibration = None
         self.intrinsic = None
         self.intrinsic_dataset = {}
+        self.camera_color = {} 
         self.workspace_load()
         self.view = 'pose_table'
 
@@ -108,6 +110,7 @@ class CameraWindow(QWidget):
         self.table = {}
         self.cell_clicked = None
         self.cb = {}
+
         for idx, cam in enumerate(self.cameras):
             self.tab_num[cam] = QWidget()
             self.tabs.addTab(self.tab_num[cam], cam)
@@ -141,9 +144,9 @@ class CameraWindow(QWidget):
             self.btnLoad4.setGeometry(QRect(360, 0, 120, 28))
 
             self.btnLoad5 = QPushButton(self.tab_num[cam])
-            self.btnLoad5.setObjectName('Point spread')
-            self.btnLoad5.setText('Point spread')
-            self.btnLoad5.clicked.connect(partial(self.point_spread, cam))
+            self.btnLoad5.setObjectName('Point_Angle_Error')
+            self.btnLoad5.setText('Point_Angle_Error')
+            self.btnLoad5.clicked.connect(partial(self.point_angle_error, cam))
             self.btnLoad5.setGeometry(QRect(480, 0, 120, 28))
 
             self.btnLoad6 = QPushButton(self.tab_num[cam])
@@ -151,6 +154,12 @@ class CameraWindow(QWidget):
             self.btnLoad6.setText('Plot histogram')
             self.btnLoad6.clicked.connect(partial(self.plot_hist, cam))
             self.btnLoad6.setGeometry(QRect(600, 0, 150, 28))
+
+            self.btnLoad7 = QPushButton(self.tab_num[cam])
+            self.btnLoad7.setObjectName('Final extrinsic')
+            self.btnLoad7.setText('Final extrinsic')
+            self.btnLoad7.clicked.connect(partial(self.final_extrinsic, cam))
+            self.btnLoad7.setGeometry(QRect(750, 0, 150, 28))
 
             # Grid for images
             self.gridLayoutWidget1[cam] = QWidget(self.tab_num[cam])
@@ -179,6 +188,25 @@ class CameraWindow(QWidget):
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
 
+    def final_extrinsic(self, cam):
+        cam_init = 'initial_calibration_M' + cam + '.json'
+        cam_final = 'calibration_' + cam + '.json'
+        i = Interactive_calibration(self.base_path)
+        for path, subdirs, files in os.walk(base_path):
+            for name in files:
+                if name == cam_init:
+                    cam_init_path = os.path.join(self.base_path, name)
+                    i.load_campose(cam_init_path, calib_type='initial')
+                elif name == cam_final:
+                    cam_final_path = os.path.join(self.base_path, name)
+                    i.load_campose(cam_final_path, calib_type='final')
+        i.draw_cameras()
+
+    def set_Cam_color(self):
+            colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'lime', 'pink', 'teal', 'darkcyan', 'violet', 'brown', 'indigo']
+            for idx, cam in enumerate(self.workspace.names.camera):
+                self.camera_color[cam] = colors[idx]
+
     def plot_hist(self, cam):
         cam_path = os.path.join(self.base_path, cam)
         images = []
@@ -196,52 +224,105 @@ class CameraWindow(QWidget):
         plt.show()
         pass
 
-    def point_spread(self, cam):
+    def point_angle_error(self, cam):
         x = []
         y = []
         z = []
-        img_name = []
-        if self.view == 'intrinsic':
-            for img in self.intrinsic_dataset[cam].keys():
-                for board in self.intrinsic_dataset[cam][img]:
-                    cam_id = self.cameras.index(cam)
-                    img_id = self.images.index(img)
-                    board_id = self.boards.index(board)
-                    ids = np.flatnonzero(self.workspace.point_table.valid[cam_id][img_id][board_id])
-                    point_table = self.workspace.point_table.points[cam_id][img_id][board_id][ids]
-                    point_x = [point[0] for point in point_table]
-                    point_y = [point[1] for point in point_table]
-                    x.extend(point_x)
-                    y.extend(point_y)
-                    img_name.append(img)
-        elif self.view == 'pose_table':
-            for img in self.images:
-                for board in self.boards:
-                    cam_id = self.cameras.index(cam)
-                    img_id = self.images.index(img)
-                    board_id = self.boards.index(board)
-                    if self.workspace.pose_table.valid[cam_id][img_id][board_id]:
-                        ids = np.flatnonzero(self.workspace.point_table.valid[cam_id][img_id][board_id])
-                        point_table = self.workspace.point_table.points[cam_id][img_id][board_id][ids]
-                        point_x = [point[0] for point in point_table]
-                        point_y = [point[1] for point in point_table]
-                        x.extend(point_x)
-                        y.extend(point_y)
-                        img_name.append(img)
 
-        fig = px.scatter(x=x, y=y)
-        fig.show()
+        if self.view == 'intrinsic':
+            fig, axs = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
+            for idx, cam in enumerate(self.workspace.names.camera):
+                x = []
+                y = []
+                z = []
+                for img in self.intrinsic_dataset[cam].keys():
+                    for board in self.intrinsic_dataset[cam][img]:
+                        cam_id = self.cameras.index(cam)
+                        img_id = self.images.index(img)
+                        board_id = self.boards.index(board)
+                        num_points = self.workspace.pose_table.num_points[cam_id][img_id][board_id]
+                        error = self.workspace.pose_table.reprojection_error[cam_id][img_id][board_id]
+                        pose = self.workspace.pose_table.poses[cam_id][img_id][board_id]
+                        rvec, tvec = split(from_matrix(pose))
+                        rotation_deg = np.linalg.norm([rvec[0], rvec[1]]) * 180.0 / math.pi
+                        x.append(rotation_deg)
+                        y.append(num_points)
+                        z.append(error)
+                bin = np.arange(0, 120, 5)
+                if idx < int(self.workspace.sizes.camera/2):
+                    # axs[0, idx].hist(y, bin, edgecolor='black')
+                    axs[0, idx].plot(x,y)
+                    axs[0, idx].set_title('Cam-'+cam)
+                else:
+                    i = idx - math.ceil(self.workspace.sizes.camera/2)
+                    # axs[1, i].hist(y, bin, edgecolor='black')
+                    axs[1, idx].plot(x,y)
+                    axs[1, i].set_title('Cam-'+cam)
+                for ax in axs.flat:
+                    ax.set(xlabel='View Angle(degrees)', ylabel='Number of Points')
+
+                # Hide x labels and tick labels for top plots and y ticks for right plots.
+                for ax in axs.flat:
+                    ax.label_outer()
+            folder = self.base_path[-3:]
+            path = os.path.join(self.base_path, folder+'-numPoints_viz.png')
+            plt.savefig(path)
+            plt.show()
+
+
+        elif self.view == 'pose_table':
+            fig, axs = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
+            for idx, cam in enumerate(self.workspace.names.camera):
+                x = [] 
+                y = [] 
+                z = [] 
+                for img in self.images:
+                    for board in self.boards:
+                        cam_id = self.cameras.index(cam)
+                        img_id = self.images.index(img)
+                        board_id = self.boards.index(board)
+                        if self.workspace.pose_table.valid[cam_id][img_id][board_id]:
+                            num_points = self.workspace.pose_table.num_points[cam_id][img_id][board_id]
+                            error = self.workspace.pose_table.reprojection_error[cam_id][img_id][board_id]
+                            pose = self.workspace.pose_table.poses[cam_id][img_id][board_id]
+                            rvec, tvec = split(from_matrix(pose))
+                            rotation_deg = np.linalg.norm([rvec[0], rvec[1]]) * 180.0 / math.pi
+                            x.append(rotation_deg)
+                            y.append(num_points)
+                            z.append(error)
+                bin = np.arange(0, 120, 5)
+                if idx < int(self.workspace.sizes.camera/2):
+                    # axs[0, idx].hist(y, bin, edgecolor='black')
+                    axs[0, idx].scatter(x,y)
+                    axs[0, idx].set_title('Cam-'+cam)
+                else:
+                    i = idx - math.ceil(self.workspace.sizes.camera/2)
+                    # axs[1, i].hist(y, bin, edgecolor='black')
+                    axs[1, i].scatter(x,y)
+                    axs[1, i].set_title('Cam-'+cam)
+                for ax in axs.flat:
+                    ax.set(xlabel='View Angle(degrees)', ylabel='Number of Points')
+
+                # Hide x labels and tick labels for top plots and y ticks for right plots.
+                for ax in axs.flat:
+                    ax.label_outer()
+            folder = self.base_path[-3:]
+            path = os.path.join(self.base_path, folder+'-intrinsic_numPoints_viz.png')
+            plt.savefig(path)
+            plt.show()                                                                                         
+
+        # data = {'rotation_deg': x, 'num_points': y, 'error': z}
+        # df = pd.DataFrame(data)
+        # fig = px.scatter_3d(df, x='rotation_deg', y='num_points', z='error', title=cam)
+        # fig.show()
 
     def rotation_translation_viz(self):
-        roll = []
-        pitch = []
-        yaw = []
-        img_name = []
-        rotation_list = []
-        camera_list = []
-        translation_list = []
         if self.view == 'intrinsic':
-            for cam in self.workspace.names.camera:
+            fig, axs = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
+            for idx, cam in enumerate(self.workspace.names.camera):
+                rotation_list = []
+                camera_list = []
+                translation_list = []
                 for img in self.intrinsic_dataset[cam].keys():
                     for board in self.intrinsic_dataset[cam][img]:
                         cam_id = self.cameras.index(cam)
@@ -255,9 +336,32 @@ class CameraWindow(QWidget):
                         rotation_list.append(rotation_deg)
                         translation_list.append(translation)
                         camera_list.append(cam)
+                bin = np.arange(0, 120, 5)
+                if idx < math.ceil(self.workspace.sizes.camera/2):
+                    axs[0, idx].hist(rotation_list, bin, edgecolor='black')
+                    axs[0, idx].set_title('Cam-'+cam)
+                else:
+                    i = idx - math.ceil(self.workspace.sizes.camera/2)
+                    axs[1, i].hist(rotation_list, bin, edgecolor='black')
+                    axs[1, i].set_title('Cam-'+cam)
+                for ax in axs.flat:
+                    ax.set(xlabel='View Angle(degrees)', ylabel='Number of Views')
 
+                # Hide x labels and tick labels for top plots and y ticks for right plots.
+                for ax in axs.flat:
+                    ax.label_outer()
+            folder = self.base_path[-3:]
+            path = os.path.join(self.base_path, folder+'-intrinsic_viz.png')
+            plt.savefig(path)
+            plt.show()
+
+                
         elif self.view == 'pose_table':
-            for cam in self.workspace.names.camera:
+            fig, axs = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
+            for idx, cam in enumerate(self.workspace.names.camera):
+                rotation_list = []   
+                camera_list = []     
+                translation_list = []
                 for img in self.images:
                     for board in self.boards:
                         cam_id = self.cameras.index(cam)
@@ -272,31 +376,52 @@ class CameraWindow(QWidget):
                             rotation_list.append(rotation_deg)
                             translation_list.append(translation)
                             camera_list.append(cam)
+                bin = np.arange(0, 120, 5)
+                if idx < int(self.workspace.sizes.camera/2):
+                    axs[0, idx].hist(rotation_list, bin, edgecolor='black')
+                    axs[0, idx].set_title('Cam-'+cam)
+                else:
+                    i = idx - math.ceil(self.workspace.sizes.camera/2)
+                    axs[1, i].hist(rotation_list, bin, edgecolor='black')
+                    axs[1, i].set_title('Cam-'+cam)
+                for ax in axs.flat:
+                    ax.set(xlabel='View Angle(degrees)', ylabel='Number of Views')
 
-        folder = self.base_path[-3:]
-        data = {'x': camera_list, 'y': rotation_list, 'cameras': camera_list}
-        df = pd.DataFrame(data)
-        fig = px.scatter(df, x='x', y='y', color='cameras',
-                         labels={"x": "Cameras",
-                                 "y": "Calibration Board Rotation(degrees)",
-                                 "cameras": "Cameras"},
-                         width=1000, height=1000)
-        fig.update_traces(marker_size=10)
-        fig.update_layout(legend=dict(font=dict(size=20)))
-        fig.update_layout(font={'size': 20}, title=folder+'-'+self.view)
-        fig.show()
+                # Hide x labels and tick labels for top plots and y ticks for right plots.
+                for ax in axs.flat:
+                    ax.label_outer()
+            folder = self.base_path[-3:]
+            path = os.path.join(self.base_path, folder+'-poseTable_viz.png')
+            plt.savefig(path)
+            plt.show()
 
-        data = {'x': camera_list, 'y': translation_list, 'cameras': camera_list}
-        df = pd.DataFrame(data)
-        fig = px.scatter(df, x='x', y='y', color='cameras',
-                         labels={"x": "Cameras",
-                                 "y": "Translation(meters)",
-                                 "cameras": "Cameras"},
-                         width=1000, height=1000)
-        fig.update_traces(marker_size=10)
-        fig.update_layout(legend=dict(font=dict(size=20)))
-        fig.update_layout(font={'size': 20}, title=folder+'-'+self.view)
-        fig.show()
+
+
+        # # for plotly plot
+        # folder = self.base_path[-3:]
+        # data = {'x': camera_list, 'y': rotation_list, 'cameras': camera_list}
+        # df = pd.DataFrame(data)
+        # fig = px.scatter(df, x='x', y='y', color='cameras',
+        #                  labels={"x": "Cameras",
+        #                          "y": "Calibration Board Rotation(degrees)",
+        #                          "cameras": "Cameras"},
+        #                  width=1000, height=1000)
+        # fig.update_traces(marker_size=10)
+        # fig.update_layout(legend=dict(font=dict(size=20)))
+        # fig.update_layout(font={'size': 20}, title=folder+'-'+self.view)
+        # fig.show()
+        #
+        # data = {'x': camera_list, 'y': translation_list, 'cameras': camera_list}
+        # df = pd.DataFrame(data)
+        # fig = px.scatter(df, x='x', y='y', color='cameras',
+        #                  labels={"x": "Cameras",
+        #                          "y": "Translation(meters)",
+        #                          "cameras": "Cameras"},
+        #                  width=1000, height=1000)
+        # fig.update_traces(marker_size=10)
+        # fig.update_layout(legend=dict(font=dict(size=20)))
+        # fig.update_layout(font={'size': 20}, title=folder+'-'+self.view)
+        # fig.show()
 
         pass
 
@@ -526,6 +651,7 @@ class CameraWindow(QWidget):
                 self.cameras = self.workspace.names.camera
                 self.images = self.workspace.names.image
                 self.boards = self.workspace.names.board
+                self.set_Cam_color()
                 if "Calibration_handeye.json" in files:
                     path = os.path.join(self.base_path, "Calibration_handeye.json")
                     self.initial_calibration = json.load(open(path))

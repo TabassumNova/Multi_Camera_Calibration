@@ -95,15 +95,18 @@ class Camera(Parameters):
       err, K, dist, r, t, _, _, error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners,
                                                                             image_size, None, None, criteria=criteria,
                                                                             flags=flags)
-      err = float("{:.2f}".format(err))
-      threshold = np.quantile(error_perView, 0.95)
-      inliers = [(i) for i, err in enumerate(error_perView) if err<threshold]
-      points.object_points = np.array([points.object_points[i] for i in inliers], dtype=object)
-      points.corners = np.array([points.corners[i] for i in inliers], dtype=object)
-      points.ids = np.array([points.ids[i] for i in inliers], dtype=object)
-      points.board_offset = np.array([points.board_offset[i] for i in inliers], dtype=object)
-      points.image_ids = np.array([points.image_ids[i] for i in inliers], dtype=object)
-      info(f"RMS={err:.2f}, Number of views={len(error_perView)}")
+      if len(error_perView) >= 15:
+        err = float("{:.2f}".format(err))
+        threshold = np.quantile(error_perView, 0.95)
+        inliers = [(i) for i, err in enumerate(error_perView) if err<threshold]
+        points.object_points = np.array([points.object_points[i] for i in inliers], dtype=object)
+        points.corners = np.array([points.corners[i] for i in inliers], dtype=object)
+        points.ids = np.array([points.ids[i] for i in inliers], dtype=object)
+        points.board_offset = np.array([points.board_offset[i] for i in inliers], dtype=object)
+        points.image_ids = np.array([points.image_ids[i] for i in inliers], dtype=object)
+        info(f"RMS={err:.2f}, Number of views={len(error_perView)}")
+      else:
+        reprojection_error_limit += 0.1
     ## new
     # err, K, dist, r, t,_,_,error_perView = cv2.calibrateCameraExtended(points.object_points, points.corners, image_size, None, None, criteria=criteria, flags=flags)
 

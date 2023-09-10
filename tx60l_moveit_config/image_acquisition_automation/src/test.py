@@ -1,24 +1,8 @@
-import plotly.graph_objs as go
+import os
 
-fig = go.Figure()
-fig.add_trace(go.Box(y=[900, 350, 650, 750, 350, 1350, 250, 1000, 850, 690, 720]))
-fig.layout.update(
-    updatemenus=[
-        go.layout.Updatemenu(
-            type="buttons", direction="left", buttons=list(
-                [
-                    dict(args=["type", "box"], label="Box", method="restyle"),
-                    dict(args=["type", "violin"], label="Violin", method="restyle")
-                ]
-            ),
-            pad={"r": 2, "t": 2},
-            showactive=True,
-            x=0.11,
-            xanchor="left",
-            y=1.1,
-            yanchor="top"
-        ),
-    ]
-)
-
-fig.show()
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35_test"
+for path, subdirs, files in os.walk(base_path):
+    for name in files:
+        if "calibration" in name:
+            name1 = name.split('calibration')
+            pass

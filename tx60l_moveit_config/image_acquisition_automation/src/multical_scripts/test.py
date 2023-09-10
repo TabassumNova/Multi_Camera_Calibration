@@ -1,8 +1,8 @@
-from scipy.spatial.transform import Rotation as R
-import math
-from src.multical.transform.matrix import *
-import numpy as np
-r, t = (split(np.eye(4)))
-rotation_deg = R.magnitude(R.from_matrix(r)) * 180.0 / math.pi
-translation = np.linalg.norm(t)
-pass
+import os
+
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35_test"
+for path, subdirs, files in os.walk(base_path):
+    for name in files:
+        if "calibration" in name:
+            name1 = name.split('calibration')
+            pass

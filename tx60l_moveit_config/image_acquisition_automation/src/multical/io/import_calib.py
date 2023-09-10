@@ -6,7 +6,7 @@ from structs.struct import struct, to_structs
 from src.multical.transform import matrix
 
 from src.multical.camera import Camera
-
+from src.multical.io.logging import LogWriter, info
 
 def transpose_lists(lists):
     return list(zip(*lists))
@@ -97,5 +97,6 @@ def import_cameras(calib_data):
 
 
 def load_calibration(filename):
+  info("Load calibration: ", str(filename))
   calib_data = load_json(filename)
   return import_cameras(calib_data)

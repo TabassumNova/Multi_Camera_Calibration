@@ -15,7 +15,7 @@ from dash.dependencies import Input, Output
 import pickle
 from src.multical.transform import common, rtvec
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30_test"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41_test"
 '''
 Single calibration.json visualization
 '''
@@ -29,10 +29,10 @@ class Interactive_calibration():
         self.campose2 = None
         self.camera_pose_final = {}
         self.camera_pose_init = {}
-        self.load_files()
+        # self.load_files()
         self.camera_color = {}
-        self.set_Cam_color()
-        self.draw_cameras()
+        # self.set_Cam_color()
+        # self.draw_cameras()
         pass
 
     def set_Cam_color(self):
@@ -62,6 +62,7 @@ class Interactive_calibration():
         for path, subdirs, files in os.walk((self.base_path)):
             if path == self.base_path:
                 for file in files:
+                    # if "initial_calibration_M" in file:
                     if file == "calibration.json":
                         calib_path = os.path.join(self.base_path, "calibration.json")
                         self.load_campose(calib_path, calib_type='final')
@@ -87,6 +88,8 @@ class Interactive_calibration():
             if calib_type == 'initial':
                 # the pose from hand-eye calibration slaveCam_wrto_masterCam
                 self.camera_pose_init[cam] = matrix.join(R, t)
+
+        self.set_Cam_color()
         pass
 
 

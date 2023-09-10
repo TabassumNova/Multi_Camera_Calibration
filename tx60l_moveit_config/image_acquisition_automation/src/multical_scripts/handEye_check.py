@@ -20,7 +20,7 @@ import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
 from sklearn.cluster import MeanShift
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V43"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):
@@ -96,7 +96,7 @@ class handEye():
 
     def initiate_workspace(self, show_all_poses=False):
         pathO = args.PathOpts(image_path=self.datasetPath)
-        cam = args.CameraOpts(calibration=self.intrinsicPath, intrinsic_error_limit=1.0)
+        cam = args.CameraOpts(calibration=self.intrinsicPath, intrinsic_error_limit=0.5)
         # pose_estimation_method = "solvePnPRansac"
         pose_estimation_method = "solvePnPGeneric"
         runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=True)
@@ -574,7 +574,7 @@ class handEye():
                 z = []
                 group_name = []
                 if cam2 != cam1:
-                    if len(cam_value2['group']) > 2:
+                    if len(cam_value2['group']) > 3:
                         for idx, group_id in enumerate(cam_value2['group']):
                             tvec = cam_value2['extrinsic'][idx][3:]
                             x.append(tvec[0])
@@ -582,6 +582,7 @@ class handEye():
                             z.append(tvec[2])
                             group_name.append(group_id)
                         xyz = np.vstack([x, y, z])
+                        print(xyz)
                         kde = stats.gaussian_kde(xyz)
                         density = kde(xyz)
                         max_idx = np.argmax(density)
@@ -718,48 +719,52 @@ class handEye():
 
     def setCamBoardpose_workspace(self):
         ## for camera_poses
-        master_cam = self.workspace.names.camera[self.master_cam]  # self.master_cam = 0
+        # master_cam = self.workspace.names.camera[self.master_cam]  # self.master_cam = 0
         old_data = self.workspace.export_Data
         cam_pose = {}
-        for cam in self.workspace.names.camera:
-            if cam == master_cam:
-                name = master_cam
-            else:
-                name = cam + '_to_' + master_cam
-            cam_pose[name] = {}
-            if cam in self.cam_pose[master_cam]:
-                p = np.array(self.cam_pose[master_cam][cam]['extrinsic'])
-                R = matrix.rotation(p).tolist()
-                T = matrix.translation(p).tolist()
-                cam_pose[name]['R'] = R
-                cam_pose[name]['T'] = T
-        # data.camera_poses = cam_pose
-        # self.workspace.export_Data = data
-        ## for camera_poses
+        for cam0 in self.workspace.names.camera:
+            master_cam = cam0
+            cam_pose = {}
+            for cam in self.workspace.names.camera:
+                if cam == master_cam:
+                    name = master_cam
+                else:
+                    name = cam + '_to_' + master_cam
+                cam_pose[name] = {}
+                if cam in self.cam_pose[master_cam]:
+                    p = np.array(self.cam_pose[master_cam][cam]['extrinsic'])
+                    R = matrix.rotation(p).tolist()
+                    T = matrix.translation(p).tolist()
+                    cam_pose[name]['R'] = R
+                    cam_pose[name]['T'] = T
 
-        ## for board_poses
-        master_board = self.workspace.names.board[self.master_board]
-        board_pose = {}
-        for board in self.workspace.names.board:
-            if board == master_board:
-                name = master_board
-            else:
-                name = board + '_to_' + master_board
-            board_pose[name] = {}
-            if board in self.calibObj_mean:
-                p = np.array(self.calibObj_mean[board]['mean'])
-                R = matrix.rotation(p).tolist()
-                T = matrix.translation(p).tolist()
-                board_pose[name]['R'] = R
-                board_pose[name]['T'] = T
-        ## for board_poses
+            ## for board_poses
+            # master_board = self.workspace.names.board[self.master_board]
+            # board_pose = {}
+            # for board in self.workspace.names.board:
+            #     if board == master_board:
+            #         name = master_board
+            #     else:
+            #         name = board + '_to_' + master_board
+            #     board_pose[name] = {}
+            #     if board in self.calibObj_mean:
+            #         p = np.array(self.calibObj_mean[board]['mean'])
+            #         R = matrix.rotation(p).tolist()
+            #         T = matrix.translation(p).tolist()
+            #         board_pose[name]['R'] = R
+            #         board_pose[name]['T'] = T
+            ## for board_poses
 
-        ## for export
-        new_data = struct(cameras=old_data.cameras, boards=self.workspace.names.board, camera_poses=cam_pose, board_poses=board_pose)
-        filename = os.path.join(self.base_path, "Calibration_handeye.json")
-        with open(filename, 'w') as outfile:
-            json.dump(to_dicts(new_data), outfile, indent=2)
-        pass
+            ## for export
+            new_data = struct(cameras=old_data.cameras, camera_poses=cam_pose)
+            if self.workspace.names.camera.index(master_cam) == self.master_cam:
+                filename = os.path.join(self.base_path, "Calibration_handeye.json")
+                with open(filename, 'w') as outfile:
+                    json.dump(to_dicts(new_data), outfile, indent=2)
+            filename = os.path.join(self.base_path, "initial_calibration_M" + master_cam + ".json")
+            with open(filename, 'w') as outfile:
+                json.dump(to_dicts(new_data), outfile, indent=2)
+            pass
 
 
     def check_cluster_reprojectionerr(self):
@@ -1388,7 +1393,7 @@ def main6(base_path, limit_images, num_adjustments):
 if __name__ == '__main__':
     # main1(base_path, limit_image=10)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    main4(base_path, limit_images=6, num_adjustments=0, limit_board_image=6, calculate_handeye=True, check_cluster=False)
+    main4(base_path, limit_images=6, num_adjustments=0, limit_board_image=6, calculate_handeye=True, check_cluster=True)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass

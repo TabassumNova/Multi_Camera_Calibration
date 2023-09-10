@@ -53,7 +53,7 @@ def estimate_pose_points(board, camera, detections, method="solvePnPGeneric"):
         if valid1 == False:
             valid, rvec, tvec, error = valid0, rvec0, tvec0, error0
             inliers = [None]
-        elif valid1 == True and len(inliers1.tolist())<6:
+        elif valid1 == True and len(inliers1.tolist())<10:
             valid, rvec, tvec, error = valid0, rvec0, tvec0, error0
             inliers = [None]
         else:
