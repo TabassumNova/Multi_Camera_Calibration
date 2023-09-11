@@ -12,7 +12,13 @@ import pyvista as pv
 import sys
 import random
 import time
+import pandas as pd
+import openpyxl
 from functools import partial
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm           # import colormap stuff!
+import numpy as np
 # from QtImageViewer import *
 import json
 from matplotlib import pyplot as plt
@@ -161,6 +167,93 @@ class CameraWindow(QWidget):
             self.btnLoad7.clicked.connect(partial(self.final_extrinsic, cam))
             self.btnLoad7.setGeometry(QRect(750, 0, 150, 28))
 
+            self.label1 = QLabel(self.tab_num[cam])
+            self.label1.setObjectName('Variation(max-min)')
+            self.label1.setText('Variation(max-min)')
+            self.label1.setStyleSheet("border: 1px solid black;")
+            self.label1.setGeometry(QRect(900, 0, 120, 28))
+
+            self.label2 = QLabel(self.tab_num[cam])
+            self.label2.setObjectName('_')
+            self.label2.setText('_')
+            self.label2.setStyleSheet("border: 1px solid black;")
+            self.label2.setGeometry(QRect(1020, 0, 70, 28))
+
+            self.label3 = QLabel(self.tab_num[cam])
+            self.label3.setObjectName('std')
+            self.label3.setText('std')
+            self.label3.setStyleSheet("border: 1px solid black;")
+            self.label3.setGeometry(QRect(1090, 0, 50, 28))
+
+            self.label4 = QLabel(self.tab_num[cam])
+            self.label4.setObjectName('_')
+            self.label4.setText('_')
+            self.label4.setStyleSheet("border: 1px solid black;")
+            self.label4.setGeometry(QRect(1140, 0, 70, 28))
+
+            self.label5 = QLabel(self.tab_num[cam])
+            self.label5.setObjectName('num_view')
+            self.label5.setText('num_view')
+            self.label5.setStyleSheet("border: 1px solid black;")
+            self.label5.setGeometry(QRect(1210, 0, 70, 28))
+
+            self.label6 = QLabel(self.tab_num[cam])
+            self.label6.setObjectName('_')
+            self.label6.setText('_')
+            self.label6.setStyleSheet("border: 1px solid black;")
+            self.label6.setGeometry(QRect(1280, 0, 70, 28))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             # Grid for images
             self.gridLayoutWidget1[cam] = QWidget(self.tab_num[cam])
             self.gridLayoutWidget1[cam].setGeometry(QRect(0, 50, 1100, 900))
@@ -230,52 +323,83 @@ class CameraWindow(QWidget):
         z = []
 
         if self.view == 'intrinsic':
+            observation_dict = {}
             fig, axs = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
+            fig2, axs2 = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
             for idx, cam in enumerate(self.workspace.names.camera):
+                observation_dict[cam] = {}
                 x = []
                 y = []
                 z = []
                 for img in self.intrinsic_dataset[cam].keys():
-                    for board in self.intrinsic_dataset[cam][img]:
+                    for board in self.boards:
                         cam_id = self.cameras.index(cam)
                         img_id = self.images.index(img)
                         board_id = self.boards.index(board)
-                        num_points = self.workspace.pose_table.num_points[cam_id][img_id][board_id]
-                        error = self.workspace.pose_table.reprojection_error[cam_id][img_id][board_id]
-                        pose = self.workspace.pose_table.poses[cam_id][img_id][board_id]
-                        rvec, tvec = split(from_matrix(pose))
-                        rotation_deg = np.linalg.norm([rvec[0], rvec[1]]) * 180.0 / math.pi
-                        x.append(rotation_deg)
-                        y.append(num_points)
-                        z.append(error)
-                bin = np.arange(0, 120, 5)
+                        if self.workspace.pose_table.valid[cam_id][img_id][board_id]:
+                            num_points = self.workspace.pose_table.num_points[cam_id][img_id][board_id]
+                            error = self.workspace.pose_table.reprojection_error[cam_id][img_id][board_id]
+                            pose = self.workspace.pose_table.poses[cam_id][img_id][board_id]
+                            rvec, tvec = split(from_matrix(pose))
+                            rotation_deg = np.linalg.norm([rvec[0], rvec[1]]) * 180.0 / math.pi
+                            x.append(rotation_deg)
+                            y.append(num_points)
+                            z.append(error)
+                ## value output
+                observation_dict[cam]['Total_view'] = len(y)              
+                p = [i for i in y if i>=20]                               
+                observation_dict[cam]['num_points>20'] = len(p)           
+                observation_dict[cam]['percentile'] = np.percentile(y, 75)
+
+
+                # observation_dict[cam]['Detected_point_variation'] = max(y) - min(y)
+                # observation_dict[cam]['std'] = np.std(y)
+                # observation_dict[cam]['num_view'] = len(y)
+                # observation_dict[cam]['mean'] = np.mean(y)
+                ## end
+                bin = np.arange(0, 100, 5)
                 if idx < int(self.workspace.sizes.camera/2):
-                    # axs[0, idx].hist(y, bin, edgecolor='black')
-                    axs[0, idx].plot(x,y)
+                    axs[0, idx].hist(y, bin, edgecolor='black')
+                    axs2[0, idx].scatter(x,y, s=5)
                     axs[0, idx].set_title('Cam-'+cam)
+                    axs2[0, idx].set_title('Cam-'+cam)
                 else:
                     i = idx - math.ceil(self.workspace.sizes.camera/2)
-                    # axs[1, i].hist(y, bin, edgecolor='black')
-                    axs[1, idx].plot(x,y)
+                    axs[1, i].hist(y, bin, edgecolor='black')
+                    axs2[1, i].scatter(x,y, s=5)
                     axs[1, i].set_title('Cam-'+cam)
-                for ax in axs.flat:
-                    ax.set(xlabel='View Angle(degrees)', ylabel='Number of Points')
+                    axs2[1, i].set_title('Cam-'+cam)
+                for ax, ax2 in zip(axs.flat, axs2.flat):
+                    # ax.set(xlabel='View Angle(degrees)', ylabel='Number of Points')
+                    ax.set(xlabel='Detected Points', ylabel='Number of Views')
+                    ax2.set(xlabel='View Angle(degrees)', ylabel='Number of Points')
 
                 # Hide x labels and tick labels for top plots and y ticks for right plots.
-                for ax in axs.flat:
+                for ax, ax2 in zip(axs.flat, axs2.flat):
                     ax.label_outer()
+                    ax2.label_outer()
             folder = self.base_path[-3:]
-            path = os.path.join(self.base_path, folder+'-numPoints_viz.png')
-            plt.savefig(path)
+            path = os.path.join(self.base_path, folder+'_intrinsic_numPoints_viz1.png')
+            fig.savefig(path)
+            path2 = os.path.join(self.base_path, folder+'_intrinsic_numPoints_viz2.png')
+            fig2.savefig(path2)
+            # plt.savefig(path)
             plt.show()
 
+            df = pd.DataFrame(observation_dict)
+            excel_path = os.path.join(self.base_path, folder+'_intrinsic_numPoints_viz1.xlsx')
+            df.to_excel(excel_path, sheet_name='Intrinsic')
 
+            
         elif self.view == 'pose_table':
+            observation_dict = {}
             fig, axs = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
+            fig2, axs2 = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
             for idx, cam in enumerate(self.workspace.names.camera):
-                x = [] 
-                y = [] 
-                z = [] 
+                observation_dict[cam] = {}
+                x = []
+                y = []
+                z = []
                 for img in self.images:
                     for board in self.boards:
                         cam_id = self.cameras.index(cam)
@@ -290,36 +414,95 @@ class CameraWindow(QWidget):
                             x.append(rotation_deg)
                             y.append(num_points)
                             z.append(error)
-                bin = np.arange(0, 120, 5)
+                ## value output
+                # observation_dict[cam]['Detected_point_variation'] = max(y) - min(y)
+                # observation_dict[cam]['std'] = np.std(y)
+                observation_dict[cam]['Total_view'] = len(y)
+                p = [i for i in y if i>=20]
+                observation_dict[cam]['num_points>20'] = len(p)
+                observation_dict[cam]['percentile'] = np.percentile(y, 75)
+                ## end
+                bin = np.arange(0, 100, 5)
                 if idx < int(self.workspace.sizes.camera/2):
-                    # axs[0, idx].hist(y, bin, edgecolor='black')
-                    axs[0, idx].scatter(x,y)
+                    axs[0, idx].hist(y, bin, edgecolor='black')
+                    axs2[0, idx].scatter(x,y, s=5)
                     axs[0, idx].set_title('Cam-'+cam)
+                    axs2[0, idx].set_title('Cam-'+cam)
                 else:
                     i = idx - math.ceil(self.workspace.sizes.camera/2)
-                    # axs[1, i].hist(y, bin, edgecolor='black')
-                    axs[1, i].scatter(x,y)
+                    axs[1, i].hist(y, bin, edgecolor='black')
+                    axs2[1, i].scatter(x,y, s=5)
                     axs[1, i].set_title('Cam-'+cam)
-                for ax in axs.flat:
-                    ax.set(xlabel='View Angle(degrees)', ylabel='Number of Points')
+                    axs2[1, i].set_title('Cam-'+cam)
+                for ax, ax2 in zip(axs.flat, axs2.flat):
+                    # ax.set(xlabel='View Angle(degrees)', ylabel='Number of Points')
+                    ax.set(xlabel='Detected Points', ylabel='Number of Views')
+                    ax2.set(xlabel='View Angle(degrees)', ylabel='Number of Points')
 
                 # Hide x labels and tick labels for top plots and y ticks for right plots.
-                for ax in axs.flat:
+                for ax, ax2 in zip(axs.flat, axs2.flat):
                     ax.label_outer()
+                    ax2.label_outer()
             folder = self.base_path[-3:]
-            path = os.path.join(self.base_path, folder+'-intrinsic_numPoints_viz.png')
-            plt.savefig(path)
-            plt.show()                                                                                         
+            path = os.path.join(self.base_path, folder+'_numPoints_viz1.png')
+            fig.savefig(path)
+            path2 = os.path.join(self.base_path, folder+'_numPoints_viz2.png')
+            fig2.savefig(path2)
+            # plt.savefig(path)
+            plt.show()
+
+            df = pd.DataFrame(observation_dict)
+            excel_path = os.path.join(self.base_path, folder+'_numPoints_viz1.xlsx')
+            df.to_excel(excel_path, sheet_name='Extrinsic')
+
 
         # data = {'rotation_deg': x, 'num_points': y, 'error': z}
         # df = pd.DataFrame(data)
         # fig = px.scatter_3d(df, x='rotation_deg', y='num_points', z='error', title=cam)
         # fig.show()
 
+    def hist3D(self, x, y):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        # x, y = np.random.rand(2, 100) * 4
+        hist, xedges, yedges = np.histogram2d(x, y, bins=5, range=[[0, 100], [0, 100]])
+
+        # Construct arrays for the anchor positions of the 16 bars.
+        # Note: np.meshgrid gives arrays in (ny, nx) so we use 'F' to flatten xpos,
+        # ypos in column-major order. For numpy >= 1.7, we could instead call meshgrid
+        # with indexing='ij'.
+        # xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25)
+        xpos, ypos = np.meshgrid(xedges[:-1] + 0.01, yedges[:-1] + 0.01)
+        xpos = xpos.flatten('F')
+        ypos = ypos.flatten('F')
+        zpos = np.zeros_like(xpos)
+
+        # Construct arrays with the dimensions for the 16 bars.
+        dx = 0.5 * np.ones_like(zpos)
+        dy = dx.copy()
+        dz = hist.flatten()
+
+        cmap = cm.get_cmap('jet') # Get desired colormap
+        max_height = np.max(dz)   # get range of colorbars
+        min_height = np.min(dz)
+
+        # scale each z to [0,1], and get their rgb values
+        rgba = [cmap((k-min_height)/max_height) for k in dz]
+
+        ax.set(xlabel='View Angle(degrees)', ylabel='Number of Points')
+        # ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color=rgba, zsort='average')
+        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color=rgba)
+
+        plt.show()
+
+        pass
+
     def rotation_translation_viz(self):
         if self.view == 'intrinsic':
+            observation_dict = {}
             fig, axs = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
             for idx, cam in enumerate(self.workspace.names.camera):
+                observation_dict[cam] = {}
                 rotation_list = []
                 camera_list = []
                 translation_list = []
@@ -336,6 +519,13 @@ class CameraWindow(QWidget):
                         rotation_list.append(rotation_deg)
                         translation_list.append(translation)
                         camera_list.append(cam)
+
+                ## value output
+                observation_dict[cam]['angle_variation'] = max(rotation_list) - min(rotation_list)
+                observation_dict[cam]['std'] = np.std(rotation_list)
+                observation_dict[cam]['num_view'] = len(rotation_list)
+                observation_dict[cam]['mean'] = np.mean(rotation_list) 
+                ## end
                 bin = np.arange(0, 120, 5)
                 if idx < math.ceil(self.workspace.sizes.camera/2):
                     axs[0, idx].hist(rotation_list, bin, edgecolor='black')
@@ -355,13 +545,27 @@ class CameraWindow(QWidget):
             plt.savefig(path)
             plt.show()
 
-                
+            df = pd.DataFrame(observation_dict)
+            excel_path = os.path.join(self.base_path, folder+'-intrinsic_viz.xlsx')
+            df.to_excel(excel_path, sheet_name='Intrinsic')
+
+
+
+            # json_object = json.dumps(observation_dict, indent=4)
+            # # Writing to sample.json
+            # json_path = os.path.join(self.base_path, folder+'-intrinsic_viz.json')
+            # with open(json_path, "w") as outfile:
+            #     outfile.write(json_object)
+
         elif self.view == 'pose_table':
+            observation_dict = {}
             fig, axs = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
             for idx, cam in enumerate(self.workspace.names.camera):
+                observation_dict[cam] = {}
                 rotation_list = []   
                 camera_list = []     
                 translation_list = []
+                num_point_list = []
                 for img in self.images:
                     for board in self.boards:
                         cam_id = self.cameras.index(cam)
@@ -375,7 +579,16 @@ class CameraWindow(QWidget):
                             translation = np.linalg.norm(t)
                             rotation_list.append(rotation_deg)
                             translation_list.append(translation)
+                            num_points = self.workspace.pose_table.num_points[cam_id][img_id][board_id]
+                            num_point_list.append(num_points)
                             camera_list.append(cam)
+                ## value output
+                observation_dict[cam]['angle_variation'] = max(rotation_list) - min(rotation_list)
+                observation_dict[cam]['std'] = np.std(rotation_list)
+                observation_dict[cam]['num_view'] = len(rotation_list)
+                observation_dict[cam]['mean'] = np.mean(rotation_list)
+                ## end
+
                 bin = np.arange(0, 120, 5)
                 if idx < int(self.workspace.sizes.camera/2):
                     axs[0, idx].hist(rotation_list, bin, edgecolor='black')
@@ -395,8 +608,14 @@ class CameraWindow(QWidget):
             plt.savefig(path)
             plt.show()
 
-
-
+            df = pd.DataFrame(observation_dict)
+            excel_path = os.path.join(self.base_path, folder+'-poseTable_viz.xlsx')
+            df.to_excel(excel_path, sheet_name='Extrinsic')
+            # json_object = json.dumps(observation_dict, indent=4)
+            # # Writing to sample.json
+            # json_path = os.path.join(self.base_path, folder+'-poseTable_viz.json')
+            # with open(json_path, "w") as outfile:
+            #     outfile.write(json_object)
         # # for plotly plot
         # folder = self.base_path[-3:]
         # data = {'x': camera_list, 'y': rotation_list, 'cameras': camera_list}

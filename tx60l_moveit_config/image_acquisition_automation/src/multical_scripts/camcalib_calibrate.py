@@ -51,6 +51,6 @@ def main2(base_path, cam_name):
 
 if __name__ == '__main__':
 
-    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41_test"
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V43_test"
     main1(base_path)
     # main2(base_path, '08320217')
