@@ -203,57 +203,6 @@ class CameraWindow(QWidget):
             self.label6.setStyleSheet("border: 1px solid black;")
             self.label6.setGeometry(QRect(1280, 0, 70, 28))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             # Grid for images
             self.gridLayoutWidget1[cam] = QWidget(self.tab_num[cam])
             self.gridLayoutWidget1[cam].setGeometry(QRect(0, 50, 1100, 900))
