@@ -30,7 +30,7 @@ def main1(base_path):
     for idx, v in enumerate(calibration_dict['calibration_path']):
         pathO = args.PathOpts(name=calibration_dict['calibration_name'][idx], image_path=base_path)
         cam = args.CameraOpts(intrinsic_error_limit=0.5, calibration=calibration_dict['calibration_path'][idx])
-        pose_estimation_method = "solvePnPRansac"
+        pose_estimation_method = "solvePnPGeneric"
         runt = args.RuntimeOpts(pose_estimation=pose_estimation_method)
         opt = args.OptimizerOpts(outlier_threshold=0.5, fix_intrinsic=True, iter=2)
 
@@ -42,7 +42,7 @@ def main2(base_path, cam_name):
     calib_path = camera_initialization(base_path, cam_name)
     pathO = args.PathOpts(name=cam_name, image_path=base_path)
     cam = args.CameraOpts(intrinsic_error_limit=0.5, calibration=calib_path)
-    pose_estimation_method = "solvePnPRansac"
+    pose_estimation_method = "solvePnPGeneric" #"solvePnPRansac"
     runt = args.RuntimeOpts(pose_estimation=pose_estimation_method)
     opt = args.OptimizerOpts(outlier_threshold=0.5, fix_intrinsic=True, iter=2)
 
@@ -51,6 +51,6 @@ def main2(base_path, cam_name):
 
 if __name__ == '__main__':
 
-    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V43_test"
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V34_test"
     main1(base_path)
     # main2(base_path, '08320217')

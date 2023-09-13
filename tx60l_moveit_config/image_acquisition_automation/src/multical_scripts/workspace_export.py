@@ -1,7 +1,10 @@
 import os.path
 
+import numpy as np
+
 import src.multical.app.calibrate as calibrate
 import src.multical.config.arguments as args
+from matplotlib import pyplot as plt
 import src.multical.config.workspace as workspace
 from src.multical.tables import *
 import json
@@ -60,7 +63,27 @@ def camera_intrinsic_dataset(ws, path):
     with open(json_path, "w") as outfile:
         outfile.write(json_object)
     pass
+def collect_corner_pixels(ws):
+    all_pixel_list = []
+    for cam in range(ws.sizes.camera):
+        for img in range(ws.sizes.image):
+            for board in range(ws.sizes.board):
+                if ws.pose_table.valid[cam][img][board]:
+                    corners = ws.detected_points[cam][img][board].corners
+                    for c in corners:
+                        height_limit = [int(c[0])-10, int(c[0])+10]
+                        width_limit = [int(c[1])-10, int(c[1])+10]
+                        img_pixel = ws.images[cam][img][width_limit[0]: width_limit[1], height_limit[0]:height_limit[1]].ravel()
+                        all_pixel_list.extend(img_pixel)
 
+        q = np.quantile(all_pixel_list, .85)
+        print(q)
+        plt.figure(figsize=(10, 6))
+        plt.hist(all_pixel_list, 100, [0, 256])
+        plt.xlabel('Corner pixel values')
+        plt.ylabel('Number of pixel')
+        plt.show()
+    pass
 
 def main1(datasetPath, calibration_path):
     pathO = args.PathOpts(image_path=datasetPath)
@@ -78,11 +101,12 @@ def main1(datasetPath, calibration_path):
     return workspace
 
 if __name__ == '__main__':
-    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\intrinsic_Sept6\cam_221_v41"
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41_test"
     calibration_path = None
     # calibration_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38\calibration.json"
     ws = main1(base_path, calibration_path)
-    export_workspace(ws, base_path)
-    if not calibration_path:
-        camera_intrinsic_dataset(ws, base_path)
-    pass
+    collect_corner_pixels(ws)
+    # export_workspace(ws, base_path)
+    # if not calibration_path:
+    #     camera_intrinsic_dataset(ws, base_path)
+    # pass

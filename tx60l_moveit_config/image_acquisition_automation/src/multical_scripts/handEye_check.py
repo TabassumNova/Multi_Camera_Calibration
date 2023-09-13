@@ -20,7 +20,7 @@ import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
 from sklearn.cluster import MeanShift
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V43"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V34"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):
@@ -1393,7 +1393,7 @@ def main6(base_path, limit_images, num_adjustments):
 if __name__ == '__main__':
     # main1(base_path, limit_image=10)
     # main3(base_path, limit_images=10, num_adjustments=2)
-    main4(base_path, limit_images=6, num_adjustments=0, limit_board_image=6, calculate_handeye=True, check_cluster=True)
+    main4(base_path, limit_images=6, num_adjustments=0, limit_board_image=6, calculate_handeye=True, check_cluster=False)
     # main5(base_path, limit_images=10, num_adjustments=1)
     # main6(base_path, limit_images=10, num_adjustments=1)
     pass

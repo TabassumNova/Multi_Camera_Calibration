@@ -19,7 +19,7 @@ from mayavi import mlab
 import pandas as pd
 import plotly.express as px
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
 '''
 for camera extrinsic visualization
 '''
@@ -46,7 +46,20 @@ class Interactive_Extrinsic():
             self.camera_color[cam] = colors[idx]
 
     def draw_heat_map(self):
+
         for cam_name, cam_value in self.groups.items():
+            data_list = []
+            final_layout = go.Figure()
+            folder = self.base_path[-3:]
+            final_layout.add_annotation(dict(font=dict(color='black', size=20),
+                                             x=0,
+                                             y=0.12,
+                                             showarrow=False,
+                                             text=folder + '-' + cam_name,
+                                             textangle=0,
+                                             xanchor='left',
+                                             xref="paper",
+                                             yref="paper"))
             for key, group in cam_value.items():
                 if len(group) > 2:
                     x = []
@@ -73,10 +86,37 @@ class Interactive_Extrinsic():
                         df = pd.DataFrame(data)
                         fig = px.scatter_3d(df, x='x', y='y', z='z',
                                             color='density', title=key)
-                        fig.show()
+                        # fig.show()
+                        name = "Master : " + master_cam + "\n" + "Slave: " + slave_cam + "\n" + "Group: "
+                        data_list.extend([go.Scatter3d(
+                            x=x,
+                            y=y,
+                            z=z,
+                            mode='markers',
+                            name= name,
+                            marker=dict(
+                                size=7,
+                                color=density
+                            )
+                        )])
+
                         for idx, k in enumerate(self.groups[cam_name][key].keys()):
                             self.groups[cam_name][key][k]['density'] = density[idx]
-                pass
+            data_list.extend([go.Scatter3d(
+                x=[0],
+                y=[0],
+                z=[0],
+                name = "Master : " + cam_name,
+                mode='markers',
+                marker=dict(
+                    size=8,
+                    color='yellow'
+                )
+            )])
+            fig1 = go.Figure(data=data_list)
+            fig1.update_layout()
+            fig1.show()
+            pass
         pass
 
     def draw_groups(self):
@@ -114,6 +154,9 @@ class Interactive_Extrinsic():
                     data1 = visualizer.extrinsic2pyramid(slave_extrinsic, color=self.camera_color[slave_cam],
                                                          focal_len_scaled=0.1, aspect_ratio=0.3,
                                                          hover_template=slave_cam+ "_" + str(tvec), name=name)
+                    # data2 = visualizer.extrinsic2pyramid(slave_extrinsic, color=self.groups[cam_name][key][key2]['density'],
+                    #                                      focal_len_scaled=0.1, aspect_ratio=0.3,
+                    #                                      hover_template=slave_cam+ "_" + str(tvec), name=name)
                     # all_fig.append(data)
                     # all_fig.append(data1)
                     final_layout.add_trace(data)
@@ -123,7 +166,7 @@ class Interactive_Extrinsic():
             if self.mean_cameras:
                 for slaveC in self.mean_cameras[cam_name]:
                     slave_extrinsic = np.array(self.mean_cameras[cam_name][slaveC]['extrinsic'])
-                    d = visualizer.extrinsic2pyramid(slave_extrinsic, color='black', focal_len_scaled=0.1, aspect_ratio=0.3,
+                    d = visualizer.extrinsic2pyramid(slave_extrinsic, color='black', focal_len_scaled=0.15, aspect_ratio=0.3,
                                                                         hover_template="mean", name=slaveC)
                     final_layout.add_trace(d)
 
