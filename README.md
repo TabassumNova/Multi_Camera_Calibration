@@ -81,6 +81,17 @@ catkin_make
 <node pkg="xsens_driver" name="mtnode" type="mtnode.py" output="screen"> 
 </node>
 ```
+#### Environments
+- python 3.10
+- pip install opencv-contrib-python-headless==4.6.0.66
+- pip install PyQt5
+- pip install pandas
+- pip install multical
+- pip install plotly
+- pip install scikit-learn
+- pip install openpyxl
+- pip install numpy==1.23.4
+- pip install mayavi
 #### Issues
 - `/usr/bin/env: ‘python3\r’: No such file or directory` : 
     - sudo apt install dos2unix
@@ -170,7 +181,13 @@ cv2.error: OpenCV(4.6.0) /work/ci_py311/opencv-suite_1676837327081/work/modules/
     numpy.linalg.LinAlgError: 3-th leading minor of the array is not positive definite
     ```
     **Solution**: values should have more than 3 groups
-
+# numpy issues
+```
+AttributeError: module 'numpy' has no attribute 'int'.
+`np.int` was a deprecated alias for the builtin `int`. To avoid this error in existing code, use `int` by itself. Doing this will not modify any behavior and is safe. When replacing `np.int`, you may wish to use e.g. `np.int64` or `np.int32` to specify the precision. If you wish to review your current use, check the release note link for additional information.
+The aliases was originally deprecated in NumPy 1.20; for more details and guidance see the original release note at:
+```
+**Solution**: numpy.int was deprecated in NumPy 1.20 and was removed in NumPy 1.24. Downgrade numpy. `pip install numpy==1.23.4`
 # PyQt5 Issues
 ```
 Backend QtAgg is interactive backend. Turning interactive mode on. qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found. This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.  Available platform plugins are: eglfs, minimal, vkkhrdisplay, xcb, vnc, wayland, minimalegl, wayland-egl, linuxfb, offscreen.
