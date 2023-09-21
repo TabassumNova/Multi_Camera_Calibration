@@ -73,7 +73,17 @@ def map_table(f, point_table, boards, cameras, error_limit=1.0, method="solvePnP
              for frame_points in points_camera._sequence()]
                for points_camera, camera in zip(point_table._sequence(), cameras)]
 
-def make_pose_table(point_table, boards, cameras, error_limit=1.0, method="solvePnPGeneric", show_all_poses=False):
+def edit_pointTable(point_table, image_list):
+  for cam in range(point_table.valid.shape[0]):
+    for img in range(point_table.valid.shape[1]):
+      if img not in image_list:
+        x = point_table.valid[cam][img]
+        point_table.valid[cam][img] = np.zeros(x.shape)
+  pass
+
+def make_pose_table(point_table, boards, cameras, error_limit=1.0, method="solvePnPGeneric", show_all_poses=False, image_list = []):
+  if image_list:
+    edit_pointTable(point_table, image_list)
   poses = map_table(extract_pose, point_table, boards, cameras, error_limit, method=method, show_all_poses=show_all_poses)
   return make_nd_table(poses, n = 3)
 

@@ -41,7 +41,10 @@ class Interactive_Extrinsic():
         pass
 
     def set_Cam_color(self):
-        colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'lime', 'pink', 'teal', 'darkcyan', 'violet', 'brown', 'indigo']
+        # colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'lime', 'pink', 'teal', 'darkcyan', 'violet', 'brown', 'indigo']
+        # colors = ['blue', 'darkblue', 'green', 'darkgreen', 'olive', 'navy']
+        colors = px.colors.sequential.Aggrnyl
+        # print(x)
         for idx, cam in enumerate(self.workspace.names.camera):
             self.camera_color[cam] = colors[idx]
 
@@ -166,7 +169,7 @@ class Interactive_Extrinsic():
             if self.mean_cameras:
                 for slaveC in self.mean_cameras[cam_name]:
                     slave_extrinsic = np.array(self.mean_cameras[cam_name][slaveC]['extrinsic'])
-                    d = visualizer.extrinsic2pyramid(slave_extrinsic, color='black', focal_len_scaled=0.15, aspect_ratio=0.3,
+                    d = visualizer.extrinsic2pyramid(slave_extrinsic, color='blue', focal_len_scaled=0.2, aspect_ratio=0.3,
                                                                         hover_template="mean", name=slaveC)
                     final_layout.add_trace(d)
 

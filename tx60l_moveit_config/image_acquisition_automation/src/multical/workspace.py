@@ -200,9 +200,14 @@ class Workspace:
             info(camera)
             info("")
 
-    def initialise_poses(self, motion_model=StaticFrames, camera_poses=None, board_poses=None, isFisheye=False, error_limit=1.0, method="solvePnPGeneric", show_all_poses=False):
+    def initialise_poses(self, motion_model=StaticFrames, camera_poses=None, board_poses=None,
+                         isFisheye=False, error_limit=1.0, method="solvePnPGeneric", show_all_poses=False, image_list = []):
         assert self.cameras is not None, "initialise_poses: no cameras set, first use calibrate_single or set_cameras"
-        self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras, error_limit=error_limit, method=method, show_all_poses=show_all_poses)
+        if image_list:
+            image_id = [self.names.image.index(img) for img in image_list]
+        else:
+            image_id = []
+        self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras, error_limit=error_limit, method=method, show_all_poses=show_all_poses, image_list = image_id)
 
         info("Pose counts:")
         tables.table_info(self.pose_table.valid, self.names)

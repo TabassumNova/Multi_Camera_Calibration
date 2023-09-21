@@ -55,7 +55,8 @@ def initialise_with_images(ws : Workspace, boards, camera_images,
             board_poses=calib.board_poses if calib is not None else None,
             error_limit= camera_opts.intrinsic_error_limit,
             method = runtime.pose_estimation,
-            show_all_poses = runtime.show_all_poses
+            show_all_poses = runtime.show_all_poses,
+            image_list = runtime.image_list
           )
     return ws
 

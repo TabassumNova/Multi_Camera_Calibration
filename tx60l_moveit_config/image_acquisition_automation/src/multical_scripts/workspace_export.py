@@ -38,7 +38,7 @@ def export_workspace(ws, path):
         outfile.write(json_object)
     '''
 
-    workspace_pickle = os.path.join(path, "workspace.pkl")
+    workspace_pickle = os.path.join(path, "workspace_test.pkl")
     with open(workspace_pickle, "wb") as file:
         pickle.dump(ws, file)
 
@@ -88,9 +88,9 @@ def collect_corner_pixels(ws):
 def main1(datasetPath, calibration_path):
     pathO = args.PathOpts(image_path=datasetPath)
     if calibration_path:
-        cam = args.CameraOpts(calibration=calibration_path,intrinsic_error_limit=1.0)
+        cam = args.CameraOpts(calibration=calibration_path,intrinsic_error_limit=0.5)
     else:
-        cam = args.CameraOpts(intrinsic_error_limit=1.0)
+        cam = args.CameraOpts(intrinsic_error_limit=0.5)
     # pose_estimation_method = "solvePnPRansac"
     pose_estimation_method = "solvePnPGeneric"
     runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=True)
@@ -101,12 +101,12 @@ def main1(datasetPath, calibration_path):
     return workspace
 
 if __name__ == '__main__':
-    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41_test"
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30_test"
     calibration_path = None
-    # calibration_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V38\calibration.json"
+    calibration_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V30_test\calibration.json"
     ws = main1(base_path, calibration_path)
-    collect_corner_pixels(ws)
-    # export_workspace(ws, base_path)
+    # collect_corner_pixels(ws)
+    export_workspace(ws, base_path)
     # if not calibration_path:
     #     camera_intrinsic_dataset(ws, base_path)
     # pass

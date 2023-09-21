@@ -83,9 +83,12 @@ class CameraWindow(QWidget):
     """
     def __init__(self, base_path, workspace):
         super().__init__()
-
+        self.setWindowTitle('Camera Window')
         self.base_path = base_path
         self.workspace = None
+        self.workspace_test = None
+        self.inlier_mask = {}
+        self.final_images = []
         self.cameras = None
         self.images = None
         self.boards = None
@@ -137,71 +140,83 @@ class CameraWindow(QWidget):
             self.btnLoad2.clicked.connect(partial(self.load_poseTable, cam))
             self.btnLoad2.setGeometry(QRect(120, 0, 120, 28))
 
+            self.btnLoad8 = QPushButton(self.tab_num[cam])
+            self.btnLoad8.setObjectName('Load Bundle-Adjustment')
+            self.btnLoad8.setText('Load Bundle-Adjustment')
+            self.btnLoad8.clicked.connect(partial(self.load_bundleAdjustment, cam))
+            self.btnLoad8.setGeometry(QRect(240, 0, 150, 28))
+
             self.btnLoad3 = QPushButton(self.tab_num[cam])
             self.btnLoad3.setObjectName('Rt Viz')
             self.btnLoad3.setText('Rt Viz')
             self.btnLoad3.clicked.connect(partial(self.rotation_translation_viz))
-            self.btnLoad3.setGeometry(QRect(240, 0, 120, 28))
+            self.btnLoad3.setGeometry(QRect(240+150, 0, 120, 28))
 
             self.btnLoad4 = QPushButton(self.tab_num[cam])
             self.btnLoad4.setObjectName('Extrinsic Viz')
             self.btnLoad4.setText('extrinsic Viz')
             self.btnLoad4.clicked.connect(partial(self.extrinsic_viz, cam))
-            self.btnLoad4.setGeometry(QRect(360, 0, 120, 28))
+            self.btnLoad4.setGeometry(QRect(360+150, 0, 120, 28))
 
             self.btnLoad5 = QPushButton(self.tab_num[cam])
             self.btnLoad5.setObjectName('Point_Angle_Error')
             self.btnLoad5.setText('Point_Angle_Error')
             self.btnLoad5.clicked.connect(partial(self.point_angle_error, cam))
-            self.btnLoad5.setGeometry(QRect(480, 0, 120, 28))
+            self.btnLoad5.setGeometry(QRect(480+150, 0, 120, 28))
 
             self.btnLoad6 = QPushButton(self.tab_num[cam])
             self.btnLoad6.setObjectName('Plot histogram')
             self.btnLoad6.setText('Plot histogram')
             self.btnLoad6.clicked.connect(partial(self.plot_hist, cam))
-            self.btnLoad6.setGeometry(QRect(600, 0, 150, 28))
+            self.btnLoad6.setGeometry(QRect(600+150, 0, 150, 28))
 
             self.btnLoad7 = QPushButton(self.tab_num[cam])
             self.btnLoad7.setObjectName('Final extrinsic')
             self.btnLoad7.setText('Final extrinsic')
             self.btnLoad7.clicked.connect(partial(self.final_extrinsic, cam))
-            self.btnLoad7.setGeometry(QRect(750, 0, 150, 28))
+            self.btnLoad7.setGeometry(QRect(750+150, 0, 150, 28))
 
-            self.label1 = QLabel(self.tab_num[cam])
-            self.label1.setObjectName('Variation(max-min)')
-            self.label1.setText('Variation(max-min)')
-            self.label1.setStyleSheet("border: 1px solid black;")
-            self.label1.setGeometry(QRect(900, 0, 120, 28))
+            self.btnLoad9 = QPushButton(self.tab_num[cam])
+            self.btnLoad9.setObjectName('View_error viz')
+            self.btnLoad9.setText('View_error viz')
+            self.btnLoad9.clicked.connect(partial(self.view_error_viz, cam))
+            self.btnLoad9.setGeometry(QRect(750 + 300, 0, 150, 28))
 
-            self.label2 = QLabel(self.tab_num[cam])
-            self.label2.setObjectName('_')
-            self.label2.setText('_')
-            self.label2.setStyleSheet("border: 1px solid black;")
-            self.label2.setGeometry(QRect(1020, 0, 70, 28))
-
-            self.label3 = QLabel(self.tab_num[cam])
-            self.label3.setObjectName('std')
-            self.label3.setText('std')
-            self.label3.setStyleSheet("border: 1px solid black;")
-            self.label3.setGeometry(QRect(1090, 0, 50, 28))
-
-            self.label4 = QLabel(self.tab_num[cam])
-            self.label4.setObjectName('_')
-            self.label4.setText('_')
-            self.label4.setStyleSheet("border: 1px solid black;")
-            self.label4.setGeometry(QRect(1140, 0, 70, 28))
-
-            self.label5 = QLabel(self.tab_num[cam])
-            self.label5.setObjectName('num_view')
-            self.label5.setText('num_view')
-            self.label5.setStyleSheet("border: 1px solid black;")
-            self.label5.setGeometry(QRect(1210, 0, 70, 28))
-
-            self.label6 = QLabel(self.tab_num[cam])
-            self.label6.setObjectName('_')
-            self.label6.setText('_')
-            self.label6.setStyleSheet("border: 1px solid black;")
-            self.label6.setGeometry(QRect(1280, 0, 70, 28))
+            # self.label1 = QLabel(self.tab_num[cam])
+            # self.label1.setObjectName('Variation(max-min)')
+            # self.label1.setText('Variation(max-min)')
+            # self.label1.setStyleSheet("border: 1px solid black;")
+            # self.label1.setGeometry(QRect(900+150, 0, 120, 28))
+            #
+            # self.label2 = QLabel(self.tab_num[cam])
+            # self.label2.setObjectName('_')
+            # self.label2.setText('_')
+            # self.label2.setStyleSheet("border: 1px solid black;")
+            # self.label2.setGeometry(QRect(1020+120, 0, 70, 28))
+            #
+            # self.label3 = QLabel(self.tab_num[cam])
+            # self.label3.setObjectName('std')
+            # self.label3.setText('std')
+            # self.label3.setStyleSheet("border: 1px solid black;")
+            # self.label3.setGeometry(QRect(1090+70, 0, 50, 28))
+            #
+            # self.label4 = QLabel(self.tab_num[cam])
+            # self.label4.setObjectName('_')
+            # self.label4.setText('_')
+            # self.label4.setStyleSheet("border: 1px solid black;")
+            # self.label4.setGeometry(QRect(1140+50, 0, 70, 28))
+            #
+            # self.label5 = QLabel(self.tab_num[cam])
+            # self.label5.setObjectName('num_view')
+            # self.label5.setText('num_view')
+            # self.label5.setStyleSheet("border: 1px solid black;")
+            # self.label5.setGeometry(QRect(1210+70, 0, 70, 28))
+            #
+            # self.label6 = QLabel(self.tab_num[cam])
+            # self.label6.setObjectName('_')
+            # self.label6.setText('_')
+            # self.label6.setStyleSheet("border: 1px solid black;")
+            # self.label6.setGeometry(QRect(1280+70, 0, 70, 28))
 
             # Grid for images
             self.gridLayoutWidget1[cam] = QWidget(self.tab_num[cam])
@@ -340,7 +355,7 @@ class CameraWindow(QWidget):
             df.to_excel(excel_path, sheet_name='Intrinsic')
 
             
-        elif self.view == 'pose_table':
+        elif self.view == 'pose_table' or self.view == 'bundle_adjustment':
             observation_dict = {}
             fig, axs = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
             fig2, axs2 = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
@@ -349,7 +364,11 @@ class CameraWindow(QWidget):
                 x = []
                 y = []
                 z = []
-                for img in self.images:
+                if self.view == 'pose_table':
+                    images = self.images
+                elif self.view == 'bundle_adjustment':
+                    images = self.final_images
+                for img in images:
                     for board in self.boards:
                         cam_id = self.cameras.index(cam)
                         img_id = self.images.index(img)
@@ -392,17 +411,31 @@ class CameraWindow(QWidget):
                 for ax, ax2 in zip(axs.flat, axs2.flat):
                     ax.label_outer()
                     ax2.label_outer()
-            folder = self.base_path[-3:]
-            path = os.path.join(self.base_path, folder+'_numPoints_viz1.png')
-            fig.savefig(path)
-            path2 = os.path.join(self.base_path, folder+'_numPoints_viz2.png')
-            fig2.savefig(path2)
-            # plt.savefig(path)
-            plt.show()
 
-            df = pd.DataFrame(observation_dict)
-            excel_path = os.path.join(self.base_path, folder+'_numPoints_viz1.xlsx')
-            df.to_excel(excel_path, sheet_name='Extrinsic')
+            if self.view == 'pose_table':
+                folder = self.base_path[-3:]
+                path = os.path.join(self.base_path, folder+'_numPoints_viz1.png')
+                fig.savefig(path)
+                path2 = os.path.join(self.base_path, folder+'_numPoints_viz2.png')
+                fig2.savefig(path2)
+                # plt.savefig(path)
+                plt.show()
+
+                df = pd.DataFrame(observation_dict)
+                excel_path = os.path.join(self.base_path, folder+'_numPoints_viz1.xlsx')
+                df.to_excel(excel_path, sheet_name='Extrinsic')
+            elif self.view == 'bundle_adjustment':
+                folder = self.base_path[-3:]
+                path = os.path.join(self.base_path, folder + '_bundle_numPoints_viz1.png')
+                fig.savefig(path)
+                path2 = os.path.join(self.base_path, folder + '_bundle_numPoints_viz2.png')
+                fig2.savefig(path2)
+                # plt.savefig(path)
+                plt.show()
+
+                df = pd.DataFrame(observation_dict)
+                excel_path = os.path.join(self.base_path, folder + '_bundle_numPoints_viz1.xlsx')
+                df.to_excel(excel_path, sheet_name='bundle')
 
 
         # data = {'rotation_deg': x, 'num_points': y, 'error': z}
@@ -443,6 +476,64 @@ class CameraWindow(QWidget):
         ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color=rgba)
 
         plt.show()
+
+        pass
+
+    def draw_cube(self,frame, cam, rvec, tvec):
+        cam_matrix = np.array(self.initial_calibration['cameras'][cam]['K'])
+        cam_dist = np.array(self.initial_calibration['cameras'][cam]['dist'])
+        axis = np.float32([[3 * .013, 0, 0], [0, 3 * .013, 0], [0, 0, -3 * .013]]).reshape(-1, 3)
+        axis_cube = np.float32([[0, 0, 0], [0, 3 * 0.013, 0], [3 * 0.013, 3 * 0.013, 0], [3 * 0.013, 0, 0],
+                                [0, 0, -3 * 0.013], [0, 3 * 0.013, -3 * 0.013], [3 * 0.013, 3 * 0.013, -3 * 0.013],
+                                [3 * 0.013, 0, -3 * 0.013]])
+        imgpts, jac = cv2.projectPoints(axis_cube, rvec, tvec, cam_matrix, cam_dist)
+        # cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvec, tvec, 0.1)
+        img = np.float64(frame)
+        imgpts = np.int32(imgpts).reshape(-1, 2)
+        # draw ground floor in green
+        # img = cv2.drawContours(img, [imgpts[:4]],-1,(0,255,0),-3)
+        # draw pillars in blue color
+        for i, j in zip(range(4), range(4, 8)):
+            img = cv2.line(img, tuple(imgpts[i]), tuple(imgpts[j]), (255), 10)
+        # draw top layer in red color
+        img = cv2.drawContours(img, [imgpts[4:]], -1, (0, 0, 255), 10)
+        return img
+
+    def view_error_viz(self, cam):
+        if self.view == 'bundle_adjustment':
+            images = self.final_images
+            x = []
+            y = []
+            err = []
+            im_size = self.initial_calibration['cameras'][cam]['image_size']
+            frame = np.ones((im_size[1], im_size[0], 3))*255
+            for img in images:
+                img_id = self.images.index(img)
+                cam_id = self.cameras.index(cam)
+                for board_id, board in enumerate(self.boards):
+                    corners_ids = np.flatnonzero(self.workspace.point_table.valid[cam_id][img_id][board_id])
+                    if len(corners_ids)!= 0:
+                        pose = self.workspace.pose_table.poses[cam_id][img_id][board_id]
+                        rvec, tvec = rtvec.split(rtvec.from_matrix(pose))
+                        frame = self.draw_cube(frame, cam, rvec, tvec)
+                    corners = [self.workspace.point_table.points[cam_id][img_id][board_id][c] for c in corners_ids]
+                    width = [c[0] for c in corners]
+                    height = [c[1] for c in corners]
+                    x.extend(width)
+                    y.extend(height)
+                    points_value = [self.workspace.pose_table.reprojection_error[cam_id][img_id][board_id]]*len(corners)
+                    err.extend(points_value)
+
+            folder = self.base_path[-3:]
+            path = os.path.join(self.base_path, folder+'_view.png')
+            cv2.imwrite(path, frame)
+            fig = px.scatter(x=x, y=y, color=err)
+            fig.update_layout(
+                xaxis_title="Image width", yaxis_title="Image height"
+            )
+            # plt.scatter(x, y, c=err)
+            # plt.show()
+            fig.show()
 
         pass
 
@@ -506,7 +597,7 @@ class CameraWindow(QWidget):
             # with open(json_path, "w") as outfile:
             #     outfile.write(json_object)
 
-        elif self.view == 'pose_table':
+        elif self.view == 'pose_table' or self.view == 'bundle_adjustment':
             observation_dict = {}
             fig, axs = plt.subplots(2, math.ceil(self.workspace.sizes.camera/2))
             for idx, cam in enumerate(self.workspace.names.camera):
@@ -515,7 +606,11 @@ class CameraWindow(QWidget):
                 camera_list = []     
                 translation_list = []
                 num_point_list = []
-                for img in self.images:
+                if self.view == 'pose_table':
+                    images = self.images
+                elif self.view == 'bundle_adjustment':
+                    images = self.final_images
+                for img in images:
                     for board in self.boards:
                         cam_id = self.cameras.index(cam)
                         img_id = self.images.index(img)
@@ -552,14 +647,26 @@ class CameraWindow(QWidget):
                 # Hide x labels and tick labels for top plots and y ticks for right plots.
                 for ax in axs.flat:
                     ax.label_outer()
-            folder = self.base_path[-3:]
-            path = os.path.join(self.base_path, folder+'-poseTable_viz.png')
-            plt.savefig(path)
-            plt.show()
 
-            df = pd.DataFrame(observation_dict)
-            excel_path = os.path.join(self.base_path, folder+'-poseTable_viz.xlsx')
-            df.to_excel(excel_path, sheet_name='Extrinsic')
+            if self.view == 'pose_table':
+                folder = self.base_path[-3:]
+                path = os.path.join(self.base_path, folder + '-poseTable_viz.png')
+                plt.savefig(path)
+                plt.show()
+
+                df = pd.DataFrame(observation_dict)
+                excel_path = os.path.join(self.base_path, folder + '-poseTable_viz.xlsx')
+                df.to_excel(excel_path, sheet_name='Extrinsic')
+            elif self.view == 'bundle_adjustment':
+                folder = self.base_path[-3:]
+                path = os.path.join(self.base_path, folder + '-bundle_viz.png')
+                plt.savefig(path)
+                plt.show()
+
+                df = pd.DataFrame(observation_dict)
+                excel_path = os.path.join(self.base_path, folder + '-bundle_viz.xlsx')
+                df.to_excel(excel_path, sheet_name='bundle')
+
             # json_object = json.dumps(observation_dict, indent=4)
             # # Writing to sample.json
             # json_path = os.path.join(self.base_path, folder+'-poseTable_viz.json')
@@ -595,6 +702,31 @@ class CameraWindow(QWidget):
 
     def extrinsic_viz(self, cam):
         i = Interactive_Extrinsic(self.base_path)
+
+    def load_bundleAdjustment(self, cam):
+        self.clearLayout(self.gridLayout1[cam])
+        self.clearLayout(self.gridLayout2[cam])
+        self.clearLayout(self.gridLayout3[cam])
+        if self.workspace_test:
+            self.view = 'bundle_adjustment'
+            self.table[cam] = QTableWidget()
+            self.table[cam].cellClicked.connect(partial(self.cell_was_clicked, cam, self.gridLayout1[cam]))
+
+            first_im = self.final_images[0]
+            self.pose_count[cam] = self.images.index(first_im)
+            self.set_image_dropDown(cam)
+            self.set_viewer(cam, self.gridLayout1[cam], self.folder_path[cam], self.images[self.pose_count[cam]],
+                            self.table[cam], self.gridLayout3[cam], self.gridLayout2[cam])
+
+            self.tab_num[cam].setLayout(self.tab_num[cam].layout)
+        else:
+            self.label1 = QLabel(self.tab_num[cam])
+            self.label1.setObjectName(self.view)
+            self.label1.setText('Error: workspace_test.pkl not available')
+            self.label1.setStyleSheet("border: 1px solid black;")
+            self.label1.setGeometry(QRect(240, 0, 120, 28))
+            self.gridLayout2[cam].addWidget(self.label1, 2, 0)
+        pass
 
     def load_intrinsic(self, cam):
         self.clearLayout(self.gridLayout1[cam])
@@ -673,6 +805,8 @@ class CameraWindow(QWidget):
             self.pose_count[cam] = group
         if self.view == 'intrinsic':
             self.group_decode(cam, group)
+        if self.view == 'bundle_adjustment':
+            self.group_decode(cam, group)
         self.clearLayout(self.gridLayout1[cam])
         self.set_viewer(cam, self.gridLayout1[cam], self.folder_path[cam], self.images[self.pose_count[cam]],
                     self.table[cam], self.gridLayout3[cam], self.gridLayout2[cam])
@@ -696,6 +830,8 @@ class CameraWindow(QWidget):
             images = self.images
         elif self.view == 'intrinsic':
             images = self.intrinsic_dataset[cam].keys()
+        elif self.view == 'bundle_adjustment':
+            images = self.final_images
         for img in images:
             self.cb[cam].addItem(str(img))
         pass
@@ -760,8 +896,8 @@ class CameraWindow(QWidget):
 
     def add_table_widget(self, cam, table, tableLayout):
         table.setRowCount(len(self.boards))
-        table.setColumnCount(4)
-        table.setHorizontalHeaderLabels(['Num_Points', "Reprojection Error", "View Angles", "Translation"])
+        table.setColumnCount(3)
+        table.setHorizontalHeaderLabels(['Num_Points', "Reprojection Error", "View Angles"])
         table.setVerticalHeaderLabels(self.boards)
         # table.cellClicked.connect(self.cell_was_clicked)
 
@@ -790,8 +926,8 @@ class CameraWindow(QWidget):
                 table.setItem(board_id, 1, item2)
                 item3.setText("")
                 table.setItem(board_id, 2, item3)
-                item4.setText("")
-                table.setItem(board_id, 3, item4)
+                # item4.setText("")
+                # table.setItem(board_id, 3, item4)
             else:
                 # text = 'num_points: ' + str(num_points) + ' | ' + 'Repo_error: ' + str(repo_error)
                 item1.setText(str(num_points))
@@ -800,16 +936,23 @@ class CameraWindow(QWidget):
                 table.setItem(board_id, 1, item2)
                 item3.setText(str(viewAngles))
                 table.setItem(board_id, 2, item3)
-                item4.setText(str(0))
-                table.setItem(board_id, 3, item4)
+                # item4.setText(str(0))
+                # table.setItem(board_id, 3, item4)
             pass
         header = table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        # header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
         tableLayout.addWidget(table)
 
+    def collect_inlier_dataset(self):
+        for cam in self.cameras:
+            file = os.path.join(self.base_path, 'calibration_'+ cam + '.pkl')
+            if os.path.exists(file):
+                data = pickle.load(open(file, "rb"))
+                self.inlier_mask[cam] = data.calibrations['calibration'].point_table
+        pass
 
     def workspace_load(self):
         for path, subdirs, files in os.walk((self.base_path)):
@@ -820,6 +963,11 @@ class CameraWindow(QWidget):
                 self.images = self.workspace.names.image
                 self.boards = self.workspace.names.board
                 self.set_Cam_color()
+                self.collect_inlier_dataset()
+                if "workspace_test.pkl" in files:
+                    path = os.path.join(self.base_path, "workspace_test.pkl")
+                    self.workspace_test = pickle.load(open(path, "rb"))
+                    self.final_images = self.workspace_test.names.image
                 if "Calibration_handeye.json" in files:
                     path = os.path.join(self.base_path, "Calibration_handeye.json")
                     self.initial_calibration = json.load(open(path))

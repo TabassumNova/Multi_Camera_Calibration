@@ -20,7 +20,7 @@ import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
 from sklearn.cluster import MeanShift
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V34"
+base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V32"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):

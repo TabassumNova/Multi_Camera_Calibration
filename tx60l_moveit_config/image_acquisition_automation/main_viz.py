@@ -73,7 +73,7 @@ class MyTabWidget(QWidget):
         # self.tab5 = QWidget()
         # self.tabs.resize(300, 200)
         # Add tabs
-        self.tabs.addTab(self.tab1, "Operation")
+        self.tabs.addTab(self.tab1, "Overview")
         self.tabs.addTab(self.tab2, "Calibration")
         # self.tabs.addTab(self.tab3, "Measurement Setup")
         self.tabs.addTab(self.tab4, "View_Plan")
