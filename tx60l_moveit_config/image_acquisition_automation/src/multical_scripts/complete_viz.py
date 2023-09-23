@@ -209,7 +209,7 @@ class Complete_Viz():
                 axs2[0, idx].scatter(poses, pose_error)
                 axs2[0, idx].set_title('Cam-' + camS)
                 if len(good_poses):
-                    axs3[0, idx].hist(poses, bin2, edgecolor='black')
+                    axs3[0, idx].hist(good_poses, bin2, edgecolor='black')
                     axs3[0, idx].set_title('Cam-' + camS)
             else:
                 i = idx - math.ceil(self.workspace.sizes.camera / 2)
@@ -220,7 +220,7 @@ class Complete_Viz():
                 axs2[1, i].scatter(poses, pose_error)
                 axs2[1, i].set_title('Cam-' + camS)
                 if len(good_poses):
-                    axs3[1, i].hist(poses, bin2, edgecolor='black')
+                    axs3[1, i].hist(good_poses, bin2, edgecolor='black')
                     axs3[1, i].set_title('Cam-' + camS)
             for ax, ax1, ax2, ax3 in zip(axs.flat, axs1.flat, axs2.flat, axs3.flat):
                 ax.set_xlabel('Re-projection error \n Per point', fontsize=15)
