@@ -81,7 +81,12 @@ catkin_make
 <node pkg="xsens_driver" name="mtnode" type="mtnode.py" output="screen"> 
 </node>
 ```
-#### Environments
+#### Issues
+- `/usr/bin/env: ‘python3\r’: No such file or directory` : 
+    - sudo apt install dos2unix
+    - dos2unix python_file.py
+
+# Environments
 - python 3.10
 - pip install opencv-contrib-python-headless==4.6.0.66
 - pip install PyQt5
@@ -94,10 +99,9 @@ catkin_make
 - pip install mayavi
 - pip install matplotlib==3.1.0
 - pip install opencv-contrib-python==4.6.0.66
-#### Issues
-- `/usr/bin/env: ‘python3\r’: No such file or directory` : 
-    - sudo apt install dos2unix
-    - dos2unix python_file.py
+
+# Bugs
+- Camera_poses Output from handeye_check.py 'SlaveCam_to_MasterCam'. Multical output 'MasterCam_to_SLaveCam'. Fix handeye_check.py output pattern.
 
 # GUI
 ## Paraview
