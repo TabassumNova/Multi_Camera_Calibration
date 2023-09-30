@@ -38,10 +38,10 @@ class CameraPoseVisualizer:
         #           [vertex_transformed[1, :-1], vertex_transformed[2, :-1], vertex_transformed[3, :-1],
         #            vertex_transformed[4, :-1]]]
         meshes = [[vertex_transformed[1, :-1], vertex_transformed[2, :-1], vertex_transformed[3, :-1], vertex_transformed[4, :-1]]]
-        data = self.draw_interactive(meshes, color, show_legend, hover_template, name)
+        data = self.draw_interactive(meshes, color, show_legend, hover_template, name, text='b')
         return data
 
-    def extrinsic2pyramid(self, extrinsic, color='red', focal_len_scaled=5, aspect_ratio=0.3, show_legend=True, hover_template='test', name='name'):
+    def extrinsic2pyramid(self, extrinsic, color='red', focal_len_scaled=5, aspect_ratio=0.3, show_legend=True, hover_template='test', name='name', text='cam'):
         '''
         for camera extrinsic visualization
         '''
@@ -60,10 +60,10 @@ class CameraPoseVisualizer:
         # meshes = [[vertex_transformed[1, :-1], vertex_transformed[2, :-1], vertex_transformed[3, :-1], vertex_transformed[4, :-1]]]
         # self.ax.add_collection3d(
         #     Poly3DCollection(meshes, facecolors=color, linewidths=0.3, edgecolors=color, alpha=0.35))
-        data = self.draw_interactive(meshes, color, show_legend, hover_template, name)
+        data = self.draw_interactive(meshes, color, show_legend, hover_template, name, text)
         return data
 
-    def draw_interactive(self, meshes, color, show_legend, hover_template, name):
+    def draw_interactive(self, meshes, color, show_legend, hover_template, name, text):
 
         x = [polygon[0] for vertice in meshes for polygon in vertice]
         y = [polygon[1] for vertice in meshes for polygon in vertice]
@@ -71,7 +71,8 @@ class CameraPoseVisualizer:
 
         data = go.Mesh3d(x=x, y=y, z=z, color=color,
                          showlegend=show_legend,
-                         hovertemplate=hover_template, name=name)
+                         hovertemplate=hover_template, name=name, text=text)
+                         # text='cam')
         # data=go.Mesh3d(x=x, y=y, z=z, color='blue', opacity=0.50)
         # fig.show()
         return data

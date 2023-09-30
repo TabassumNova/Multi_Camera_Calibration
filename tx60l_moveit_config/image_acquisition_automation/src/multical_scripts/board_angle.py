@@ -107,7 +107,7 @@ def draw(frame, board_num, euler_deg, rvecs, tvecs, cam_matrix, cam_dist, text_h
     # cv2.putText(frame, 'Board' + str(board_num), (10, text_height), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
     # cv2.putText(frame, 'Euler_degree ' + str(euler_deg), (10, text_height + 100), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
     # cv2.putText(frame, 'tvecs ' + str(tvecs), (10, text_height + 200), font, 2, (0, 0, 255), 5, cv2.LINE_AA)
-    cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvecs, tvecs, 0.1)
+    cv2.drawFrameAxes(frame, cam_matrix, cam_dist, rvecs, tvecs, 0.1, thickness = 10)
     start_height = text_height + 600
     return frame, start_height
 
@@ -208,7 +208,7 @@ def initiate_workspace(datasetPath, intrinsicPath):
     return workspace
 
 def main():
-    directory = 'D:\MY_DRIVE_N\Masters_thesis\Dataset/angle_test'
+    directory = r'D:\MY_DRIVE_N\Masters_thesis\Dataset/angle_test\New_folder'
     path, board_path, intrinsic_path = collect_files(directory)
 
     workspace = initiate_workspace(directory, intrinsic_path)
