@@ -102,6 +102,11 @@ catkin_make
 
 # Bugs
 - Camera_poses Output from handeye_check.py 'SlaveCam_to_MasterCam'. Multical output 'MasterCam_to_SLaveCam'. Fix handeye_check.py output pattern.
+- Problem when starting program from Middle PC 
+```
+ModuleNotFoundError: No module named 'src'
+```
+**Solution: ** VScode creates problem. Use PyCharm ('multicalenv')
 
 # GUI
 ## Paraview
