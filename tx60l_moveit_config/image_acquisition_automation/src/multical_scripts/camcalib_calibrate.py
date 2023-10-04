@@ -89,7 +89,7 @@ def main2(base_path, cam_name):
     # '08320217' , '08320218', '08320220', '08320221', '08320222', '36220113'
     # calib_path = camera_initialization(base_path, cam_name)
     pathO = args.PathOpts(name=cam_name, image_path=base_path)
-    cam = args.CameraOpts(intrinsic_error_limit=0.5, calibration="D:\MY_DRIVE_N\Masters_thesis\Dataset\V43_eval\calibration_08320217.json")
+    cam = args.CameraOpts(intrinsic_error_limit=0.5, calibration="D:\MY_DRIVE_N\Masters_thesis\Dataset\V24_eval\calibration_08320218.json")
     pose_estimation_method = "solvePnPGeneric" #"solvePnPRansac"
     runt = args.RuntimeOpts(pose_estimation=pose_estimation_method)
     opt = args.OptimizerOpts(outlier_threshold=0.5, fix_intrinsic=True, fix_camera_poses=True, iter=2)
@@ -99,7 +99,7 @@ def main2(base_path, cam_name):
 
 if __name__ == '__main__':
 
-    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V43_eval"
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V24_eval"
     # main1(base_path)
-    main2(base_path, '08320217')
+    main2(base_path, '08320218')
     # main3(base_path, 0)
