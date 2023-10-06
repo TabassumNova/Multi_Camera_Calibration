@@ -1,3 +1,48 @@
+# All About Camera Calibration #
+
+[[_TOC_]]
+# Polygon design
+# Board pattern design
+# Continuous Image acquisition
+## Robot motion
+## Image acquisition libraries
+### Aravis
+### TIS
+### CVB
+## Overview of good dataset
+# Detection
+# Camera Intrinsic calculation
+# Board parameter calculation
+# Camera Extrinsic calculation
+# Bundle Adjustment
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Camera_Calib_Nova
 
 -  `/multical-master/camcalib_calibrate.py` replaces command `multical calibrate --image_path D:\MY_DRIVE_N\Masters_thesis\multical_test_new\net-2-base\data`
