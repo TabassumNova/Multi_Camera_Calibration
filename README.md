@@ -1,6 +1,6 @@
-<figure >
-  <img src="Images/cover.png"/>
-</figure>
+<p align="center">
+  <img src="Images/cover.png" width="500"/>
+ </p>
 
 # All About Camera Calibration #
 [[_TOC_]]
