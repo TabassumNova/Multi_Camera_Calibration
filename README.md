@@ -1,9 +1,8 @@
-# All About Camera Calibration #
-
 <figure >
-  <img src="/images/cover.png" width="600" align=""/>
+  <img src="Images/cover.png"/>
 </figure>
 
+# All About Camera Calibration #
 [[_TOC_]]
 # Polygon design
 # Board pattern design
