@@ -8,8 +8,23 @@
 - Useful link (https://hackaday.io/project/178164-polyhedral-dice-platonic-solids-2d-cad)
 - [Icosahedron CAD File](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/Polygon%20drawings?ref_type=heads)
 # Board pattern design
-- [Code](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/printing%20board?ref_type=heads)
--   Run `write_board2.py`
+- [Package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/printing%20board?ref_type=heads)
+-   Run [`write_board2.py`](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/printing%20board/write_board2.py?ref_type=heads)
+- arguments 
+`
+--rows
+9
+--columns
+12
+-T
+charuco_board
+--square_size
+13
+--marker_size
+8
+-f
+DICT_6X6_1000.json`
+- In order to change board offet: Inside write_board2.py change `marker_id = 100`
 # Continuous Image acquisition
 ## Robot motion
 ## Image acquisition libraries
