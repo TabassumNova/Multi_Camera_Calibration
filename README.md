@@ -5,7 +5,11 @@
 # All About Camera Calibration #
 [[_TOC_]]
 # Polygon design
+- Useful link (https://hackaday.io/project/178164-polyhedral-dice-platonic-solids-2d-cad)
+- [Icosahedron CAD File](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/Polygon%20drawings?ref_type=heads)
 # Board pattern design
+- [Code](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/printing%20board?ref_type=heads)
+-   Run `write_board2.py`
 # Continuous Image acquisition
 ## Robot motion
 ## Image acquisition libraries
