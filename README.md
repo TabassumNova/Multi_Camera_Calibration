@@ -138,7 +138,7 @@ rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/s
 - After installation, start the "tcam-capture" program in the terminal to use a camera.
 - Code example in https://github.com/TheImagingSource/tiscamera/tree/master/examples
 
-<\details>
+</details>
 
 ### CVB
 ## Overview of good dataset
