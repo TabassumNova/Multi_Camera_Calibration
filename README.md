@@ -25,6 +25,7 @@ charuco_board
 -f
 DICT_6X6_1000.json`
 - In order to change board offet: Inside write_board2.py change `marker_id = 100`
+- Create [boards.yaml](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/Sample_files/boards.yaml) file accordingly
 # Continuous Image acquisition
 ## Robot motion
 ## Image acquisition libraries
