@@ -379,6 +379,314 @@ def analyze_view_angle(pose_table):
   euler_deg = r.as_euler('xyz', degrees=True)
   return euler_deg
 
+def select_best_viewed_boards(ws, angle_threshold = 15):
+  num_cameras = len(ws.names.camera)
+  num_images = len(ws.names.image)
+  num_boards = len(ws.names.board)
+  board_selection_matrix = np.zeros((num_cameras))
+
+  board_selection_dict = {}
+  for cam in range (0, num_cameras):
+    board_selection_dict[cam] = []
+    for img in range (0, num_images):
+      for board in range (0, num_boards):
+        if ws.pose_table.valid[cam][img][board]:
+          pose_table = ws.pose_table.poses[cam][img][board]
+          euler_deg = analyze_view_angle(pose_table)
+          if abs(euler_deg[0]) > angle_threshold:
+            ws.pose_table.valid[cam][img][board] = False
+          else:
+            board_selection_dict[cam].append(board)
+    board_selection_matrix[cam] = max(set(board_selection_dict[cam]), key=board_selection_dict[cam].count)
+
+  return board_selection_matrix
+
+
+
+def select_board_majority(ws, image_threshold =10):
+  num_cameras = len(ws.names.camera)
+  num_images = len(ws.names.image)
+  num_boards = len(ws.names.board)
+
+  for cam in range (0, num_cameras):
+    for board in range(0, num_boards):
+      count_img = 0
+      for img in range (0, num_images):
+        if ws.pose_table.valid[cam][img][board]:
+          count_img += 1
+      if count_img >= image_threshold:
+        pass
+      else:
+        for img in range(0, num_images):
+          ws.pose_table.valid[cam][img][board] = False
+
+
+
+def camera_board_calibration(ws):
+  num_cameras = len(ws.names.camera)
+  num_images = len(ws.names.image)
+  num_boards = len(ws.names.board)
+  pass
+
+def master_slave_pose(ws, master_cam, master_board, slave_cam, slave_board):
+  # num_cameras = len(ws.names.camera)
+  num_images = len(ws.names.image)
+  # num_boards = len(ws.names.board)
+
+  masterR_list = []
+  masterT_list = []
+  slaveR_list = []
+  slaveT_list = []
+  image_list = []
+
+  for img in range(0, num_images):
+    master_valid = ws.pose_table.valid[master_cam][img][master_board]
+    slave_valid = ws.pose_table.valid[slave_cam][img][slave_board]
+    if master_valid and slave_valid:
+      master_pose = ws.pose_table.poses[master_cam][img][master_board]
+      master_R, master_t = matrix.split(master_pose)
+      slave_pose = ws.pose_table.poses[slave_cam][img][slave_board]
+      slave_R, slave_t = matrix.split(slave_pose)
+      masterR_list.append(master_R)
+      masterT_list.append(master_t)
+      slaveR_list.append(slave_R)
+      slaveT_list.append(slave_t)
+      image_list.append(img)
+  # for img in range(0, num_images):
+  #   for board1 in range(0, num_boards):
+  #     if ws.pose_table.valid[master_cam][img][board1]:
+  #       master_board = board1
+  #       master_pose = ws.pose_table.poses[master_cam][img][master_board]
+  #       master_R, master_t = matrix.split(master_pose)
+  #       for board2 in range(0, num_boards):
+  #         if ws.pose_table.valid[slave_cam][img][board2]:
+  #           slave_board = board2
+  #           slave_pose = ws.pose_table.poses[slave_cam][img][slave_board]
+  #           slave_R, slave_t = matrix.split(slave_pose)
+  #           masterR_list.append(master_R)
+  #           masterT_list.append(master_t)
+  #           slaveR_list.append(slave_R)
+  #           slaveT_list.append(slave_t)
+
+  return np.array(masterR_list), np.array(masterT_list), np.array(slaveR_list), np.array(slaveT_list), image_list
+
+
+
+def handEye_table(ws, master_cam = 0):
+  num_cameras = len(ws.names.camera)
+  num_images = len(ws.names.image)
+  num_boards = len(ws.names.board)
+
+  handEye_dict = {}
+  # handEye_dict[master_cam] = {}
+  handEye_dict['slave_wrt_master'] = {}
+  handEye_dict['board_wrt_boardM'] = {}
+  master_boards = [b for b in range(0,num_boards) if ws.pose_table.valid[master_cam][:,b].sum()>20]
+  for slave_cam in range(0, num_cameras):
+    slave_boards = [b for b in range(0,num_boards) if ws.pose_table.valid[slave_cam][:,b].sum()>20]
+    if slave_cam != master_cam:
+      for boardM in master_boards:
+        for boardS in slave_boards:
+          # handEye_dict[slave_cam] = {}
+          masterR, masterT, slaveR, slaveT, image_list = master_slave_pose(ws, master_cam, boardM, slave_cam, boardS)
+          board_wrt_boardM, slave_wrt_master, err, err2 = hand_eye.hand_eye_robot_world(masterR, masterT, slaveR, slaveT)
+          '''
+          ## for reprojection error
+          base_wrt_gripper = matrix.join(masterR, masterT)
+          world_wrt_camera = matrix.join(slaveR, slaveT)
+          T1 = matrix.transform(base_wrt_gripper, board_wrt_boardM)
+          T2 = matrix.transform(np.linalg.inv(slave_wrt_master), T1)
+          cameraMatrix = ws.cameras[slave_cam].intrinsic
+          distortion = ws.cameras[slave_cam].dist
+          for i in range(0, T2.shape[0]):
+
+            imagePoints = ws.detected_points[slave_cam][image_list[i]][boardS]['corners']
+            point_ids =  ws.detected_points[slave_cam][image_list[i]][boardS]['ids']
+            objectPoints = np.array([ws.boards[boardS].adjusted_points[i] for i in point_ids])
+            # t = T2[i]
+            # rtvec = rtvec.from_matrix(t)
+            rmatrix = T2[i][0:3, 0:3]
+            tmatrix = T2[i][0:3, 3]
+            rvec = (R.from_matrix([rmatrix]).as_rotvec())
+            tvec = (tmatrix.T)
+            imP, _ = cv2.projectPoints(np.copy(objectPoints), rvec, tvec, cameraMatrix, distortion)
+            error = imagePoints - imP.reshape([-1, 2])
+          ## end
+          '''
+          print('master ', master_cam, ', slave ', slave_cam, ': err_min: ', err.min(), 'err_max: ', err.max(), ', err2: ', err2.min(), err2.max())
+          handEye_dict['slave_wrt_master'][slave_cam] = slave_wrt_master
+          handEye_dict['board_wrt_boardM'][slave_cam] = board_wrt_boardM
+          # handEye_dict[slave_cam]['board_wrt_boardM'] = board_wrt_boardM
+          # handEye_dict[slave_cam]['slave_wrt_master'] = slave_wrt_master
+          # handEye_dict[slave_cam]['err'] = err
+          # handEye_dict[slave_cam]['err2'] = err2
+          # return board_wrt_boardM, slave_wrt_master, err
+    else:
+      handEye_dict['slave_wrt_master'][slave_cam] = np.eye(4, dtype='float64')
+
+  return handEye_dict['slave_wrt_master'], handEye_dict['board_wrt_boardM']
+
+def estimate_camera_board_poses(ws):
+  num_cameras = len(ws.names.camera)
+  master_cam = 0
+  boards = ws.boards
+  # board_selection_matrix = select_best_viewed_boards(ws, angle_threshold=45)
+  # handEye_table(ws)
+  handEye_dict = {}
+  for cam in range(0, num_cameras):
+    # board_wrt_boardM, slave_wrt_master, err = handEye_table(ws, master_cam=cam)
+    handEye_dict[cam] = handEye_table(ws, master_cam=cam)
+  #
+
+def estimate_camera_board_poses_old(ws):
+  master_cam = 0
+  boards = ws.boards
+  # objp = boards[0].adjusted_points
+
+  # select_best_viewed_boards(ws)
+  # select one board for each camera
+  num_cam = ws.point_table['points'].shape[0]
+  num_img = ws.point_table['points'].shape[1]
+  num_board = ws.point_table['points'].shape[2]
+  selected_board = 0
+  board_selection_matrix = np.zeros((num_cam))
+
+  for cam in range(0, num_cam):
+    board_selection_list = []
+    board_selection_dict = {}
+    for im in range(0, num_img):
+      for b in range(0, num_board):
+        length = len(ws.detected_points[cam][im][b]['ids'])
+        # board_selection_matrix[cam][im][b] = length
+        if length > 0:
+          board_selection_list.append(b)
+          if b in board_selection_dict:
+            board_selection_dict[b] = board_selection_dict[b] + length
+          else:
+            board_selection_dict[b] = length
+
+    sorted_dict = sorted(board_selection_dict.items(), reverse=False)
+    # count = Counter(board_selection_list).most_common()
+    # board_selection_matrix[cam] = max(board_selection_list,key=board_selection_list.count)
+    board_selection_matrix[cam] = next(iter(board_selection_dict))
+
+  skip_board = []
+  for b in range (0, num_board):
+    if b not in board_selection_matrix:
+      skip_board.append(b)
+
+  #### Calibration ####
+  # termination criteria
+  criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+  # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
+  # objp = np.zeros((11 * 8, 3), np.float32)
+  # objp[:, :2] = np.mgrid[0:11, 0:8].T.reshape(-1, 2)
+  objp = boards[0].adjusted_points
+  # Arrays to store object points and image points from all the images.
+  objpoints = []  # 3d point in real world space
+  imgpoints = []  # 2d points in image plane.
+
+  cam_board_transformation = {}
+  ## count skip img
+  skip_img = []
+  for cam in range(0, num_cam):
+    selected_board = int(board_selection_matrix[cam])
+    for im in range(0, num_img):
+      for b in skip_board:
+        ws.pose_table['valid'][cam][im][b] = ws.pose_table['valid'][cam][im][b] * 0
+        ws.point_table['valid'][cam][im][b] = ws.point_table['valid'][cam][im][b] * 0
+      if len(ws.detected_points[cam][im][selected_board]['ids']) < 8:
+        skip_img.append(im)
+        for c in range(0, num_cam):
+          ws.pose_table['valid'][c][im] = ws.pose_table['valid'][c][im]*0
+          ws.point_table['valid'][c][im] = ws.point_table['valid'][c][im]*0
+
+  obj_points_dict = {}
+  img_points_dict = {}
+  img_obj_point_dict = {}
+  for cam in range(0, num_cam):
+    cam_board_transformation[cam] = {}
+    selected_board = int(board_selection_matrix[cam])
+    objpoints = []  # 3d point in real world space
+    imgpoints = []
+    img_obj_point_dict[cam] = {}
+    for im in range(0, num_img):
+      if im not in skip_img:
+        img_obj_point_dict[cam][im] = {}
+        if len(ws.detected_points[cam][im][selected_board]['ids']) > 4:
+          # working version
+          c = ws.detected_points[cam][im][selected_board]['corners']
+          imgpoints.append(ws.detected_points[cam][im][selected_board]['corners'])
+          objpoints.append(np.array([list(objp[i]) for i in ws.detected_points[cam][im][selected_board]['ids']]))
+
+          j = 0
+          for i in ws.detected_points[cam][im][selected_board]['ids']:
+            img_obj_point_dict[cam][im][i] = {}
+            img_obj_point_dict[cam][im][i]['corners'] = ws.detected_points[cam][im][selected_board]['corners'][j]
+            img_obj_point_dict[cam][im][i]['obj_point'] = objp[i]
+            j += 1
+
+    obj_points_dict[cam] = objpoints
+    img_points_dict[cam] = imgpoints
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (5472, 3648), None, None)
+    # ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (1920, 1080), None, None)
+
+    Rotation = np.zeros((len(rvecs), 3, 3))
+    for r in range(0, len(rvecs)):
+      rot = R.from_rotvec(rvecs[r].T)
+      Rotation[r] = rot.as_matrix()
+
+    cam_board_transformation[cam]['rvecs'] = Rotation
+    Translation = np.zeros((len(tvecs), 3))
+    for t in range(0, len(tvecs)):
+      Translation[t] = tvecs[t].T
+    cam_board_transformation[cam]["tvecs"] = Translation
+    # cam_board_transformation[cam]['mtx'] = mtx
+    # cam_board_transformation[cam]['dist'] = dist
+
+  ##### hand eye
+  cam_transformation_dict = {}
+  cam_pose_dict = {}
+  board_pose_dict = {}
+  for c1 in range(0, num_cam):
+    if c1 == master_cam:
+      b1 = board_selection_matrix[c1]
+      r = np.eye(3, dtype='float64')
+      t = np.array([[0, 0, 0]], dtype='float64').T
+      h = np.hstack([r, t])
+      v = np.array([[0, 0, 0, 1]], dtype='float64')
+      board_pose_dict[int(b1)] = np.concatenate((h,v), axis=0)
+      for c2 in range(0, num_cam):
+        b2 = board_selection_matrix[c2]
+
+        base_world_r, base_world_t, c1_c2_r, c1_c2_t = cv2.calibrateRobotWorldHandEye(
+          cam_board_transformation[c1]['rvecs'],
+          cam_board_transformation[c1]['tvecs'],
+          cam_board_transformation[c2]['rvecs'],
+          cam_board_transformation[c2]['tvecs'])
+        if b2 != b1:
+          v = np.array([[0, 0, 0, 1]], dtype='float64')
+          h = np.hstack([base_world_r, base_world_t])
+          rt = np.concatenate((h, v), axis=0)
+          board_pose_dict[int(b2)] = rt
+        text = 'cam' + str(c1) + '_to_' + 'cam' + str(c2)
+        cam_transformation_dict[text] = {}
+        cam_transformation_dict[text]['R'] = c1_c2_r
+        cam_transformation_dict[text]['T'] = c1_c2_t
+        v = np.array([[0,0,0,1]], dtype='float64')
+        h = np.hstack([c1_c2_r, c1_c2_t])
+        rt = np.concatenate((h,v), axis=0)
+        # rt = rtvec.join(c1_c2_r, c1_c2_t.T)
+        cam_pose_dict[c2] = rt
+        # print(cam_pose)
+
+  rel_cam_poses = fill_poses(cam_pose_dict, num_cam)
+  rel_board_poses = fill_poses(board_pose_dict, num_board)
+
+
+  # print('end', cam_pose)
+  return rel_cam_poses, rel_board_poses, board_selection_matrix
+
 
 def initialise_poses_new(pose_table, camera_poses=None, board_poses=None, masterCam = 0):
     # Find relative transforms between cameras and rig poses
@@ -419,7 +727,7 @@ def initialise_poses_new(pose_table, camera_poses=None, board_poses=None, master
 
 def initialise_poses(pose_table, camera_poses=None, board_poses=None):
   '''
-  This is the original one
+  This is te original one
   named on 15th August
   :param pose_table:
   :param camera_poses:
@@ -474,6 +782,31 @@ def initialise_board(ws, board_poses=None):
       valid=np.ones(board_poses.shape[0], dtype=np.bool)
     ))
   return board
+
+def initialise_HandEye(ws, camera_poses=None):
+
+  # Find relative transforms between cameras and rig poses
+  camera, board, board_selection_matrix = estimate_camera_board_poses(ws)
+
+  if camera_poses is not None:
+    info("Camera initialisation vs. supplied calibration")
+    report_poses("camera", camera_poses, camera.poses)
+    camera = Table.create(
+      poses=camera_poses,
+      valid=np.ones(camera_poses.shape[0], dtype=np.bool)
+    )
+
+  # solve for the rig transforms cam @ rig @ board = pose
+  # first take inverse of both sides by board pose
+  # cam @ rig = board_relative = pose @ board^-1
+  board_relative = multiply_tables(ws.pose_table, expand(inverse(board), [0, 1]))
+
+  # solve for unknown rig
+  expanded = broadcast_to(expand(camera, [1, 2]), board_relative)
+  times = relative_between_n(expanded, board_relative, axis=1, inv=True)
+
+  return struct(times=times, camera=camera, board=board, selected_boards=board_selection_matrix)
+
 
 def stereo_calibrate(points, board, cameras, i, j, **kwargs):
   matching = matching_points(points, board, i, j)

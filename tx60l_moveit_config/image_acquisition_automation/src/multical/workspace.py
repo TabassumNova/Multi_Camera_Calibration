@@ -263,45 +263,6 @@ class Workspace:
 
         # return pose_init_board
 
-    def initialise_HandEye(self, motion_model=HandEye, camera_poses=None, isFisheye=False):
-        assert self.cameras is not None, "initialise_poses: no cameras set, first use calibrate_single or set_cameras"
-        self.pose_table = tables.make_pose_table(self.point_table, self.boards, self.cameras)
-
-        for idx, cam in enumerate(self.pose_table['valid']):
-            num_views = cam.sum()
-            if num_views<20:
-                self.pose_table['valid'][idx] *= False
-                info(f"Camera {self.names.camera[idx]} have {num_views} views that is not enough")
-
-        info("Pose counts:")
-        tables.table_info(self.pose_table.valid, self.names)
-
-        # pose_init = tables.initialise_poses(self.pose_table,
-        #   camera_poses=None if camera_poses is None else np.array([camera_poses[k] for k in self.names.camera])
-        # )
-
-        # new
-        pose_init = tables.initialise_HandEye(self,
-                                            camera_poses=None if camera_poses is None else np.array(
-                                                [camera_poses[k] for k in self.names.camera])
-                                            )
-
-        calib = Calibration(
-            ParamList(self.cameras, self.names.camera),
-            ParamList(self.boards, self.names.board),
-            self.point_table,
-            PoseSet(pose_init.camera, self.names.camera),
-            PoseSet(pose_init.board, self.names.board),
-            motion_model.init(self.pose_table, pose_init, self.names.image),
-            # motion_model.init(pose_init.times, self.names.image)
-        )
-
-        # calib = calib.reject_outliers_quantile(0.75, 5)
-        calib.report(f"Initialisation")
-
-        self.calibrations["initialisation"] = calib
-        return calib
-
     def calibrate(self, name="calibration",
         camera_poses=True, motion=True, board_poses=True, 
         cameras=False, boards=False,
