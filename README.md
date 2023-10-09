@@ -155,11 +155,13 @@ rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/s
 
 ### CVB
 ## Overview of good dataset
-# Detection
-# Camera Intrinsic calculation
-# Board parameter calculation
-# Camera Extrinsic calculation
-# Bundle Adjustment
+# Multical++
+- Edited [package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/multical)
+- Following are some important scripts
+    - [Detection](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/board/common.py)
+    - [Intrinsic](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/camera.py)
+    - [Bundle Adjustment](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/optimization/calibration.py)
+
 
 
 
