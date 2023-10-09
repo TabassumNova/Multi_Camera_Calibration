@@ -98,6 +98,10 @@ class Box_Attacher_3(object):
         workbook.close()
 
     def move_ef_position(self, xPose, yPose, zPose):
+        '''
+        For changing the position (x, y, z) of End effector
+        xPose/ yPose/ zPose -> these are 3 float values
+        '''
         wpose = self.move_group.get_current_pose().pose
         wpose.position.x = xPose
         wpose.position.y = yPose
@@ -108,6 +112,9 @@ class Box_Attacher_3(object):
         return plan
 
     def plan_from_pose_json(self, pose_json_path):
+        '''
+        Takes .json file as path and move the end effector accordingly
+        '''
         pose_file = open(pose_json_path)
         data = json.load(pose_file)
         
@@ -120,14 +127,19 @@ class Box_Attacher_3(object):
             start_arv_image_acquisition(pose = int(pose))
         pass
     
-    def plan_box_param(self, library = 'arv'):
+    def plan_box_param(self, library = 'arv', path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/board_param_poses.json"):
+        '''
+        This function moves the End Effector around +z axis, then around -z axis
+        and writes the position and orientation in a json file
+        '''
+
         enter = input("Hit ENTER if you want to start planning: ")
         wpose = self.move_group.get_current_pose().pose
         initial_pose = get_pose(self, euler=True)
         pose_list = get_calib_poses_new(self, initial_pose)
         pose = 1
         json_dict = {}
-        file_name = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/board_param_poses.json"
+        file_name = path
         if enter == '':
             for i in range(len(pose_list)):
                 # Move to first point automatically
@@ -144,6 +156,11 @@ class Box_Attacher_3(object):
                 pose += 1
 
     def write_json(self, json_dict, pose, file_name):
+        '''
+        this function writes end effector's position(x,y,z), orientation(w,x,y,z)
+        and joint angles in a json file
+        pose -> int value
+        '''
         json_dict[pose] = {}
         current_pose = self.move_group.get_current_pose().pose.position
         current_orientation = self.move_group.get_current_pose().pose.orientation
@@ -209,64 +226,6 @@ class Box_Attacher_3(object):
                         outfile.write(json_object)
                 plan = self.move_ef_position(pointx[j], pointy[j], pointz[j])
 
-        ### new
-        # pointx = np.array((0.096))
-        # pointy = np.array((-0.25))
-        # pointz = np.array((0.95))
-
-        # newX, newY, newZ = create_points(pointx, pointy, pointz, planNum=plan_num)
-        # t = np.arange(7, plan_num+7)
-        # view3D(new_x=newX, new_y=newY, new_z=newZ, newtext=t)
-        # pointx = np.append(pointx, newX)
-        # pointy = np.append(pointy, newY)
-        # pointz = np.append(pointz, newZ)
-
-        # workbook = xlsxwriter.Workbook(
-        #     '/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/EF_pose.xlsx')
-        # worksheet = workbook.add_worksheet()
-        # worksheet.write(0, 0, 'Pose No.')
-        # worksheet.write(0, 1, 'xPose')
-        # worksheet.write(0, 2, 'yPose')
-        # worksheet.write(0, 3, 'zPose')
-        # initial_pose = get_pose(self, euler=True)
-        # pose_list = get_calib_poses(self, initial_pose)
-        # pose = 1
-        # if library == 'cvb':
-        #     cam_streamer = CamStreamer(-1)
-        # if enter == '':
-        #     for j in range(pointx.shape[0]):
-        #         print('Pose: ', pose)
-        #         # print ('EF position: ', pointx[j], pointy[j], pointz[j])
-        #         # plan = self.move_ef_position(pointx[j], pointy[j], pointz[j])
-        #         # worksheet.write(j+1, 0, pose)
-        #         # worksheet.write(j + 1, 1, pointx[j])
-        #         # worksheet.write(j + 1, 2, pointy[j])
-        #         # worksheet.write(j + 1, 3, pointz[j])
-        #         # if library == 'cvb':
-        #         #     cam_streamer.start_cvb_image_acquisition(pose)
-        #         # elif library == 'tis':
-        #         #     start_tis_image_acquisition(self, pose)
-        #         # elif library == 'arv':
-        #         #     start_arv_image_acquisition(self, pose)
-                
-        #         # pose = self.plan_diff_orientation(pose)
-        #         # joint_goal = self.move_group.get_current_joint_values()
-        #         # self.move_group.go(joint_goal, wait=True)
-        #         start_arv_image_acquisition(self, pose)
-        #         initial_pose = get_pose(self, euler=True) # orientation in euler
-        #         # move_robot(self, initial_pose, extrinsic_euler=False) 
-        #         pose += 1
-        #         pose_list = get_calib_poses(self, initial_pose)
-        #         for i in range(len(pose_list)):
-        #             # Move to first point automatically
-        #             motion_successful = move_robot(self, pose_list[i])
-        #             start_arv_image_acquisition(self, pose)
-        #             print('Pose: ', pose)
-        #             pose += 1
-            
-        # workbook.close()
-
-    # pose = 1
 
     def plan_diff_orientation(self, pose):
         """
