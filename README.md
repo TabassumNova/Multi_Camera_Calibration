@@ -84,7 +84,11 @@ DICT_6X6_1000.json`
 `ROS_NAMESPACE=cam1 rosrun camera_aravis cam_aravis _guid:=GmbH-11120229`
 - From another terminal, run `ROS_NAMESPACE=cam2 rosrun camera_aravis cam_aravis _guid:=GmbH-42120643`
 
-#### ROS wrapper for image acquisition automation
+
+
+#### Custom ROS Package (Implemented)
+
+##### How to create ROS wrapper?
 - Create ROS package (http://wiki.ros.org/ROS/Tutorials/CreatingPackage)
 ```
 cd tx60_moveit/src
@@ -99,12 +103,12 @@ catkin_make
 <node pkg="xsens_driver" name="mtnode" type="mtnode.py" output="screen"> 
 </node>
 ```
-#### Issues
+##### Issues
 - `/usr/bin/env: ‘python3\r’: No such file or directory` : 
     - sudo apt install dos2unix
     - dos2unix python_file.py
 
-#### Custom ROS Package (Implemented)
+##### Implemented Camera_automation ROS wrapper
 - [package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/camera_automation)
 - Command from console
 ```
