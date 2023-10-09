@@ -30,7 +30,7 @@ DICT_6X6_1000.json`
 ## Robot motion
 ## Image acquisition libraries
 ### Aravis
-<details><summary>
+<details><summary>Expand
 
 </summary>
 
@@ -129,7 +129,7 @@ rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/s
 
 
 ### TIS
-<details><summary>
+<details><summary>Expand
 </summary>
 
 #### 20 MP TIS camera original software
