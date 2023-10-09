@@ -34,8 +34,8 @@ DICT_6X6_1000.json`
     - plan_from_pose_json(self, pose_json_path)
     - plan_box_param(self, library = 'arv', path = "")
     - write_json(self, json_dict, pose, file_name)
-
 - [main.py](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/main.py) contains script for using box_attacher_3.py
+- sample [gripper_poses.json](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/Sample_files/gripper_pose.json) that could be used in plan_from_pose_json() function
 ## Image acquisition libraries
 ### Aravis
 <details><summary>Expand
