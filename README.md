@@ -30,6 +30,10 @@ DICT_6X6_1000.json`
 ## Robot motion
 ## Image acquisition libraries
 ### Aravis
+<details><summary>
+
+</summary>
+
 #### Camera Aravis API
 - For installation follow this link: https://aravisproject.github.io/aravis/building.html
 - Steps: 
@@ -121,14 +125,21 @@ Example :
 rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/arv_im.png
 ```
 
+</details>
 
 
 ### TIS
+<details><summary>
+</summary>
+
 #### 20 MP TIS camera original software
 - https://www.theimagingsource.de/support/software-f%C3%BCr-linux/
 - It is installed with "sudo apt install .​/​tiscamera_0.n.n_amd64_ubuntu_1804.deb". "n" is to be replaced by the corresponding version number.
 - After installation, start the "tcam-capture" program in the terminal to use a camera.
 - Code example in https://github.com/TheImagingSource/tiscamera/tree/master/examples
+
+<\details>
+
 ### CVB
 ## Overview of good dataset
 # Detection
