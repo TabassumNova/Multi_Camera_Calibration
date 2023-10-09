@@ -28,6 +28,14 @@ DICT_6X6_1000.json`
 - Create [boards.yaml](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/Sample_files/boards.yaml) file accordingly
 # Continuous Image acquisition
 ## Robot motion
+- [box_attacher_3.py](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/box_attacher_3.py) is adopted from box_attacher_2.py. The following functions are added that are helpful for image acquisition: 
+
+    - move_ef_position(self, xPose, yPose, zPose)
+    - plan_from_pose_json(self, pose_json_path)
+    - plan_box_param(self, library = 'arv', path = "")
+    - write_json(self, json_dict, pose, file_name)
+
+- [main.py](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/main.py) contains script for using box_attacher_3.py
 ## Image acquisition libraries
 ### Aravis
 <details><summary>Expand
