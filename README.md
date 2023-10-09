@@ -104,6 +104,20 @@ catkin_make
     - sudo apt install dos2unix
     - dos2unix python_file.py
 
+#### Custom ROS Package (Implemented)
+- [package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/camera_automation)
+- Command from console
+```
+roscore
+rosrun camera_automation cam_node.py camera_serial_number exposure_time path_to_save_image
+```
+Example :
+```
+rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/arv_im.png
+```
+
+
+
 ### TIS
 #### 20 MP TIS camera original software
 - https://www.theimagingsource.de/support/software-f%C3%BCr-linux/
