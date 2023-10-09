@@ -1,0 +1,72 @@
+common:
+  _type_: 'charuco'
+  size: [12, 9]
+  aruco_dict: '6X6_1000'
+  square_length: 0.013
+  marker_length: 0.008
+  
+
+  min_rows: 3
+  min_points: 9
+
+boards:
+  cube_0:
+    aruco_offset: 0
+
+  cube_54:
+    aruco_offset: 54
+
+  cube_108:
+    aruco_offset: 108
+    
+  cube_162:
+    aruco_offset: 162
+
+  cube_216:
+    aruco_offset: 216
+
+  cube_270:
+    aruco_offset: 270
+
+  cube_324:
+    aruco_offset: 324
+
+  cube_378:
+    aruco_offset: 378
+
+  cube_432:
+    aruco_offset: 432
+
+  cube_486:
+    aruco_offset: 486
+
+  cube_540:
+    aruco_offset: 540
+
+  cube_594:
+    aruco_offset: 594
+
+  cube_648:
+    aruco_offset: 648
+
+  cube_702:
+    aruco_offset: 702
+
+  cube_756:
+    aruco_offset: 756
+
+  cube_810:
+    aruco_offset: 810
+
+  cube_864:
+    aruco_offset: 864
+
+  cube_918:
+    aruco_offset: 918
+
+
+
+
+aruco_params:
+  adaptiveThreshWinSizeMax: 200
+  adaptiveThreshWinSizeStep: 50
