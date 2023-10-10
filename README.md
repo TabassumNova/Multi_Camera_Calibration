@@ -34,8 +34,8 @@ DICT_6X6_1000.json`
     - plan_from_pose_json(self, pose_json_path)
     - plan_box_param(self, library = 'arv', path = "")
     - write_json(self, json_dict, pose, file_name)
-
 - [main.py](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/main.py) contains script for using box_attacher_3.py
+- sample [gripper_poses.json](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/Sample_files/gripper_pose.json) that could be used in plan_from_pose_json() function
 ## Image acquisition libraries
 ### Aravis
 <details><summary>Expand
@@ -135,7 +135,6 @@ rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/s
 
 #### Necessary Python Script (Implemented)
 - [aravis_image_acquisition.py](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/aravis_image_acquisition.py?ref_type=heads) contains all functions for continuous image acquisition from all the cameras
-
 - [aravis_show_image.py](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/aravis_show_image.py?ref_type=heads) contains all functions for the PyQT GUI
 
 </details>
@@ -155,12 +154,14 @@ rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/s
 
 ### CVB
 ## Overview of good dataset
-# Detection
-# Camera Intrinsic calculation
-# Board parameter calculation
-# Camera Extrinsic calculation
-# Bundle Adjustment
+# Multical++
+- Edited [package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/multical)
+- Following are some important scripts
+    - [Detection](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/board/common.py)
+    - [Intrinsic](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/camera.py)
+    - [Bundle Adjustment](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/optimization/calibration.py)
 
+# HandEye Initialization
 
 
 
