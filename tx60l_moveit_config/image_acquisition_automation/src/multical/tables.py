@@ -434,16 +434,16 @@ def initialise_poses(pose_table, camera_poses=None, board_poses=None):
     # from Hand-eye the transformation is SlaveCam_wrto_MasterCam
     # for Multical camera pose we need masterCam_wrto_slaveCam
     info("Camera initialisation vs. supplied calibration")
-    report_poses("camera", np.linalg.inv(camera_poses), camera.poses)
-    camera = Table.create(
-      poses=np.linalg.inv(camera_poses),
-      valid=np.ones(camera_poses.shape[0], dtype=np.bool)
-    )
-    # report_poses("camera", (camera_poses), camera.poses)
+    # report_poses("camera", np.linalg.inv(camera_poses), camera.poses)
     # camera = Table.create(
-    #   poses=(camera_poses),
+    #   poses=np.linalg.inv(camera_poses),
     #   valid=np.ones(camera_poses.shape[0], dtype=np.bool)
     # )
+    report_poses("camera", (camera_poses), camera.poses)
+    camera = Table.create(
+      poses=(camera_poses),
+      valid=np.ones(camera_poses.shape[0], dtype=np.bool)
+    )
 
   board = estimate_relative_poses_inv(pose_table, axis=2)
   if board_poses is not None:

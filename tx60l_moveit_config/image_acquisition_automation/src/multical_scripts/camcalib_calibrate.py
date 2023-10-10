@@ -29,6 +29,9 @@ def camera_initialization(base_path, cam_name):
     return calib_path
 
 def main1(base_path):
+    '''
+    This function is for performing bundle adjustment keeping all cameras as master camera in turn
+    '''
     calibration_dict = collect_initialization_results(base_path)
 
     for idx, v in enumerate(calibration_dict['calibration_path']):
@@ -54,37 +57,6 @@ def load_workspace_pkl(pkl_path):
     final_error = np.sqrt(np.square(inlier_error).mean())
     return final_error
 
-
-def main3(base_path, masterCam):
-    calibration_dict = collect_initialization_results(base_path)
-    iteration_dict = {}
-    for idx, v in enumerate(calibration_dict['calibration_path']):
-        if idx == masterCam:
-            error = 1
-            iter = 1
-            while error >= 1:
-                iteration_dict[iter] = {}
-                image_list = choose_random_images(base_path)
-                pathO = args.PathOpts(name=calibration_dict['calibration_name'][idx], image_path=base_path)
-                cam = args.CameraOpts(intrinsic_error_limit=0.5, calibration=calibration_dict['calibration_path'][idx])
-                pose_estimation_method = "solvePnPGeneric"
-                runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, image_list=image_list)
-                opt = args.OptimizerOpts(outlier_threshold=0.5, fix_intrinsic=True, iter=2)
-
-                c = calibrate.Calibrate(paths=pathO, camera=cam, runtime=runt, optimizer=opt)
-                c.execute()
-                pkl_path = os.path.join(base_path, calibration_dict['calibration_name'][idx]+'.pkl')
-                error = load_workspace_pkl(pkl_path)
-                iteration_dict[iter]['reprojection_error'] = error
-                iteration_dict[iter]['image_list'] = image_list
-                json_object = json.dumps(iteration_dict, indent=4)
-                # Writing to sample.json
-                json_path = os.path.join(base_path, "calibration_iteration.json")
-                with open(json_path, "w") as outfile:
-                    outfile.write(json_object)
-                iter += 1
-    pass
-
 def main2(base_path, cam_name):
     # '08320217' , '08320218', '08320220', '08320221', '08320222', '36220113'
     # calib_path = camera_initialization(base_path, cam_name)
@@ -99,7 +71,6 @@ def main2(base_path, cam_name):
 
 if __name__ == '__main__':
 
-    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V24_eval"
-    # main1(base_path)
-    main2(base_path, '08320218')
-    # main3(base_path, 0)
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35_test"
+    main1(base_path)
+    # main2(base_path, '08320220')
