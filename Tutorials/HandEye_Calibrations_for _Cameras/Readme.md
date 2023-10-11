@@ -7,13 +7,13 @@
 # HandEye Calibration for Master-Slave Camera pair
  Here,
 
- $`_{b}^{g}\textrm{T}`$ -> $`_{Master_Board}^{Master_Camera}\textrm{T}`$
+ $`_{b}^{g}\textrm{T}`$ -> $`_{Master_camera}^{Master_board}\textrm{T}`$
     
- $`_{w}^{c}\textrm{T}`$ -> $`_{Slave_Camera}^{Slave_Board}\textrm{T}`$
+ $`_{w}^{c}\textrm{T}`$ -> $`_{Slave_camera}^{Slave_board}\textrm{T}`$
 
- $`_{g}^{c}\textrm{T}`$ -> $`_{Slave_Board}^{Master_Board}\textrm{T}`$
+ $`_{g}^{c}\textrm{T}`$ -> $`_{Master_Board}^{Slave_Board}\textrm{T}`$
 
- $`_{b}^{w}\textrm{T}`$ -> $`_{Slave_Camera}^{Master_Camera}\textrm{T}`$
+ $`_{b}^{w}\textrm{T}`$ -> $`_{Master_Camera}^{Slave_Camera}\textrm{T}`$
 
 
 
