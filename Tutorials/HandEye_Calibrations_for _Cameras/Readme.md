@@ -6,7 +6,8 @@
 
 # HandEye Calibration for Master-Slave Camera pair
  Here,
- $_{b}^{g}\textrm{T}$
+
+ $_{b}^{g}\textrm{T}$ ->  $_{Master_Board}^{Master_camera}\textrm{T}$
 
  $_{w}^{c}\textrm{T}$
 
