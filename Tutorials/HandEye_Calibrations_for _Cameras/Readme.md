@@ -15,8 +15,9 @@
 
  base_wrt_cam, $`_{b}^{c}\textrm{T}`$ -> $`_{Master\_camera}^{Slave\_camera}\textrm{T}`$
 
+ HandEye Calibration function from [handEye_final.py](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical_scripts/handEye_final.py?ref_type=heads)
+
  ```
- 
 def hand_eye_robot_world(cam_world_R, cam_world_t, base_gripper_R, base_gripper_t):
         base_cam_r, base_cam_t, gripper_world_r, gripper_world_t = \
             cv2.calibrateRobotWorldHandEye(cam_world_R, cam_world_t, base_gripper_R, base_gripper_t, method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH)
