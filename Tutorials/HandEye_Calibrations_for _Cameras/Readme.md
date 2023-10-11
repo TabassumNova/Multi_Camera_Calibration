@@ -8,7 +8,7 @@
  Here,
  $_{B}^{A}\textrm{T}_{B}^{A}$
  
- {}^{B_3}_{}\textrm{T}^{}_{C_S}
+ ${}^{B_3}_{}\textrm{T}^{}_{C_S}$
 
 
 
