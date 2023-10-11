@@ -8,7 +8,7 @@
  Here,
  $_{B}^{A}\textrm{T}$
 
-  $_{}^{A}\textrm{T}$
+  $_{}^{A}_{B}\textrm{T}$
  
  $_{}^{B_3}\textrm{T}^{}_{C_S}$
 
