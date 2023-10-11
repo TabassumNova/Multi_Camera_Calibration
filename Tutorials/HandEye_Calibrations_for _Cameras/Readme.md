@@ -9,8 +9,7 @@
 
  $`_{b}^{g}\textrm{T}`$ -> $`_{Master_Board}^{Master_Camera}\textrm{T}`$
     
-
- $`_{w}^{c}\textrm{T}`$ -> $`_{Slave_Board}^{Slave_Camera}\textrm{T}`$
+ $`_{w}^{c}\textrm{T}`$ -> $`_{Slave_Camera}^{Slave_Board}\textrm{T}`$
 
  $`_{g}^{c}\textrm{T}`$ -> $`_{Slave_Board}^{Master_Board}\textrm{T}`$
 
