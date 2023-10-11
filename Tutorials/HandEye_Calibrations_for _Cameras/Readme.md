@@ -7,13 +7,13 @@
 # HandEye Calibration for Master-Slave Camera pair
  Here,
 
- $`_{b}^{g}\textrm{T}`$ -> $`_{Master\_camera}^{Master\_board}\textrm{T}`$
+ base_wrt_gripper, $`_{b}^{g}\textrm{T}`$ -> $`_{Master\_camera}^{Master\_board}\textrm{T}`$
     
- $`_{c}^{w}\textrm{T}`$ -> $`_{Slave\_camera}^{Slave\_board}\textrm{T}`$
+ cam_wrt_world, $`_{c}^{w}\textrm{T}`$ -> $`_{Slave\_camera}^{Slave\_board}\textrm{T}`$
 
- $`_{g}^{w}\textrm{T}`$ -> $`_{Master\_board}^{Slave\_board}\textrm{T}`$
+ gripper_wrt_world, $`_{g}^{w}\textrm{T}`$ -> $`_{Master\_board}^{Slave\_board}\textrm{T}`$
 
- $`_{b}^{c}\textrm{T}`$ -> $`_{Master\_camera}^{Slave\_camera}\textrm{T}`$
+ base_wrt_cam, $`_{b}^{c}\textrm{T}`$ -> $`_{Master\_camera}^{Slave\_camera}\textrm{T}`$
 
  ```
  
