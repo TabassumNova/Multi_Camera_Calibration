@@ -7,7 +7,8 @@
 # HandEye Calibration for Master-Slave Camera pair
  Here,
 
- $_{b}^{g}\textrm{T}$ similar to  $_{b}^{g}\textrm{T}$
+ $_{b}^{g}\textrm{T}$ ->  
+ $_{b}^{g}\textrm{T}$
 
  $_{w}^{c}\textrm{T}$
 
