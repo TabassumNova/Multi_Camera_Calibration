@@ -15,5 +15,25 @@
 
  $`_{b}^{w}\textrm{T}`$ -> $`_{Master\_camera}^{Slave\_camera}\textrm{T}`$
 
+ ```
+ 
+def hand_eye_robot_world(cam_world_R, cam_world_t, base_gripper_R, base_gripper_t):
+        base_cam_r, base_cam_t, gripper_world_r, gripper_world_t = \
+            cv2.calibrateRobotWorldHandEye(cam_world_R, cam_world_t, base_gripper_R, base_gripper_t, method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH)
+
+        base_wrt_cam = matrix.join(base_cam_r, base_cam_t.reshape(-1))
+        gripper_wrt_world = matrix.join(gripper_world_r, gripper_world_t.reshape(-1))
+        camera_wrt_world = matrix.join(cam_world_R, cam_world_t)
+        base_wrt_gripper = matrix.join(base_gripper_R, base_gripper_t)
+
+        err = matrix.transform(base_wrt_cam, camera_wrt_world) - matrix.transform(base_wrt_gripper, gripper_wrt_world)
+        ZB = matrix.transform(base_wrt_cam, camera_wrt_world)
+        error2 = base_wrt_gripper - matrix.transform(ZB, np.linalg.inv(gripper_wrt_world))
+        estimated_gripper_base = np.linalg.inv(matrix.transform(ZB, np.linalg.inv(gripper_wrt_world)))
+
+        return base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, estimated_gripper_base, err, error2
+
+ ```
+
 
 
