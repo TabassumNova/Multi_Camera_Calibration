@@ -9,11 +9,11 @@
 
  $`_{b}^{g}\textrm{T}`$ -> $`_{Master\_camera}^{Master\_board}\textrm{T}`$
     
- $`_{w}^{c}\textrm{T}`$ -> $`_{Slave\_camera}^{Slave\_board}\textrm{T}`$
+ $`_{c}^{w}\textrm{T}`$ -> $`_{Slave\_camera}^{Slave\_board}\textrm{T}`$
 
- $`_{g}^{c}\textrm{T}`$ -> $`_{Master\_board}^{Slave\_board}\textrm{T}`$
+ $`_{g}^{w}\textrm{T}`$ -> $`_{Master\_board}^{Slave\_board}\textrm{T}`$
 
- $`_{b}^{w}\textrm{T}`$ -> $`_{Master\_camera}^{Slave\_camera}\textrm{T}`$
+ $`_{b}^{c}\textrm{T}`$ -> $`_{Master\_camera}^{Slave\_camera}\textrm{T}`$
 
  ```
  
