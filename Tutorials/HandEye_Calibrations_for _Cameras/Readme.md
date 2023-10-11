@@ -4,9 +4,9 @@
 </p>
 
 
-## start kdfjvkjdfvkjdf
-fvdfeereffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-fffffffffffffffffffffffddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+# HandEye Calibration for Master-Slave Camera pair
+ Here,
+ $_{B}^{A}\textrm{T}$
 
 
 
