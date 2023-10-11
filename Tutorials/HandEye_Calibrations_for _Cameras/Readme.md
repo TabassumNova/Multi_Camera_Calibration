@@ -6,7 +6,7 @@
 
 # HandEye Calibration for Master-Slave Camera pair
  Here,
- $_{B}^{A}\textrm{T}_{B}^{A}$
+ $_{B}^{A}\textrm{T}$
  
  $_{}^{B_3}\textrm{T}^{}_{C_S}$
 
