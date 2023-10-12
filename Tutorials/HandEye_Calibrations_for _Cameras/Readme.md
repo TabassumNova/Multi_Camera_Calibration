@@ -15,6 +15,9 @@
 
  base_wrt_cam, $`_{b}^{c}\textrm{T}`$ -> $`_{Master\_camera}^{Slave\_camera}\textrm{T}`$
 
+ ## Remarks
+ $`_{Master\_camera}^{Master\_board}\textrm{T}`$ and $`_{Slave\_camera}^{Slave\_board}\textrm{T}`$ can be calculated using [solvePnP](https://docs.opencv.org/4.x/d5/d1f/calib3d_solvePnP.html) algorithm. But solvePnP generates $`_{board}^{camera}\textrm{T}`$. You need to inverse the matrix to get $`_{camera}^{board}\textrm{T}`$
+
  HandEye Calibration function from [handEye_final.py](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical_scripts/handEye_final.py?ref_type=heads)
 
  ```
