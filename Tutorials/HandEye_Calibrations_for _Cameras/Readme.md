@@ -15,10 +15,8 @@
 
  base_wrt_cam, $`_{b}^{c}\textrm{T}`$ -> $`_{Master\_camera}^{Slave\_camera}\textrm{T}`$
 
- ## Remarks
- $`_{Master\_camera}^{Master\_board}\textrm{T}`$ and $`_{Slave\_camera}^{Slave\_board}\textrm{T}`$ can be calculated using [solvePnP](https://docs.opencv.org/4.x/d5/d1f/calib3d_solvePnP.html) algorithm. But solvePnP generates $`_{board}^{camera}\textrm{T}`$. You need to inverse the matrix to get $`_{camera}^{board}\textrm{T}`$
 
- HandEye Calibration function from [handEye_final.py](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical_scripts/handEye_final.py?ref_type=heads)
+HandEye Calibration function from [handEye_final.py](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical_scripts/handEye_final.py?ref_type=heads)
 
  ```
 def hand_eye_robot_world(cam_world_R, cam_world_t, base_gripper_R, base_gripper_t):
@@ -38,6 +36,9 @@ def hand_eye_robot_world(cam_world_R, cam_world_t, base_gripper_R, base_gripper_
         return base_wrt_cam, gripper_wrt_world, camera_wrt_world, base_wrt_gripper, estimated_gripper_base, err, error2
 
  ```
+
+## Remarks
+ $`_{Master\_camera}^{Master\_board}\textrm{T}`$ and $`_{Slave\_camera}^{Slave\_board}\textrm{T}`$ can be calculated using [solvePnP](https://docs.opencv.org/4.x/d5/d1f/calib3d_solvePnP.html) algorithm. But solvePnP generates $`_{board}^{camera}\textrm{T}`$. You need to inverse the matrix to get $`_{camera}^{board}\textrm{T}`$
 
 
 
