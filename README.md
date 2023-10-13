@@ -182,23 +182,6 @@ rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/s
 
 
 
-
-
-
-
-
-
-
-# Camera_Calib_Nova
-
--  `/multical-master/camcalib_calibrate.py` replaces command `multical calibrate --image_path D:\MY_DRIVE_N\Masters_thesis\multical_test_new\net-2-base\data`
-- `/multical-master/camcalib_detect.py` replaces command `multical boards --boards my_board.yaml --detect my_image.jpeg`
-- `/test_files/calibration.py` --> opencv calibration using checker board images
-- `/test_files/charuco_detect.py` --> opencv charuco detection
-
-
-
-
 # Environments
 - python 3.10
 - pip install opencv-contrib-python-headless==4.6.0.66
@@ -221,7 +204,7 @@ ModuleNotFoundError: No module named 'src'
 ```
 **Solution: ** VScode creates problem. Use PyCharm ('multicalenv')
 
-# GUI
+# Visualization
 ## Paraview
 - https://www.youtube.com/watch?v=FTUBpqkC3Ss
 - To add python shell in paraview application: view > Python shell
@@ -236,44 +219,8 @@ ModuleNotFoundError: No module named 'src'
 - https://www.pythonguis.com/faq/adding-images-to-pyqt5-applications/
 - Convert pyQt UI to python: command on shell: pyuic5.exe input.ui -o output.py
 
-## Qt Designer
-- For loading image-> label > in Pixmap, load image > scaledContents check
-
-## Aruco board Create
-- https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/printing%20board/write_board2.py
-- Parameters 
-```
---rows
-9
---columns
-12
--T
-charuco_board
---square_size
-13
---marker_size
-8
--f
-DICT_6X6_1000.json
-```
-
-
-# Directory description
-## [tx60_moveit_config](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config)
-- Contains robot motion for image acquisition
-- Git clone this repo in your workspace
-- From terminal run `roslaunch tx60l_moveit_config moveit_planning_execution.launch sim:=false robot_ip:=192.168.0.250`
-- From another terminal run `rosrun tx60l_moveit_config main.py`
-
-
-# Camera Parameters
-- Intrinsic (https://1drv.ms/f/s!At7UW7zuEoCCivQPV5hxq03VmbaI4A?e=VPgsl9)
-
-*** Not all the views are taken for calculating intrinsic. The program iteratively rejects outliers that have greater reprojection erro and optimizes the intrinsic parameters. How many views are taken for calculation are written in calibration.txt file
-
-**** cam222 has only 28 views??
-
-# OpenCV Issues
+# Issues
+## OpenCV Issues
 - For aruco, PyQT related issues
     - pip3 uninstall opencv-python
     - python3 -m pip install opencv-contrib-python
@@ -291,27 +238,27 @@ DICT_6X6_1000.json
     - PyQt5 working
 
 
-# Hand-Eye Calibration Issues
+## Hand-Eye Calibration Issues
 ```
 cv2.calibrateRobotWorldHandEye(cam_world_R, cam_world_t, base_gripper_R, base_gripper_t, method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH)
 cv2.error: OpenCV(4.6.0) /work/ci_py311/opencv-suite_1676837327081/work/modules/calib3d/src/calibration_handeye.cpp:524: error: (-7:Iterations do not converge) Rotation normalization issue: determinant(R) is null in function 'normalizeRotation'
 ```
 **Solution:** Remove the outlier image
 
-# scipy issues
+## scipy issues
 - Error from stats.gaussian_kde(values)
     ```
     numpy.linalg.LinAlgError: 3-th leading minor of the array is not positive definite
     ```
     **Solution**: values should have more than 3 groups
-# numpy issues
+## numpy issues
 ```
 AttributeError: module 'numpy' has no attribute 'int'.
 `np.int` was a deprecated alias for the builtin `int`. To avoid this error in existing code, use `int` by itself. Doing this will not modify any behavior and is safe. When replacing `np.int`, you may wish to use e.g. `np.int64` or `np.int32` to specify the precision. If you wish to review your current use, check the release note link for additional information.
 The aliases was originally deprecated in NumPy 1.20; for more details and guidance see the original release note at:
 ```
 **Solution**: numpy.int was deprecated in NumPy 1.20 and was removed in NumPy 1.24. Downgrade numpy. `pip install numpy==1.23.4`
-# PyQt5 Issues
+## PyQt5 Issues
 ```
 Backend QtAgg is interactive backend. Turning interactive mode on. qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found. This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.  Available platform plugins are: eglfs, minimal, vkkhrdisplay, xcb, vnc, wayland, minimalegl, wayland-egl, linuxfb, offscreen.
 ```
@@ -327,4 +274,6 @@ Backend QtAgg is interactive backend. Turning interactive mode on. qt.qpa.plugin
 docker build -t cam-calib-docker .
 Docker run cam-calib-docker
 ```
+
+# Credits
 
