@@ -20,6 +20,7 @@
 <a name="pattern"></a>
 
 # Board pattern design
+- Useful link (https://docs.opencv.org/4.x/da/d0d/tutorial_camera_calibration_pattern.html)
 - [Package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/printing%20board?ref_type=heads)
 -   Run [`write_board2.py`](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/printing%20board/write_board2.py?ref_type=heads)
 - arguments 
