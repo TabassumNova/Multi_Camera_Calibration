@@ -320,6 +320,7 @@ Backend QtAgg is interactive backend. Turning interactive mode on. qt.qpa.plugin
 - Problem might come from PyQt5 of Python>=3.6. or matplotlib. Downgrade matplotlib `pip install matplotlib==3.1.0`
 - try (https://github.com/NVlabs/instant-ngp/discussions/300)
 - Uninstall and install opencv couple of times. Sometimes it works.
+
 [Dockerfile](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/Dockerfile?ref_type=heads) commands:
 ```
 docker build -t cam-calib-docker .
