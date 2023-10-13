@@ -8,12 +8,12 @@ import os.path
 import cv2
 import pickle
 import math
-import pyvista as pv
+# import pyvista as pv
 import sys
 import random
 import time
 import pandas as pd
-import openpyxl
+# import openpyxl
 from functools import partial
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -33,9 +33,9 @@ from src.multical_scripts.singleCalib_viz import *
 import sys
 # from src.aravis_show_image import find_cameras, show_image
 from random import randint
-import pyvistaqt
+# import pyvistaqt
 from PIL import Image
-from qtpy.QtWidgets import QFrame, QAction
+# from qtpy.QtWidgets import QFrame, QAction
 # from pyvistaqt import QtInteractor
 
 

@@ -15,7 +15,7 @@ from src.multical.transform.rtvec import *
 import pickle
 from src.multical.transform import common, rtvec
 from scipy import stats
-from mayavi import mlab
+# from mayavi import mlab
 import pandas as pd
 import plotly.express as px
 
