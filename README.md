@@ -281,3 +281,4 @@ Docker run cam-calib-docker
 - The 'Robot Motion' part is based on the work from [Oguz Kedilioglu](https://github.com/Oguked)
 - This work is based on the work of [Multical](https://github.com/oliver-batchelor/multical)
 - Much Inspiration is taken from [CALICO](https://github.com/amy-tabb/calico) and [MC-Calib](https://github.com/rameau-fr/MC-Calib)
+- Some visualization inspiration is taken from [rc-visard](https://doc.rc-visard.com/v1.3/en/handeye_calibration.html)
