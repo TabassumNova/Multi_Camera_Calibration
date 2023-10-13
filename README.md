@@ -290,6 +290,7 @@ DICT_6X6_1000.json
     - solvePnP working
     - PyQt5 working
 
+
 # Hand-Eye Calibration Issues
 ```
 cv2.calibrateRobotWorldHandEye(cam_world_R, cam_world_t, base_gripper_R, base_gripper_t, method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH)
@@ -314,4 +315,9 @@ The aliases was originally deprecated in NumPy 1.20; for more details and guidan
 ```
 Backend QtAgg is interactive backend. Turning interactive mode on. qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found. This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.  Available platform plugins are: eglfs, minimal, vkkhrdisplay, xcb, vnc, wayland, minimalegl, wayland-egl, linuxfb, offscreen.
 ```
-**Solution**: Problem might come from PyQt5 of Python>=3.6. or matplotlib. Downgrade matplotlib `pip install matplotlib==3.1.0`
+- Same issue for [Dockerfile](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/Dockerfile?ref_type=heads)
+**Solution (might not work)**: 
+- Problem might come from PyQt5 of Python>=3.6. or matplotlib. Downgrade matplotlib `pip install matplotlib==3.1.0`
+- try (https://github.com/NVlabs/instant-ngp/discussions/300)
+- Uninstall and install opencv couple of times. Sometimes it works.
+
