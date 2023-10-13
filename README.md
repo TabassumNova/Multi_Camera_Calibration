@@ -155,6 +155,7 @@ rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/s
 ### CVB
 ## Overview of good dataset
 # Multical++
+For this work, I edited some parts of the original implemetation of [Multical](https://github.com/oliver-batchelor/multical)
 - Edited [package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/multical)
 - Following are some important scripts
     - [Detection](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/board/common.py)
@@ -276,4 +277,6 @@ Docker run cam-calib-docker
 ```
 
 # Credits
-
+- This work is conducted at the Institute for Factory Automation and Production Systems(FAPS), FAU-Erlangen, Germany.
+- The 'Robot Motion' part is based on the work from Oguz
+- This work is based on the work of [Multical](https://github.com/oliver-batchelor/multical) 
