@@ -6,7 +6,8 @@
 # Table of Contents  
 * [Polygon design](#polygon)  
 * [Board pattern design](#pattern)
-* [Continuous Image acquisition](#image_aq) 
+* [Continuous Image acquisition](#image_aq)
+* [Camera Calibration Framework](#cam_calib)
 
 
 
@@ -167,7 +168,11 @@ rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/s
 
 ### CVB
 ## Overview of good dataset
-# Multical++
+
+<a name="cam_calib"></a>
+
+# Camera Calibration Framework
+## Multical++
 For this work, I edited some parts of the original implemetation of [Multical](https://github.com/oliver-batchelor/multical)
 - Edited [package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/multical)
 - Following are some important scripts
@@ -175,25 +180,7 @@ For this work, I edited some parts of the original implemetation of [Multical](h
     - [Intrinsic](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/camera.py)
     - [Bundle Adjustment](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/optimization/calibration.py)
 
-# HandEye Initialization
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+## HandEye Initialization
 
 
 # Environments
