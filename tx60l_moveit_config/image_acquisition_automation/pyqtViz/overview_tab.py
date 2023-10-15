@@ -22,7 +22,6 @@ from PyQt5.QtGui import *
 #     QHBoxLayout, QGridLayout, QLineEdit, QLabel, QTabWidget, QScrollArea, QTextBrowser, QCheckBox
 # from PyQt6.QtWidgets import *
 # from PyQt6.QtGui import *
-# from QtImageViewer import QtImageViewer
 from src.multical_scripts.board_angle import *
 from src.multical_scripts.handEye_viz import *
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
@@ -42,207 +41,110 @@ except ImportError:
 from .calibration_tab import *
 from src.QtImageViewer import *
 
-class Operation(QScrollArea):
+class Overview(QWidget):
     def __init__(self):
-        super(Operation, self).__init__()
+        super().__init__()
+        self.layout = QGridLayout(self)
+        self.workspace = None
+        self.cameras = None
+        self.images = None
+        self.boards = None
+        self.detectedPoints = None
+        self.intrinsic = None
+        self.handEyeCamera = None
+        self.viewer = {}
+        self.new_window = None
 
-        widget1 = QWidget()
-        layout1 = QGridLayout(widget1)
-        layout1.setAlignment(Qt.AlignTop)
-        l1 = QLabel(widget1)
-        l1.setPixmap(QPixmap("cover1.png"))
-        l1.setGeometry(QRect(50, 0, 1880, 300))
-        # layout1.addWidget(l1)
-
-        label1 = QLabel(widget1)
-        label1.setText('Select Directory')
-        label1.setFont(QFont("Times", 10, QFont.Bold))
-        # label1.setAlignment(Qt.AlignCenter)
-        label1.setGeometry(QRect(0, 320, 150, 28))
-
-        self.btn1 = QPushButton(widget1)
-        self.btn1.setObjectName('Directory')
-        self.btn1.setText('Directory')
-        self.btn1.setGeometry(QRect(0, 360, 111, 28))
-        self.btn1.clicked.connect(self.open_dir_dialog)
-        # layout1.addWidget(self.btn4_2)
-
-        self.label1 = QLabel(self)
-        self.label1.setObjectName('Select Directory')
-        self.label1.setText('Select Directory')
-        self.label1.setStyleSheet("border: 1px solid black;")
-        self.label1.setGeometry(QRect(125, 360, 1200, 28))
-
-        label2 = QLabel(widget1)
-        label2.setText('Initialization')
-        label2.setFont(QFont("Times", 10, QFont.Bold))
-        # label2.setAlignment(Qt.AlignCenter)
-        label2.setGeometry(QRect(0, 400, 150, 28))
-
-        self.btn2 = QPushButton(widget1)
-        self.btn2.setObjectName('Start Calculation')
-        self.btn2.setText('Start Calculation')
-        self.btn2.setGeometry(QRect(0, 430, 111, 28))
-        self.btn2.clicked.connect(self.open_dir_dialog)
-        # layout1.addWidget(self.btn4_2)
-
-        self.label2 = QLabel(self)
-        self.label2.setObjectName('Info')
-        self.label2.setText('Info')
-        self.label2.setStyleSheet("border: 1px solid black;")
-        self.label2.setGeometry(QRect(125, 430, 300, 28))
-
-        self.btn3 = QPushButton(widget1)
-        self.btn3.setObjectName('Show Camera Poses')
-        self.btn3.setText('Show Camera Poses')
-        self.btn3.setGeometry(QRect(450, 430, 180, 28))
-        self.btn3.clicked.connect(self.open_dir_dialog)
-
-        label3 = QLabel(widget1)
-        label3.setText('Select one Master Camera')
-        label3.setGeometry(QRect(0, 460, 300, 28))
-
-        label4 = QLabel(widget1)
-        label4.setText('Bundle Adjustment')
-        label4.setFont(QFont("Times", 10, QFont.Bold))
-        # label2.setAlignment(Qt.AlignCenter)
-        label4.setGeometry(QRect(0, 500, 180, 28))
-
-        self.btn3 = QPushButton(widget1)
-        self.btn3.setObjectName('Start Calculation')
-        self.btn3.setText('Start Calculation')
-        self.btn3.setGeometry(QRect(0, 540, 111, 28))
-        self.btn3.clicked.connect(self.open_dir_dialog)
-        # layout1.addWidget(self.btn4_2)
-
-        self.label3 = QLabel(self)
-        self.label3.setObjectName('Info')
-        self.label3.setText('Info')
-        self.label3.setStyleSheet("border: 1px solid black;")
-        self.label3.setGeometry(QRect(125, 540, 300, 28))
-
-        self.btn4 = QPushButton(widget1)
-        self.btn4.setObjectName('Show Final Camera Poses')
-        self.btn4.setText('Show Final Camera Poses')
-        self.btn4.setGeometry(QRect(450, 540, 200, 28))
-        self.btn4.clicked.connect(self.open_dir_dialog)
-
-        # label4 = QLabel(widget1)
-        # label4.setText('Select one Master Camera')
-        # label4.setGeometry(QRect(0, 460, 300, 28))
-
-        # for index in range(100):
-        #     layout1.addWidget(QLabel('Label %02d' % index))
-        self.setWidget(widget1)
-        self.setWidgetResizable(True)
-        widget1.setLayout(layout1)
-        # self.setWidgetResizable(True)
-        # scrollContent = QWidget(self)
-        # scrollLayout = QVBoxLayout(scrollContent)
-        # scrollContent.setLayout(scrollLayout)
-        # self.setWidget(scrollContent)
-
-        # self.layout = QGridLayout(self)
-        # self.workspace = None
-        # self.cameras = None
-        # self.images = None
-        # self.boards = None
-        # self.detectedPoints = None
-        # self.intrinsic = None
-        # self.handEyeCamera = None
-        # self.viewer = {}
-        # self.new_window = None
+        # self.btnLoad1 = QPushButton(self)
+        # self.btnLoad1.setObjectName('Live View')
+        # self.btnLoad1.setText('Live View')
+        # self.btnLoad1.setGeometry(QRect(0, 0, 93, 28))
+        # self.btnLoad1.clicked.connect(self.saveImage)
         #
-        # # self.btnLoad1 = QPushButton(self)
-        # # self.btnLoad1.setObjectName('Live View')
-        # # self.btnLoad1.setText('Live View')
-        # # self.btnLoad1.setGeometry(QRect(0, 0, 93, 28))
-        # # self.btnLoad1.clicked.connect(self.saveImage)
-        # #
-        # # self.btnLoad2 = QPushButton(self)
-        # # self.btnLoad2.setObjectName('Start')
-        # # self.btnLoad2.setText('Start')
-        # # # self.btnLoad1.setStyleSheet("background-color : cyan;")
-        # # self.btnLoad2.setGeometry(QRect(90, 0, 93, 28))
-        # # self.btnLoad2.clicked.connect(self.nextPose)
-        # #
-        # # self.btnLoad3 = QPushButton(self)
-        # # self.btnLoad3.setObjectName('Stop')
-        # # self.btnLoad3.setText('Stop')
-        # # # self.btnLoad2.setStyleSheet("background-color : cyan;")
-        # # self.btnLoad3.setGeometry(QRect(180, 0, 93, 28))
-        # # self.btnLoad3.clicked.connect(self.nextPose)
-        # #
-        # # self.btnLoad4 = QPushButton(self)
-        # # self.btnLoad4.setObjectName('x')
-        # # self.btnLoad4.setText('x')
-        # # # self.btnLoad3.setStyleSheet("background-color : cyan;")
-        # # self.btnLoad4.clicked.connect(self.nextPose)
-        # # self.btnLoad4.setGeometry(QRect(290, 0, 30, 28))
-        # #
-        # # self.btnLoad5 = QPushButton(self)
-        # # self.btnLoad5.setObjectName('Save')
-        # # self.btnLoad5.setText('Save')
-        # # # self.btnLoad4.setStyleSheet("background-color : cyan;")
-        # # self.btnLoad5.clicked.connect(self.nextPose)
-        # # self.btnLoad5.setGeometry(QRect(320, 0, 93, 28))
+        # self.btnLoad2 = QPushButton(self)
+        # self.btnLoad2.setObjectName('Start')
+        # self.btnLoad2.setText('Start')
+        # # self.btnLoad1.setStyleSheet("background-color : cyan;")
+        # self.btnLoad2.setGeometry(QRect(90, 0, 93, 28))
+        # self.btnLoad2.clicked.connect(self.nextPose)
         #
-        # self.btnLoad6 = QPushButton(self)
-        # self.btnLoad6.setObjectName('<')
-        # self.btnLoad6.setText('<')
-        # # self.btnLoad5.setStyleSheet("background-color : cyan;")
-        # self.btnLoad6.clicked.connect(self.loadPrevious)
-        # self.btnLoad6.setGeometry(QRect(0, 0, 30, 28))
+        # self.btnLoad3 = QPushButton(self)
+        # self.btnLoad3.setObjectName('Stop')
+        # self.btnLoad3.setText('Stop')
+        # # self.btnLoad2.setStyleSheet("background-color : cyan;")
+        # self.btnLoad3.setGeometry(QRect(180, 0, 93, 28))
+        # self.btnLoad3.clicked.connect(self.nextPose)
         #
-        # self.btnLoad7 = QPushButton(self)
-        # self.btnLoad7.setObjectName('Load')
-        # self.btnLoad7.setText('Load')
-        # # self.btnLoad7.setStyleSheet("background-color : cyan;")
-        # self.btnLoad7.clicked.connect(self.open_dir_dialog)
-        # self.btnLoad7.setGeometry(QRect(30, 0, 93, 28))
+        # self.btnLoad4 = QPushButton(self)
+        # self.btnLoad4.setObjectName('x')
+        # self.btnLoad4.setText('x')
+        # # self.btnLoad3.setStyleSheet("background-color : cyan;")
+        # self.btnLoad4.clicked.connect(self.nextPose)
+        # self.btnLoad4.setGeometry(QRect(290, 0, 30, 28))
         #
-        # self.btnLoad8 = QPushButton(self)
-        # self.btnLoad8.setObjectName('>')
-        # self.btnLoad8.setText('>')
-        # self.btnLoad8.clicked.connect(self.loadNext)
-        # self.btnLoad8.setGeometry(QRect(123, 0, 30, 28))
-        #
-        # # Grid for images
-        # self.gridLayoutWidget1 = QWidget(self)
-        # self.gridLayoutWidget1.setGeometry(QRect(0, 50, 1880, 300))
-        # self.gridLayoutWidget1.setObjectName("gridLayoutWidget")
-        # self.gridLayout1 = QGridLayout(self.gridLayoutWidget1)
-        # self.gridLayout1.setContentsMargins(0, 0, 0, 0)
-        # self.gridLayout1.setObjectName("gridLayout")
-        #
-        # # Grid for Summary title
-        # self.gridLayoutWidget2 = QWidget(self)
-        # self.gridLayoutWidget2.setGeometry(QRect(0, 350, 100, 30))
-        # self.gridLayoutWidget2.setObjectName("gridLayoutWidget")
-        # self.gridLayout2 = QGridLayout(self.gridLayoutWidget2)
-        # self.gridLayout2.setContentsMargins(0, 0, 0, 0)
-        # self.gridLayout2.setObjectName("gridLayout")
-        #
-        # # Grid for table
-        # self.gridLayoutWidget3 = QWidget(self)
-        # self.gridLayoutWidget3.setGeometry(QRect(0, 400, 1880, 500))
-        # self.gridLayoutWidget3.setObjectName("gridLayoutWidget")
-        # self.gridLayout3 = QGridLayout(self.gridLayoutWidget3)
-        # self.gridLayout3.setContentsMargins(0, 0, 0, 0)
-        # self.gridLayout3.setObjectName("gridLayout")
-        # # add table widget
-        # self.table = QTableWidget()
-        # self.gridLayout3.addWidget(self.table)
-        #
-        #
-        # self.folder_path = ''
-        # self.live_view = ''
-        # self.pose = 1
-        # self.pose_count = 0
-        # self.last_pose = 0
-        # self.last_pose_count = 0
-        #
-        # self.setLayout(self.layout)
+        # self.btnLoad5 = QPushButton(self)
+        # self.btnLoad5.setObjectName('Save')
+        # self.btnLoad5.setText('Save')
+        # # self.btnLoad4.setStyleSheet("background-color : cyan;")
+        # self.btnLoad5.clicked.connect(self.nextPose)
+        # self.btnLoad5.setGeometry(QRect(320, 0, 93, 28))
+
+        self.btnLoad6 = QPushButton(self)
+        self.btnLoad6.setObjectName('<')
+        self.btnLoad6.setText('<')
+        # self.btnLoad5.setStyleSheet("background-color : cyan;")
+        self.btnLoad6.clicked.connect(self.loadPrevious)
+        self.btnLoad6.setGeometry(QRect(0, 0, 30, 28))
+
+        self.btnLoad7 = QPushButton(self)
+        self.btnLoad7.setObjectName('Load')
+        self.btnLoad7.setText('Load')
+        # self.btnLoad7.setStyleSheet("background-color : cyan;")
+        self.btnLoad7.clicked.connect(self.open_dir_dialog)
+        self.btnLoad7.setGeometry(QRect(30, 0, 93, 28))
+
+        self.btnLoad8 = QPushButton(self)
+        self.btnLoad8.setObjectName('>')
+        self.btnLoad8.setText('>')
+        self.btnLoad8.clicked.connect(self.loadNext)
+        self.btnLoad8.setGeometry(QRect(123, 0, 30, 28))
+
+        # Grid for images
+        self.gridLayoutWidget1 = QWidget(self)
+        self.gridLayoutWidget1.setGeometry(QRect(0, 50, 1880, 300))
+        self.gridLayoutWidget1.setObjectName("gridLayoutWidget")
+        self.gridLayout1 = QGridLayout(self.gridLayoutWidget1)
+        self.gridLayout1.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout1.setObjectName("gridLayout")
+
+        # Grid for Summary title
+        self.gridLayoutWidget2 = QWidget(self)
+        self.gridLayoutWidget2.setGeometry(QRect(0, 350, 100, 30))
+        self.gridLayoutWidget2.setObjectName("gridLayoutWidget")
+        self.gridLayout2 = QGridLayout(self.gridLayoutWidget2)
+        self.gridLayout2.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout2.setObjectName("gridLayout")
+
+        # Grid for table
+        self.gridLayoutWidget3 = QWidget(self)
+        self.gridLayoutWidget3.setGeometry(QRect(0, 400, 1880, 500))
+        self.gridLayoutWidget3.setObjectName("gridLayoutWidget")
+        self.gridLayout3 = QGridLayout(self.gridLayoutWidget3)
+        self.gridLayout3.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout3.setObjectName("gridLayout")
+
+        # add table widget
+        self.table = QTableWidget()
+        self.gridLayout3.addWidget(self.table)
+
+        self.folder_path = ''
+        self.live_view = ''
+        self.pose = 1
+        self.pose_count = 0
+        self.last_pose = 0
+        self.last_pose_count = 0
+
+        self.setLayout(self.layout)
 
     def saveImage(self):
         print("Button clicked, Hello! Save Image")
@@ -281,13 +183,11 @@ class Operation(QScrollArea):
                     self.viewer[dir].open(v)
                     gridLayout.addWidget(self.viewer[dir], 0, idx)
         self.clearLayout(self.gridLayout2)
-
         label1 = QLabel()
         label1.setText('Pose')
         label1.setFont(QFont("Times", 10, QFont.Bold))
         label1.setAlignment(Qt.AlignCenter)
         self.gridLayout2.addWidget(label1, 2, 0)
-
 
         label = QLabel()
         label.setText(self.images[self.pose_count])

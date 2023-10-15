@@ -37,6 +37,7 @@ except ImportError:
     qimage2ndarray = None
 
 from pyqtViz.operation_tab import *
+from pyqtViz.overview_tab import *
 from pyqtViz.calibration_tab import *
 # from pyqtViz.viewPlan_tab import *
 import cv2
@@ -66,15 +67,17 @@ class MyTabWidget(QWidget):
         self.tabs = QTabWidget()
 
         self.tab1 = Operation()
-        self.tab2 = Calibration()
+        self.tab2 = Overview()
+        self.tab3 = Calibration()
         # self.tab3 = QWidget()
         # self.tab4 = View_Plan()
         self.tab4 = QWidget()
         # self.tab5 = QWidget()
         # self.tabs.resize(300, 200)
         # Add tabs
-        self.tabs.addTab(self.tab1, "Overview")
-        self.tabs.addTab(self.tab2, "Calibration")
+        self.tabs.addTab(self.tab1, "Operation")
+        self.tabs.addTab(self.tab2, "Overview")
+        self.tabs.addTab(self.tab3, "Calibration")
         # self.tabs.addTab(self.tab3, "Measurement Setup")
         self.tabs.addTab(self.tab4, "View_Plan")
         # self.tabs.addTab(self.tab5, "Settings")

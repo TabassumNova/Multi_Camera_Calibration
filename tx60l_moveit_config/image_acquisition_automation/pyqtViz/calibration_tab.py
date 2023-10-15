@@ -40,7 +40,7 @@ try:
 except ImportError:
     qimage2ndarray = None
 
-from .operation_tab import *
+from .overview_tab import *
 import cv2
 import math
 import matplotlib.pyplot as plt
