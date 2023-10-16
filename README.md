@@ -219,7 +219,8 @@ ModuleNotFoundError: No module named 'src'
 ## PyQt User Interface
 This GUI automates the whole calibration process also shows results of the calibration
 <p align="center">
-  <img src="Images/gui1.png" width="700"/>
+  <img src="Images/gui1.png" width="650"/>
+  <img src="Images/ex_viz.gif" width="350"/>
  </p>
  
 ## Paraview guide
