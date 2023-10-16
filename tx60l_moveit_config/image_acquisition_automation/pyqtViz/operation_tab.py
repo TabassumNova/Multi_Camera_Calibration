@@ -24,7 +24,10 @@ from PyQt5.QtGui import *
 # from PyQt6.QtGui import *
 # from QtImageViewer import QtImageViewer
 from src.multical_scripts.board_angle import *
-from src.multical_scripts.handEye_viz import *
+# from src.multical_scripts.handEye_viz import *
+from src.multical_scripts.handEye_final import *
+from src.multical_scripts.extrinsic_viz import *
+import shutil
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
     import numpy as np
@@ -45,22 +48,26 @@ from src.QtImageViewer import *
 class Operation(QScrollArea):
     def __init__(self):
         super(Operation, self).__init__()
+        self.workspace = None
+        self.camera_checkBox = {}
+        self.masterCamera = None
+        self.test_dir = None
 
-        widget1 = QWidget()
-        layout1 = QGridLayout(widget1)
+        self.widget1 = QWidget()
+        layout1 = QGridLayout(self.widget1)
         layout1.setAlignment(Qt.AlignTop)
-        l1 = QLabel(widget1)
+        l1 = QLabel(self.widget1)
         l1.setPixmap(QPixmap("cover1.png"))
         l1.setGeometry(QRect(50, 0, 1880, 300))
         # layout1.addWidget(l1)
 
-        label1 = QLabel(widget1)
+        label1 = QLabel(self.widget1)
         label1.setText('Select Directory')
         label1.setFont(QFont("Times", 10, QFont.Bold))
         # label1.setAlignment(Qt.AlignCenter)
         label1.setGeometry(QRect(0, 320, 150, 28))
 
-        self.btn1 = QPushButton(widget1)
+        self.btn1 = QPushButton(self.widget1)
         self.btn1.setObjectName('Directory')
         self.btn1.setText('Directory')
         self.btn1.setGeometry(QRect(0, 360, 111, 28))
@@ -71,57 +78,64 @@ class Operation(QScrollArea):
         self.label1.setObjectName('Select Directory')
         self.label1.setText('Select Directory')
         self.label1.setStyleSheet("border: 1px solid black;")
-        self.label1.setGeometry(QRect(125, 360, 1200, 28))
+        self.label1.setGeometry(QRect(125, 360, 500, 28))
 
-        label2 = QLabel(widget1)
+        label2 = QLabel(self.widget1)
         label2.setText('Initialization')
         label2.setFont(QFont("Times", 10, QFont.Bold))
         # label2.setAlignment(Qt.AlignCenter)
         label2.setGeometry(QRect(0, 400, 150, 28))
 
-        self.btn2 = QPushButton(widget1)
+        self.btn2 = QPushButton(self.widget1)
         self.btn2.setObjectName('Start Calculation')
         self.btn2.setText('Start Calculation')
         self.btn2.setGeometry(QRect(0, 430, 111, 28))
-        self.btn2.clicked.connect(self.open_dir_dialog)
+        self.btn2.clicked.connect(self.initialization_calculation)
         # layout1.addWidget(self.btn4_2)
 
-        self.label2 = QLabel(self)
+        self.label2 = QLabel(self.widget1)
         self.label2.setObjectName('Info')
         self.label2.setText('Info')
         self.label2.setStyleSheet("border: 1px solid black;")
         self.label2.setGeometry(QRect(125, 430, 300, 28))
 
-        self.btn3 = QPushButton(widget1)
+        self.btn3 = QPushButton(self.widget1)
         self.btn3.setObjectName('Show Camera Poses')
         self.btn3.setText('Show Camera Poses')
         self.btn3.setGeometry(QRect(450, 430, 180, 28))
-        self.btn3.clicked.connect(self.open_dir_dialog)
+        self.btn3.clicked.connect(self.showCameras)
 
-        label3 = QLabel(widget1)
+        label3 = QLabel(self.widget1)
         label3.setText('Select one Master Camera')
-        label3.setGeometry(QRect(0, 460, 300, 28))
+        label3.setGeometry(QRect(0, 460, 200, 28))
 
-        label4 = QLabel(widget1)
+        self.gridLayoutWidget1 = QWidget(self)
+        self.gridLayoutWidget1.setGeometry(QRect(200, 460, 700, 28))
+        self.gridLayoutWidget1.setObjectName("gridLayoutWidget")
+        self.gridLayout1 = QGridLayout(self.gridLayoutWidget1)
+        self.gridLayout1.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout1.setObjectName("gridLayout")
+
+        label4 = QLabel(self.widget1)
         label4.setText('Bundle Adjustment')
         label4.setFont(QFont("Times", 10, QFont.Bold))
         # label2.setAlignment(Qt.AlignCenter)
         label4.setGeometry(QRect(0, 500, 180, 28))
 
-        self.btn3 = QPushButton(widget1)
+        self.btn3 = QPushButton(self.widget1)
         self.btn3.setObjectName('Start Calculation')
         self.btn3.setText('Start Calculation')
         self.btn3.setGeometry(QRect(0, 540, 111, 28))
-        self.btn3.clicked.connect(self.open_dir_dialog)
+        self.btn3.clicked.connect(self.bundleAdjustment_calculation)
         # layout1.addWidget(self.btn4_2)
 
-        self.label3 = QLabel(self)
+        self.label3 = QLabel(self.widget1)
         self.label3.setObjectName('Info')
         self.label3.setText('Info')
         self.label3.setStyleSheet("border: 1px solid black;")
         self.label3.setGeometry(QRect(125, 540, 300, 28))
 
-        self.btn4 = QPushButton(widget1)
+        self.btn4 = QPushButton(self.widget1)
         self.btn4.setObjectName('Show Final Camera Poses')
         self.btn4.setText('Show Final Camera Poses')
         self.btn4.setGeometry(QRect(450, 540, 200, 28))
@@ -133,9 +147,9 @@ class Operation(QScrollArea):
 
         # for index in range(100):
         #     layout1.addWidget(QLabel('Label %02d' % index))
-        self.setWidget(widget1)
+        self.setWidget(self.widget1)
         self.setWidgetResizable(True)
-        widget1.setLayout(layout1)
+        self.widget1.setLayout(layout1)
         # self.setWidgetResizable(True)
         # scrollContent = QWidget(self)
         # scrollLayout = QVBoxLayout(scrollContent)
@@ -340,42 +354,89 @@ class Operation(QScrollArea):
             if child.widget():
                 child.widget().deleteLater()
 
+    def showCameras(self):
+        v = Interactive_Extrinsic(self.folder_path)
+
+    def initialization_calculation(self):
+        # h = handEye(self.folder_path)
+        # h.initiate_workspace()
+        # h.calc_camPose_param(limit_images=6, limit_board_image=6, calculate_handeye=True, check_cluster=False)
+        # h.export_handEye_Camera()
+        for path, subdirs, files in os.walk((self.folder_path)):
+            if path == self.folder_path:
+                if 'workspace.pkl' in files:
+                    workspace_path = os.path.join(self.folder_path, 'workspace.pkl')
+                    self.workspace = pickle.load(open( workspace_path, "rb"))
+        for idx, cam in enumerate(self.workspace.names.camera):
+            self.camera_checkBox[cam] = QCheckBox(text=cam)
+            self.camera_checkBox[cam].stateChanged.connect(partial(self.selectedCamera, cam))
+            self.camera_checkBox[cam].setGeometry(QRect(0, 650, 30, 28))
+            self.gridLayout1.addWidget(self.camera_checkBox[cam], 1, idx)
+
+    def createbundle_dir(self):
+        os.chdir(self.folder_path)
+        mycwd = os.getcwd()
+        os.chdir("..")
+        mycwd1 = os.getcwd()
+        dataset = mycwd.split(mycwd1)
+        dataset_test = dataset[1][1:]+'_test'
+        self.test_dir = os.path.join(mycwd1, dataset_test)
+        os.mkdir(self.test_dir)
+        print("test path: ", self.test_dir)
+
+        # copy boards.yaml
+        org_file = os.path.join(self.folder_path, 'boards.yaml')
+        new_file = os.path.join(self.test_dir, 'boards.yaml')
+        shutil.copy(org_file, new_file)
+
+        # copy initial_calibration_M
+        file = 'initial_calibration_M' + self.masterCamera + '.json'
+        org_file1 = os.path.join(self.folder_path, file)
+        new_file1 = os.path.join(self.test_dir, file)
+        shutil.copy(org_file1, new_file1)
+
+        # select first 20 images of each camera
+        image_name = self.workspace.names.image[0:20]
+        for cam_idx, cam in enumerate(self.workspace.names.camera):
+            org_cam_path = os.path.join(self.folder_path, cam)
+            new_cam_path = os.path.join(self.test_dir, cam)
+            os.mkdir(new_cam_path)
+            for img in image_name:
+                org_img_file = os.path.join(org_cam_path, img)
+                new_img_file = os.path.join(new_cam_path, img)
+                shutil.copy(org_img_file, new_img_file)
+
+        pass
+
+    def bundleAdjustment_calculation(self):
+        if self.masterCamera == None:
+            self.label3.setText('Select one Master Camera')
+        else:
+            self.createbundle_dir()
+
+
+    def selectedCamera(self, cam):
+        state = self.camera_checkBox[cam].isChecked()
+        if state:
+            self.masterCamera = cam
+        else:
+            self.masterCamera = None
+        print('Master-Camera: ', self.masterCamera)
+        pass
+
     def open_dir_dialog(self):
         dialog = QFileDialog()
         self.folder_path = dialog.getExistingDirectory(None, "Select Folder")
         self.workspace_load()
-        self.set_viewer(gridLayout=self.gridLayout1)
-        return self.folder_path
+
 
     def workspace_load(self):
         for path, subdirs, files in os.walk((self.folder_path)):
             if path == self.folder_path:
-                if "workspace.pkl" not in files:
-                    print('No "workspace.pkl" file found; Run workspace_export.py')
+                if 'boards.yaml' not in files:
+                    self.label1.setText('No boards.yaml file found')
                 else:
-                    workspace_path = os.path.join(self.folder_path, [f for f in files if f == "workspace.pkl"][0])
-                    self.workspace = pickle.load(open( workspace_path, "rb"))
-                    self.cameras = self.workspace.names.camera
-                    self.images = self.workspace.names.image
-                    self.boards = self.workspace.names.board
-                    self.last_pose_count = len(self.images)
-                if 'calibration.detections.pkl' not in files:
-                    print('No "calibration.detections.pkl" file found')
-                else:
-                    pickle_file = pickle.load(open(os.path.join(self.folder_path, 'calibration.detections.pkl'), 'rb'))
-                    self.detectedPoints = pickle_file.detected_points
-                if "calibration.json" not in files:
-                    print('No "calibration.json" file found')
-                else:
-                    intrinsic_path = os.path.join(self.folder_path, 'calibration.json')
-                    self.intrinsic = json.load(open(intrinsic_path))
-                if "handEyeCamera.json" not in files:
-                    print('No "handEyeCamera.json" file found; Run main4 of handEye_check.py')
-                else:
-                    handEye_path = os.path.join(self.folder_path, "handEyeCamera.json")
-                    self.handEyeCamera = json.load(open(handEye_path))
-
-        pass
+                    self.label1.setText(self.folder_path)
 
     def loadNext(self):
         if self.last_pose_count >= self.pose_count >= 0:

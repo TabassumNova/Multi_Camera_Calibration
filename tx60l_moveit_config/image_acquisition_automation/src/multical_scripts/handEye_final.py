@@ -249,7 +249,7 @@ class handEye():
         pass
 
     # @jit(target_backend='cuda')
-    def handEye_table(self, master_cam=0, limit_image=2, limit_board_image=2, calculate_handeye=True, check_cluster=True):
+    def handEye_table(self, master_cam=0, limit_image=6, limit_board_image=6, calculate_handeye=True, check_cluster=False):
         '''
         handEye for Master_cam to Slave_cam
         :param limit_image: number of image allowed for hand eye pair
@@ -456,7 +456,7 @@ class handEye():
         b = Interactive_Extrinsic_Board(self.calibObj_mean, self.workspace.names.board)
         pass
 
-    def calc_camPose_param(self, limit_images, limit_board_image, calculate_handeye, check_cluster):
+    def calc_camPose_param(self, limit_images=6, limit_board_image=6, calculate_handeye=True, check_cluster=False):
         cameras = self.workspace.names.camera
         # cameras = ['08320217']
         for idx, master_cam in enumerate(cameras):
@@ -647,7 +647,7 @@ def main1(base_path, limit_image=10):
     h.viewPlanSimple()
 
 
-def main4(base_path, limit_images, limit_board_image, calculate_handeye, check_cluster):
+def main4(base_path, limit_images=6, limit_board_image=6, calculate_handeye=True, check_cluster=False):
 
     h = handEye(base_path)
     h.initiate_workspace()
@@ -657,5 +657,4 @@ def main4(base_path, limit_images, limit_board_image, calculate_handeye, check_c
 if __name__ == '__main__':
     # main1(base_path, limit_image=10)
     main4(base_path, limit_images=6, limit_board_image=6, calculate_handeye=True, check_cluster=False)
-
     pass

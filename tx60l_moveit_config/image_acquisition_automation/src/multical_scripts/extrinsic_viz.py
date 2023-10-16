@@ -19,7 +19,6 @@ from scipy import stats
 import pandas as pd
 import plotly.express as px
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
 '''
 for camera extrinsic visualization
 '''
@@ -251,9 +250,9 @@ class Interactive_Extrinsic():
                     if file == "handEyeCamera.json":
                         handEye_path = os.path.join(self.base_path, "handEyeCamera.json")
                         self.handEye = json.load(open(handEye_path))
-                    if file == "campose2.json":
-                        campose2_path = os.path.join(self.base_path, "campose2.json")
-                        self.campose2 = json.load(open(campose2_path))
+                    # if file == "campose2.json":
+                    #     campose2_path = os.path.join(self.base_path, "campose2.json")
+                    #     self.campose2 = json.load(open(campose2_path))
                     if file == 'meanCameras.json':
                         meanCam_path = os.path.join(self.base_path, 'meanCameras.json')
                         self.mean_cameras = json.load(open(meanCam_path))
@@ -262,16 +261,6 @@ class Interactive_Extrinsic():
 
 
 if __name__ == '__main__':
-    # argument : the minimum/maximum value of x, y, z
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
     v = Interactive_Extrinsic(base_path)
 
-    # visualizer = CameraPoseVisualizer([-2000, 2000], [-2000, 2000], [-2000, 2000])
-    #
-    # # argument : extrinsic matrix, color, scaled focal length(z-axis length of frame body of camera
-    # all_fig = []
-    # data = visualizer.extrinsic2pyramid(np.eye(4), 'c', focal_len_scaled=0.1, aspect_ratio=0.3)
-    # all_fig.append(data)
-    # final_layout = go.Figure(data= all_fig)
-    # # final_layout.add_trace(all_fig)
-    # final_layout.show()
-    # visualizer.show()
