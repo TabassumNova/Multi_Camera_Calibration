@@ -188,7 +188,8 @@ For this work, I edited some parts of the original implemetation of [Multical](h
     - [Bundle Adjustment](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/optimization/calibration.py)
 
 ## HandEye Initialization
-
+- Tutorial
+- Package
 
 # Environments
 - python 3.10
