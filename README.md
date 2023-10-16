@@ -216,7 +216,13 @@ ModuleNotFoundError: No module named 'src'
 **Solution: ** VScode creates problem. Use PyCharm ('multicalenv')
 
 # Visualization
-## Paraview
+## PyQt User Interface
+This GUI automates the whole calibration process also shows results of the calibration
+<p align="center">
+  <img src="Images/gui1.png" width="700"/>
+ </p>
+ 
+## Paraview guide
 - https://www.youtube.com/watch?v=FTUBpqkC3Ss
 - To add python shell in paraview application: view > Python shell
 - Python program can be run from command prompt: 
@@ -224,12 +230,7 @@ ModuleNotFoundError: No module named 'src'
     - From cmd, run `pvpython.exe`
     - for loading imagefile `reader = OpenDataFile("D:/path_to_the_folder/group01_img1.png")`
     - Or write a python script and run from cmd `pvpython.exe D:/path_to_python_script/parav3.py`
-
-## pyvistaqt
-- https://qtdocs.pyvista.org/usage.html
-- https://www.pythonguis.com/faq/adding-images-to-pyqt5-applications/
-- Convert pyQt UI to python: command on shell: pyuic5.exe input.ui -o output.py
-
+      
 # Issues
 ## OpenCV Issues
 - For aruco, PyQT related issues
