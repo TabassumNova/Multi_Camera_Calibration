@@ -397,7 +397,7 @@ def initialise_poses_new(pose_table, camera_poses=None, board_poses=None, master
     info("Camera initialisation vs. supplied calibration")
     report_poses("camera", camera_poses, camera.poses)
     camera = Table.create(
-      poses=camera_poses, 
+      poses=camera_poses,
       valid=np.ones(camera_poses.shape[0], dtype=np.bool)
     )
     

@@ -5,21 +5,16 @@
 # https://www.geeksforgeeks.org/pyqt5-qtabwidget/
 
 import os.path
-import pickle
 
-from another_Window import *
-import src.multical.workspace as ws
-from src.pyqt_final2_tab2 import *
 from calibrtaion_tab2 import *
 # INFO: QtInteractor can not work with PyQt6
 # PyQt5
-from PyQt5.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize, QRect
-from PyQt5.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen, QColor
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
-    QGraphicsItem, QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsLineItem, QGraphicsPolygonItem, QTableWidget, \
+from PyQt5.QtCore import Qt, QRect
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import QFileDialog, QTableWidget, \
     QTableWidgetItem
-from PyQt5.QtWidgets import QApplication, QMainWindow, QSpinBox, QWidget, QPushButton, QTextEdit, QVBoxLayout, \
-    QHBoxLayout, QGridLayout, QLineEdit, QLabel, QTabWidget, QScrollArea, QTextBrowser, QCheckBox
+from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, \
+    QGridLayout, QLabel, QTabWidget
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 
@@ -34,8 +29,8 @@ from PyQt5.QtGui import *
 # from PyQt6.QtGui import *
 
 from src.multical.transform.rtvec import *
-from src.multical_scripts.board_angle import *
-from src.multical_scripts.handEye_viz import *
+from tx60l_moveit_config.image_acquisition_automation.src.multical_scripts.board_angle import *
+from tx60l_moveit_config.image_acquisition_automation.src.multical_scripts.handEye_viz import *
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
     import numpy as np

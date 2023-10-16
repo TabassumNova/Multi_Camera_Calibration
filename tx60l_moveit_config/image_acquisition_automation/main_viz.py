@@ -4,23 +4,10 @@
 # https://www.pythonguis.com/tutorials/pyqt-layouts/
 # https://www.geeksforgeeks.org/pyqt5-qtabwidget/
 
-import os.path
-from pyqtViz.cameraWindow import *
 # from calibrtaion_tab2 import *
 # from src.aravis_show_image import *
 # INFO: QtInteractor can not work with PyQt6
 # PyQt5
-from PyQt5.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize, QRect
-from PyQt5.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen, QColor
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
-    QGraphicsItem, QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsLineItem, QGraphicsPolygonItem, QTableWidget, \
-    QTableWidgetItem
-from PyQt5.QtWidgets import QApplication, QMainWindow, QSpinBox, QWidget, QPushButton, QTextEdit, QVBoxLayout, \
-    QHBoxLayout, QGridLayout, QLineEdit, QLabel, QTabWidget, QScrollArea, QTextBrowser, QCheckBox
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from src.multical_scripts.board_angle import *
-from src.multical_scripts.handEye_viz import *
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
     import numpy as np
@@ -37,10 +24,8 @@ except ImportError:
     qimage2ndarray = None
 
 from pyqtViz.operation_tab import *
-from pyqtViz.overview_tab import *
 from pyqtViz.calibration_tab import *
 # from pyqtViz.viewPlan_tab import *
-import cv2
 
 # Creating the main window
 class App(QMainWindow):

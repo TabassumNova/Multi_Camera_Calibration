@@ -1,12 +1,12 @@
 import rospy
 from src.box_attacher_3 import *
 
-from src.multical_scripts.handEye_check import *
+from tx60l_moveit_config.image_acquisition_automation.src.multical_scripts.handEye_check import *
 from src.data_robot_mover2 import *
 from src.aravis_image_acquisition import *
 from src.helpers import make_directory
 import os
-from structs.struct import struct, to_dicts, transpose_lists
+from structs.struct import to_dicts
 
 base_path = "/home/raptor/tx60_moveit/src/tx60l_moveit_config/python_program/image/handEye_gripper/08320220"
 

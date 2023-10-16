@@ -22,7 +22,7 @@ from sklearn.cluster import MeanShift
 
 base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
 
-class handEye():
+class handEye1():
     def __init__(self, base_path, master_cam=0, master_board=0):
         self.base_path = base_path
         self.master_cam = master_cam
@@ -732,7 +732,7 @@ class handEye():
                     name = cam + '_to_' + master_cam
                 cam_pose[name] = {}
                 if cam in self.cam_pose[master_cam]:
-                    p = np.array(self.cam_pose[master_cam][cam]['extrinsic'])
+                    p = np.linalg.inv(self.cam_pose[master_cam][cam]['extrinsic'])
                     R = matrix.rotation(p).tolist()
                     T = matrix.translation(p).tolist()
                     cam_pose[name]['R'] = R

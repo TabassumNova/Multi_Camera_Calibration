@@ -20,7 +20,6 @@ import pandas as pd
 from src.multical_scripts.extrinsic_viz_board import *
 from sklearn.cluster import MeanShift
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
 
 class handEye():
     def __init__(self, base_path, master_cam=0, master_board=0):
@@ -453,7 +452,7 @@ class handEye():
                     self.calibObj_mean[b]['group'] = [rtvec.to_matrix(a[idx]) for idx,g in enumerate(a)]
 
         # For drawing boards
-        b = Interactive_Extrinsic_Board(self.calibObj_mean, self.workspace.names.board)
+        # b = Interactive_Extrinsic_Board(self.calibObj_mean, self.workspace.names.board)
         pass
 
     def calc_camPose_param(self, limit_images=6, limit_board_image=6, calculate_handeye=True, check_cluster=False):
@@ -631,7 +630,7 @@ class handEye():
         with open(filename, "w") as outfile:
             outfile.write(json_object)
         pass
-        v = Interactive_Extrinsic(base_path)
+        # v = Interactive_Extrinsic(self.base_path)
 
 
 def main1(base_path, limit_image=10):
@@ -654,7 +653,8 @@ def main4(base_path, limit_images=6, limit_board_image=6, calculate_handeye=True
     h.calc_camPose_param(limit_images, limit_board_image, calculate_handeye, check_cluster)
     h.export_handEye_Camera()
 
-if __name__ == '__main__':
-    # main1(base_path, limit_image=10)
-    main4(base_path, limit_images=6, limit_board_image=6, calculate_handeye=True, check_cluster=False)
-    pass
+# if __name__ == '__main__':
+#     base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
+#     # main1(base_path, limit_image=10)
+#     main4(base_path, limit_images=6, limit_board_image=6, calculate_handeye=True, check_cluster=False)
+#     pass
