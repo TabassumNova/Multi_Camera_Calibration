@@ -201,9 +201,11 @@ For this work, I edited some parts of the original implemetation of [Multical](h
 - pip install scikit-learn
 - pip install openpyxl
 - pip install numpy==1.23.4
-- pip install mayavi
 - pip install matplotlib==3.1.0
 - pip install opencv-contrib-python==4.6.0.66
+
+Or, one can directly use the virtual environment [venv](https://github.com/TabassumNova/Multi_Camera_Calibration/tree/main/venv)
+
 
 # Bugs
 - Camera_poses Output from handeye_check.py 'SlaveCam_to_MasterCam'. Multical output 'MasterCam_to_SLaveCam'. Fix handeye_check.py output pattern.
