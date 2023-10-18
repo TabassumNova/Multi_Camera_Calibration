@@ -15,7 +15,7 @@ from src.multical.transform.rtvec import *
 import pickle
 from src.multical.transform import common, rtvec
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41_test"
+
 '''
 Single calibration.json visualization
 '''
@@ -29,10 +29,10 @@ class Interactive_calibration():
         self.campose2 = None
         self.camera_pose_final = {}
         self.camera_pose_init = {}
-        # self.load_files()
+        self.load_files()
         self.camera_color = {}
-        # self.set_Cam_color()
-        # self.draw_cameras()
+        self.set_Cam_color()
+        self.draw_cameras()
         pass
 
     def set_Cam_color(self):
@@ -45,14 +45,14 @@ class Interactive_calibration():
         final_layout = go.Figure()
 
         for cam, pose in self.camera_pose_final.items():
-            data = visualizer.extrinsic2pyramid(pose, color=self.camera_color[cam],
-                                                     focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False,
-                                                     hover_template=cam+'_final')
+            # data = visualizer.extrinsic2pyramid(self.camera_pose_final[cam], color='green',
+            #                                          focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False,
+            #                                          hover_template=cam+'_final')
 
-            data1 = visualizer.extrinsic2pyramid(self.camera_pose_init[cam], color=self.camera_color[cam],
+            data1 = visualizer.extrinsic2pyramid(self.camera_pose_init[cam], color='blue',
                                                 focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False,
                                                 hover_template=cam+'_init')
-            final_layout.add_trace(data)
+            # final_layout.add_trace(data)
             final_layout.add_trace(data1)
         final_layout.show()
         pass
@@ -61,14 +61,20 @@ class Interactive_calibration():
         # workspace, handEye, campose2 = None, None, None
         for path, subdirs, files in os.walk((self.base_path)):
             if path == self.base_path:
-                for file in files:
-                    # if "initial_calibration_M" in file:
-                    if file == "calibration.json":
-                        calib_path = os.path.join(self.base_path, "calibration.json")
-                        self.load_campose(calib_path, calib_type='final')
-                    if file == "Calibration_handeye.json":
-                        init_calib_path = os.path.join(self.base_path, "Calibration_handeye.json")
-                        self.load_campose(init_calib_path, calib_type='initial')
+                for f in files:
+                    if 'initial_calibration_M' in f:
+                        mCam0 = f.split('initial_calibration_M')[1]
+                        mCam = mCam0.split('.json')[0]
+                        final_calib = 'M' + mCam + '.json'
+                        init_calib = 'initial_calibration_M' + mCam + '.json'
+                        # self.masterCamera = mCam
+                        # if "initial_calibration_M" in file:
+                        if final_calib in files:
+                            calib_path = os.path.join(self.base_path, final_calib)
+                            self.load_campose(calib_path, calib_type='final')
+                        if init_calib in files:
+                            init_calib_path = os.path.join(self.base_path, init_calib)
+                            self.load_campose(init_calib_path, calib_type='initial')
 
 
     def load_campose(self, path, calib_type):
@@ -83,19 +89,19 @@ class Interactive_calibration():
             t = np.array(calib['camera_poses'][k]['T'])
             if calib_type == 'final':
                 # the final pose from multical masterCam_wrto_slaveCam
-                self.camera_pose_final[cam] = np.linalg.inv(matrix.join(R, t))
+                self.camera_pose_final[cam] = matrix.join(R, t)
                 # self.camera_pose_final[cam] = (matrix.join(R, t))
             if calib_type == 'initial':
                 # the pose from hand-eye calibration slaveCam_wrto_masterCam
                 self.camera_pose_init[cam] = matrix.join(R, t)
 
-        self.set_Cam_color()
+        # self.set_Cam_color()
         pass
 
 
 
 if __name__ == '__main__':
-    # argument : the minimum/maximum value of x, y, z
+    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V41_test"
     v = Interactive_calibration(base_path)
 
 

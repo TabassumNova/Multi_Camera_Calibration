@@ -28,6 +28,7 @@ from src.multical_scripts.board_angle import *
 from src.multical_scripts.handEye_final import *
 from src.multical_scripts.extrinsic_viz import *
 from src.multical_scripts.camcalib_calibrate import *
+from src.multical_scripts.singleCalib_viz import *
 import shutil
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
@@ -53,6 +54,7 @@ class Operation(QScrollArea):
         self.camera_checkBox = {}
         self.masterCamera = None
         self.test_dir = None
+        self.final_calibration = None
 
         self.widget1 = QWidget()
         layout1 = QGridLayout(self.widget1)
@@ -140,7 +142,7 @@ class Operation(QScrollArea):
         self.btn4.setObjectName('Show Final Camera Poses')
         self.btn4.setText('Show Final Camera Poses')
         self.btn4.setGeometry(QRect(450, 540, 200, 28))
-        self.btn4.clicked.connect(self.open_dir_dialog)
+        self.btn4.clicked.connect(self.finalCam_pose)
 
         # label4 = QLabel(widget1)
         # label4.setText('Select one Master Camera')
@@ -258,21 +260,30 @@ class Operation(QScrollArea):
         v = Interactive_Extrinsic(self.folder_path)
 
     def initialization_calculation(self):
-        h = handEye(self.folder_path)
-        h.initiate_workspace()
-        h.calc_camPose_param(limit_images=6, limit_board_image=6, calculate_handeye=True, check_cluster=True)
-        h.export_handEye_Camera()
-        for path, subdirs, files in os.walk((self.folder_path)):
-            if path == self.folder_path:
-                if 'workspace.pkl' in files:
-                    workspace_path = os.path.join(self.folder_path, 'workspace.pkl')
-                    self.workspace = pickle.load(open( workspace_path, "rb"))
-        for idx, cam in enumerate(self.workspace.names.camera):
-            self.camera_checkBox[cam] = QCheckBox(text=cam)
-            self.camera_checkBox[cam].stateChanged.connect(partial(self.selectedCamera, cam))
-            self.camera_checkBox[cam].setGeometry(QRect(0, 650, 30, 28))
-            self.gridLayout1.addWidget(self.camera_checkBox[cam], 1, idx)
-        self.label2.setText('Initialization Done')
+        if os.path.isfile(os.path.join(self.folder_path, 'workspace.pkl')) and os.path.isfile(os.path.join(self.folder_path, 'meanCameras.json')):
+            self.label2.setText('Load previous Initialization')
+            workspace_path = os.path.join(self.folder_path, 'workspace.pkl')
+            self.workspace = pickle.load(open(workspace_path, "rb"))
+
+        else:
+            h = handEye(self.folder_path)
+            h.initiate_workspace()
+            h.calc_camPose_param(limit_images=6, limit_board_image=6, calculate_handeye=True, check_cluster=True)
+            h.export_handEye_Camera()
+            for path, subdirs, files in os.walk((self.folder_path)):
+                if path == self.folder_path:
+                    if 'workspace.pkl' in files:
+                        workspace_path = os.path.join(self.folder_path, 'workspace.pkl')
+                        self.workspace = pickle.load(open( workspace_path, "rb"))
+            self.label2.setText('Initialization Done')
+
+        if self.workspace:
+            for idx, cam in enumerate(self.workspace.names.camera):
+                self.camera_checkBox[cam] = QCheckBox(text=cam)
+                self.camera_checkBox[cam].stateChanged.connect(partial(self.selectedCamera, cam))
+                self.camera_checkBox[cam].setGeometry(QRect(0, 650, 30, 28))
+                self.gridLayout1.addWidget(self.camera_checkBox[cam], 1, idx)
+
 
     def createbundle_dir(self):
         os.chdir(self.folder_path)
@@ -282,31 +293,47 @@ class Operation(QScrollArea):
         dataset = mycwd.split(mycwd1)
         dataset_test = dataset[1][1:]+'_test'
         self.test_dir = os.path.join(mycwd1, dataset_test)
-        os.mkdir(self.test_dir)
-        print("test path: ", self.test_dir)
+        if os.path.exists(self.test_dir):
+            for path, subdirs, files in os.walk((self.test_dir)):
+                if path == self.test_dir:
+                    for f in files:
+                        if 'initial_calibration_M' in f:
+                            mCam0 = f.split('initial_calibration_M')[1]
+                            mCam = mCam0.split('.json')[0]
+                            s = 'M' + mCam + '.pkl'
+                            self.masterCamera = mCam
+                            if s in files:
+                                self.final_calibration = pickle.load(open(os.path.join(self.test_dir, s), "rb"))
+                                self.workspace = None
+                            break
 
-        # copy boards.yaml
-        org_file = os.path.join(self.folder_path, 'boards.yaml')
-        new_file = os.path.join(self.test_dir, 'boards.yaml')
-        shutil.copy(org_file, new_file)
+        else:
+            os.mkdir(self.test_dir)
+            print("test path: ", self.test_dir)
+            # copy boards.yaml
+            org_file = os.path.join(self.folder_path, 'boards.yaml')
+            new_file = os.path.join(self.test_dir, 'boards.yaml')
+            shutil.copy(org_file, new_file)
+            # copy initial_calibration_M
+            file = 'initial_calibration_M' + self.masterCamera + '.json'
+            org_file1 = os.path.join(self.folder_path, file)
+            new_file1 = os.path.join(self.test_dir, file)
+            shutil.copy(org_file1, new_file1)
+            # select first 20 images of each camera
+            image_name = self.workspace.names.image[0:20]
+            for cam_idx, cam in enumerate(self.workspace.names.camera):
+                org_cam_path = os.path.join(self.folder_path, cam)
+                new_cam_path = os.path.join(self.test_dir, cam)
+                os.mkdir(new_cam_path)
+                for img in image_name:
+                    org_img_file = os.path.join(org_cam_path, img)
+                    new_img_file = os.path.join(new_cam_path, img)
+                    shutil.copy(org_img_file, new_img_file)
 
-        # copy initial_calibration_M
-        file = 'initial_calibration_M' + self.masterCamera + '.json'
-        org_file1 = os.path.join(self.folder_path, file)
-        new_file1 = os.path.join(self.test_dir, file)
-        shutil.copy(org_file1, new_file1)
+            pass
 
-        # select first 20 images of each camera
-        image_name = self.workspace.names.image[0:20]
-        for cam_idx, cam in enumerate(self.workspace.names.camera):
-            org_cam_path = os.path.join(self.folder_path, cam)
-            new_cam_path = os.path.join(self.test_dir, cam)
-            os.mkdir(new_cam_path)
-            for img in image_name:
-                org_img_file = os.path.join(org_cam_path, img)
-                new_img_file = os.path.join(new_cam_path, img)
-                shutil.copy(org_img_file, new_img_file)
-
+    def finalCam_pose(self):
+        v = Interactive_calibration(self.test_dir)
         pass
 
     def bundleAdjustment_calculation(self):
@@ -314,11 +341,19 @@ class Operation(QScrollArea):
             self.label3.setText('Select one Master Camera')
         else:
             self.createbundle_dir()
-            file = 'initial_calibration_M' + self.masterCamera + '.json'
-            intrinsic_path = os.path.join(self.test_dir, file)
-            final_calibration(base_path=self.test_dir, master_cam=self.masterCamera, intrinsic_path=intrinsic_path)
-            pass
-        self.label3.setText('Bundle Adjustment Done')
+            if self.final_calibration:
+                self.label3.setText('Load previous Calculation for '+str(self.masterCamera))
+            else:
+                file = 'initial_calibration_M' + self.masterCamera + '.json'
+                intrinsic_path = os.path.join(self.test_dir, file)
+                final_calibration(base_path=self.test_dir, master_cam=self.masterCamera, intrinsic_path=intrinsic_path)
+                s = 'M'+self.masterCamera+'.pkl'
+                if os.path.exists(os.path.join(self.test_dir, s)):
+                    self.final_calibration = pickle.load(open(os.path.join(self.test_dir, s), "rb"))
+                    self.workspace = None
+                    self.label3.setText('Bundle Adjustment Done for Master Camera-'+str(self.masterCamera))
+                pass
+
 
 
     def selectedCamera(self, cam):
