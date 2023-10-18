@@ -65,7 +65,7 @@ class Interactive_calibration():
                     if 'initial_calibration_M' in f:
                         mCam0 = f.split('initial_calibration_M')[1]
                         mCam = mCam0.split('.json')[0]
-                        final_calib = 'M' + mCam + '.json'
+                        final_calib = 'calibration_' + mCam + '.json'
                         init_calib = 'initial_calibration_M' + mCam + '.json'
                         # self.masterCamera = mCam
                         # if "initial_calibration_M" in file:
@@ -89,11 +89,11 @@ class Interactive_calibration():
             t = np.array(calib['camera_poses'][k]['T'])
             if calib_type == 'final':
                 # the final pose from multical masterCam_wrto_slaveCam
-                self.camera_pose_final[cam] = matrix.join(R, t)
+                self.camera_pose_final[cam] = np.linalg.inv(matrix.join(R, t))
                 # self.camera_pose_final[cam] = (matrix.join(R, t))
             if calib_type == 'initial':
                 # the pose from hand-eye calibration slaveCam_wrto_masterCam
-                self.camera_pose_init[cam] = matrix.join(R, t)
+                self.camera_pose_init[cam] = np.linalg.inv(matrix.join(R, t))
 
         # self.set_Cam_color()
         pass

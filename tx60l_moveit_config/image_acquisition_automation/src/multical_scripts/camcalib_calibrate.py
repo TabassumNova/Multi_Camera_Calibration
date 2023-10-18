@@ -60,7 +60,7 @@ def load_workspace_pkl(pkl_path):
 def final_calibration(base_path, master_cam, intrinsic_path):
     # '08320217' , '08320218', '08320220', '08320221', '08320222', '36220113'
     # calib_path = camera_initialization(base_path, cam_name)
-    pathO = args.PathOpts(name='M'+ master_cam, image_path=base_path)
+    pathO = args.PathOpts(name='calibration_'+ master_cam, image_path=base_path)
     cam = args.CameraOpts(intrinsic_error_limit=0.5, calibration=intrinsic_path)
     pose_estimation_method = "solvePnPGeneric" #"solvePnPRansac"
     runt = args.RuntimeOpts(pose_estimation=pose_estimation_method)

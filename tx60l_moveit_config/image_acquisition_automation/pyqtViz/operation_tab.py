@@ -144,9 +144,11 @@ class Operation(QScrollArea):
         self.btn4.setGeometry(QRect(450, 540, 200, 28))
         self.btn4.clicked.connect(self.finalCam_pose)
 
-        # label4 = QLabel(widget1)
-        # label4.setText('Select one Master Camera')
-        # label4.setGeometry(QRect(0, 460, 300, 28))
+        label5 = QLabel(self.widget1)
+        label5.setText('Results')
+        label5.setFont(QFont("Times", 10, QFont.Bold))
+        # label2.setAlignment(Qt.AlignCenter)
+        label5.setGeometry(QRect(0, 580, 180, 28))
 
         # for index in range(100):
         #     layout1.addWidget(QLabel('Label %02d' % index))
@@ -300,7 +302,7 @@ class Operation(QScrollArea):
                         if 'initial_calibration_M' in f:
                             mCam0 = f.split('initial_calibration_M')[1]
                             mCam = mCam0.split('.json')[0]
-                            s = 'M' + mCam + '.pkl'
+                            s = 'calibration_' + mCam + '.pkl'
                             self.masterCamera = mCam
                             if s in files:
                                 self.final_calibration = pickle.load(open(os.path.join(self.test_dir, s), "rb"))
@@ -347,11 +349,11 @@ class Operation(QScrollArea):
                 file = 'initial_calibration_M' + self.masterCamera + '.json'
                 intrinsic_path = os.path.join(self.test_dir, file)
                 final_calibration(base_path=self.test_dir, master_cam=self.masterCamera, intrinsic_path=intrinsic_path)
-                s = 'M'+self.masterCamera+'.pkl'
+                s = 'calibration_'+self.masterCamera+'.pkl'
                 if os.path.exists(os.path.join(self.test_dir, s)):
                     self.final_calibration = pickle.load(open(os.path.join(self.test_dir, s), "rb"))
                     self.workspace = None
-                    self.label3.setText('Bundle Adjustment Done for Master Camera-'+str(self.masterCamera))
+                    self.label3.setText('Bundle Adjustment Done for '+str(self.masterCamera))
                 pass
 
 
