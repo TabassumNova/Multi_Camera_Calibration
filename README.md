@@ -236,7 +236,7 @@ For this work, I edited some parts of the original implemetation of [Multical](h
 ## PyQt User Interface
 This GUI automates the whole calibration process also shows results of the calibration
 <p align="center">
-  <img src="Images/gui1.png" width="650"/>
+  <img src="Images/gui1.png" width="700"/>
   <img src="Images/ex_viz1.gif" width="350"/>
   <img src="Images/ex_viz2.gif" width="350"/>
  </p>
