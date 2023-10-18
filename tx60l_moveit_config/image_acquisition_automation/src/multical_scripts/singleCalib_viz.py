@@ -45,14 +45,14 @@ class Interactive_calibration():
         final_layout = go.Figure()
 
         for cam, pose in self.camera_pose_final.items():
-            # data = visualizer.extrinsic2pyramid(self.camera_pose_final[cam], color='green',
-            #                                          focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False,
-            #                                          hover_template=cam+'_final')
+            data = visualizer.extrinsic2pyramid(self.camera_pose_final[cam], color='green',
+                                                     focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False,
+                                                     hover_template=cam+'_final')
 
             data1 = visualizer.extrinsic2pyramid(self.camera_pose_init[cam], color='blue',
                                                 focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False,
                                                 hover_template=cam+'_init')
-            # final_layout.add_trace(data)
+            final_layout.add_trace(data)
             final_layout.add_trace(data1)
         final_layout.show()
         pass
