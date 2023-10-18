@@ -179,7 +179,7 @@ rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/s
 <a name="cam_calib"></a>
 
 # Camera Calibration Framework
-## Environments
+## Packages
 - python 3.10
 - pip install opencv-contrib-python-headless==4.6.0.66
 - pip install PyQt5
