@@ -238,6 +238,7 @@ This GUI automates the whole calibration process also shows results of the calib
 <p align="center">
   <img src="Images/gui1.png" width="650"/>
   <img src="Images/ex_viz1.gif" width="350"/>
+  <img src="Images/ex_viz2.gif" width="350"/>
  </p>
  
 ## Paraview guide
