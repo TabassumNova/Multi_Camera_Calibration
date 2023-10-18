@@ -19,7 +19,7 @@ This repository is based on the implementation of the multi-camera calibration f
 
 <a name="polygon"></a>
 
-## Polygon design
+# Polygon design
 - Useful link (https://hackaday.io/project/178164-polyhedral-dice-platonic-solids-2d-cad)
 - [Icosahedron CAD File](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/Polygon%20drawings?ref_type=heads)
 
@@ -179,19 +179,7 @@ rosrun camera_automation cam_node.py 42120643 2000000 /home/raptor/tx60_moveit/s
 <a name="cam_calib"></a>
 
 # Camera Calibration Framework
-## Multical++
-For this work, I edited some parts of the original implemetation of [Multical](https://github.com/oliver-batchelor/multical)
-- Edited [package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/multical)
-- Following are some important scripts
-    - [Detection](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/board/common.py)
-    - [Intrinsic](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/camera.py)
-    - [Bundle Adjustment](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/optimization/calibration.py)
-
-## HandEye Initialization
-- [Tutorial](https://github.com/TabassumNova/Multi_Camera_Calibration/tree/main/Tutorials/HandEye_Calibrations_for%20_Cameras)
-- [Package](https://github.com/TabassumNova/Multi_Camera_Calibration/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical_scripts/handEye_final.py)
-
-# Environments
+## Packages
 - python 3.10
 - pip install opencv-contrib-python-headless==4.6.0.66
 - pip install PyQt5
@@ -205,6 +193,39 @@ For this work, I edited some parts of the original implemetation of [Multical](h
 - pip install opencv-contrib-python==4.6.0.66
 
 Or, one can directly use the virtual environment [venv](https://github.com/TabassumNova/Multi_Camera_Calibration/tree/main/venv)
+
+## Usage
+Steps:
+- git clone this_repository
+- Open this project from any IDE
+- One can use this program in two ways:
+    - Manually
+    - Automatically using GUI (This is still underdevelopment)
+- For Manual operation:
+    - Prepare dataset folders as following:
+      ```
+      - root
+        - cam1
+        - cam2
+        .
+        .
+        .
+        - boards.yaml
+      ```
+     - Run handEye_final.py
+## Multical++
+For this work, I edited some parts of the original implemetation of [Multical](https://github.com/oliver-batchelor/multical)
+- Edited [package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/multical)
+- Following are some important scripts
+    - [Detection](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/board/common.py)
+    - [Intrinsic](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/camera.py)
+    - [Bundle Adjustment](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical/optimization/calibration.py)
+
+## HandEye Initialization
+- [Tutorial](https://github.com/TabassumNova/Multi_Camera_Calibration/tree/main/Tutorials/HandEye_Calibrations_for%20_Cameras)
+- [Package](https://github.com/TabassumNova/Multi_Camera_Calibration/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical_scripts/handEye_final.py)
+
+
 
 
 # Bugs
