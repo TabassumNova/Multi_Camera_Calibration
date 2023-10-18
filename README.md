@@ -208,19 +208,15 @@ Or, one can directly use the virtual environment [venv](https://github.com/Tabas
 
 
 # Bugs
-- Camera_poses Output from handeye_check.py 'SlaveCam_to_MasterCam'. Multical output 'MasterCam_to_SLaveCam'. Fix handeye_check.py output pattern.
-- Problem when starting program from Middle PC 
-```
-ModuleNotFoundError: No module named 'src'
-```
-**Solution: ** VScode creates problem. Use PyCharm ('multicalenv')
+- GUI "Show Final Camera Poses" visualization issue
+
 
 # Visualization
 ## PyQt User Interface
 This GUI automates the whole calibration process also shows results of the calibration
 <p align="center">
   <img src="Images/gui1.png" width="650"/>
-  <img src="Images/ex_viz.gif" width="350"/>
+  <img src="Images/ex_viz1.gif" width="350"/>
  </p>
  
 ## Paraview guide
