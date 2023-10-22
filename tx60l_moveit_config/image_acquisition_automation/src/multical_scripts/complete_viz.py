@@ -31,7 +31,7 @@ import plotly.subplots as sp
 '''
 for camera extrinsic visualization
 '''
-class Complete_Viz():
+class Complete_Viz1():
     def __init__(self, base_path):
         self.base_path = base_path
         self.workspace = None

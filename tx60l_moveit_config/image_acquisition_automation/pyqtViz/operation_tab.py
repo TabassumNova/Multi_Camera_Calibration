@@ -4,7 +4,7 @@ from .cameraWindow import *
 # INFO: QtInteractor can not work with PyQt6
 # PyQt5
 from PyQt5.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize, QRect
-from PyQt5.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen, QColor
+from PyQt5.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen, QColor, QMovie
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
     QGraphicsItem, QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsLineItem, QGraphicsPolygonItem, QTableWidget, \
     QTableWidgetItem
@@ -12,6 +12,11 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QSpinBox, QWidget, QPushB
     QHBoxLayout, QGridLayout, QLineEdit, QLabel, QTabWidget, QScrollArea, QTextBrowser, QCheckBox
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+import matplotlib
+matplotlib.use('Qt5Agg')
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
 
 # from PyQt6.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize, QRect
 # from PyQt6.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen, QColor
@@ -29,6 +34,7 @@ from src.multical_scripts.handEye_final import *
 from src.multical_scripts.extrinsic_viz import *
 from src.multical_scripts.camcalib_calibrate import *
 from src.multical_scripts.singleCalib_viz import *
+from src.multical_scripts.final_results import *
 import shutil
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
@@ -60,20 +66,27 @@ class Operation(QScrollArea):
         layout1 = QGridLayout(self.widget1)
         layout1.setAlignment(Qt.AlignTop)
         l1 = QLabel(self.widget1)
-        l1.setPixmap(QPixmap("cover1.png"))
-        l1.setGeometry(QRect(50, 0, 1880, 300))
+        # l1.setPixmap(QPixmap("Icosahedron.gif"))
+        l1.setGeometry(QRect(1600, 0, 300, 300))
         # layout1.addWidget(l1)
+        self.movie = QMovie("Icosahedron.gif")
+        l1.setMovie(self.movie)
+        self.movie.start()
+
+
+
+
 
         label1 = QLabel(self.widget1)
         label1.setText('Select Directory')
         label1.setFont(QFont("Times", 10, QFont.Bold))
         # label1.setAlignment(Qt.AlignCenter)
-        label1.setGeometry(QRect(0, 320, 150, 28))
+        label1.setGeometry(QRect(10, 10, 150, 28))
 
         self.btn1 = QPushButton(self.widget1)
         self.btn1.setObjectName('Directory')
         self.btn1.setText('Directory')
-        self.btn1.setGeometry(QRect(0, 360, 111, 28))
+        self.btn1.setGeometry(QRect(10, 40, 111, 28))
         self.btn1.clicked.connect(self.open_dir_dialog)
         # layout1.addWidget(self.btn4_2)
 
@@ -81,18 +94,18 @@ class Operation(QScrollArea):
         self.label1.setObjectName('Select Directory')
         self.label1.setText('Select Directory')
         self.label1.setStyleSheet("border: 1px solid black;")
-        self.label1.setGeometry(QRect(125, 360, 500, 28))
+        self.label1.setGeometry(QRect(125, 40, 500, 28))
 
         label2 = QLabel(self.widget1)
         label2.setText('Initialization')
         label2.setFont(QFont("Times", 10, QFont.Bold))
         # label2.setAlignment(Qt.AlignCenter)
-        label2.setGeometry(QRect(0, 400, 150, 28))
+        label2.setGeometry(QRect(10, 80, 150, 28))
 
         self.btn2 = QPushButton(self.widget1)
         self.btn2.setObjectName('Start Calculation')
         self.btn2.setText('Start Calculation')
-        self.btn2.setGeometry(QRect(0, 430, 111, 28))
+        self.btn2.setGeometry(QRect(10, 110, 111, 28))
         self.btn2.clicked.connect(self.initialization_calculation)
         # layout1.addWidget(self.btn4_2)
 
@@ -100,20 +113,20 @@ class Operation(QScrollArea):
         self.label2.setObjectName('Info')
         self.label2.setText('Info')
         self.label2.setStyleSheet("border: 1px solid black;")
-        self.label2.setGeometry(QRect(125, 430, 300, 28))
+        self.label2.setGeometry(QRect(125, 110, 300, 28))
 
         self.btn3 = QPushButton(self.widget1)
         self.btn3.setObjectName('Show Camera Poses')
         self.btn3.setText('Show Camera Poses')
-        self.btn3.setGeometry(QRect(450, 430, 180, 28))
+        self.btn3.setGeometry(QRect(450, 110, 180, 28))
         self.btn3.clicked.connect(self.showCameras)
 
         label3 = QLabel(self.widget1)
         label3.setText('Select one Master Camera')
-        label3.setGeometry(QRect(0, 460, 200, 28))
+        label3.setGeometry(QRect(10, 140, 200, 28))
 
         self.gridLayoutWidget1 = QWidget(self)
-        self.gridLayoutWidget1.setGeometry(QRect(200, 460, 700, 28))
+        self.gridLayoutWidget1.setGeometry(QRect(200, 140, 700, 28))
         self.gridLayoutWidget1.setObjectName("gridLayoutWidget")
         self.gridLayout1 = QGridLayout(self.gridLayoutWidget1)
         self.gridLayout1.setContentsMargins(0, 0, 0, 0)
@@ -123,12 +136,12 @@ class Operation(QScrollArea):
         label4.setText('Bundle Adjustment')
         label4.setFont(QFont("Times", 10, QFont.Bold))
         # label2.setAlignment(Qt.AlignCenter)
-        label4.setGeometry(QRect(0, 500, 180, 28))
+        label4.setGeometry(QRect(10, 200, 180, 28))
 
         self.btn3 = QPushButton(self.widget1)
         self.btn3.setObjectName('Start Calculation')
         self.btn3.setText('Start Calculation')
-        self.btn3.setGeometry(QRect(0, 540, 111, 28))
+        self.btn3.setGeometry(QRect(10, 230, 111, 28))
         self.btn3.clicked.connect(self.bundleAdjustment_calculation)
         # layout1.addWidget(self.btn4_2)
 
@@ -136,19 +149,31 @@ class Operation(QScrollArea):
         self.label3.setObjectName('Info')
         self.label3.setText('Info')
         self.label3.setStyleSheet("border: 1px solid black;")
-        self.label3.setGeometry(QRect(125, 540, 300, 28))
+        self.label3.setGeometry(QRect(125, 230, 300, 28))
 
         self.btn4 = QPushButton(self.widget1)
         self.btn4.setObjectName('Show Final Camera Poses')
         self.btn4.setText('Show Final Camera Poses')
-        self.btn4.setGeometry(QRect(450, 540, 200, 28))
+        self.btn4.setGeometry(QRect(450, 230, 180, 28))
         self.btn4.clicked.connect(self.finalCam_pose)
 
         label5 = QLabel(self.widget1)
         label5.setText('Results')
         label5.setFont(QFont("Times", 10, QFont.Bold))
         # label2.setAlignment(Qt.AlignCenter)
-        label5.setGeometry(QRect(0, 580, 180, 28))
+        label5.setGeometry(QRect(10, 270, 180, 28))
+
+        # For plot
+        self.plot1 = QLabel(self.widget1)
+        # plot1.setPixmap(QPixmap("cover1.png"))
+        # self.plot1.setGeometry(QRect(800, 320, 1000, 300))
+        self.plot1.setGeometry(QRect(10, 270, 1000, 700))
+
+        self.plot2 = QLabel(self.widget1)
+        # plot1.setPixmap(QPixmap("cover1.png"))
+        self.plot2.setGeometry(QRect(1010, 270, 1000, 700))
+        # self.plot2.setGeometry(QRect(0, 800, 1000, 600))
+        # label5.setGeometry(QRect(0, 580, 180, 28))
 
         # for index in range(100):
         #     layout1.addWidget(QLabel('Label %02d' % index))
@@ -336,6 +361,13 @@ class Operation(QScrollArea):
 
     def finalCam_pose(self):
         v = Interactive_calibration(self.test_dir)
+
+    def show_results(self):
+        v = Complete_Viz(self.test_dir, self.masterCamera)
+        img_path1 = os.path.join(self.test_dir, 'angleVsview.png')
+        self.plot1.setPixmap(QPixmap(img_path1))
+        img_path2 = os.path.join(self.test_dir, 'pixelError.png')
+        self.plot2.setPixmap(QPixmap(img_path2))
         pass
 
     def bundleAdjustment_calculation(self):
@@ -355,6 +387,7 @@ class Operation(QScrollArea):
                     self.workspace = None
                     self.label3.setText('Bundle Adjustment Done for '+str(self.masterCamera))
                 pass
+        self.show_results()
 
 
 

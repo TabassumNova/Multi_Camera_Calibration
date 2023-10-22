@@ -1,5 +1,5 @@
 import math
-import dash_core_components as dcc
+# import dash_core_components as dcc
 import numpy as np
 from plotly.subplots import make_subplots
 from src.extrinsic2pyramid.camera_pose_visualizer import CameraPoseVisualizer
@@ -10,10 +10,10 @@ import operator
 import matplotlib as mpl
 import cv2
 import random
-# from dash import Dash, dcc, html, Input, Output,callback
+from dash import Dash, dcc, html, Input, Output,callback
 import plotly.io as pio
 import io
-from base64 import b64encode
+# from base64 import b64encode
 from src.multical.transform.rtvec import *
 from matplotlib import pyplot as plt
 # from jupyter_dash import JupyterDash
@@ -32,29 +32,32 @@ import plotly.subplots as sp
 for camera extrinsic visualization
 '''
 class Complete_Viz():
-    def __init__(self, base_path):
+    def __init__(self, base_path, masterCamera):
         self.base_path = base_path
         self.workspace = None
+        self.calibrated_workspace = None
         self.cameras = None
         self.all_images = None
         self.error_dict = {}
         self.boards = None
-        self.reprojected_points = {}
-        self.inlier_mask = {}
+        self.reprojected_points = None
+        self.inlier_mask = None
         self.valid_reprojected_points = {}
         self.valid_image_name = {}
-        self.bundle_image_name = {}
+        self.bundle_image_name = None
         self.valid_inlier_mask = {}
         self.camera_intrinsics = {}
         self.camera_extrinsics = {}
         self.handEye = None
         self.campose2 = None
         self.mean_cameras = None
-        self.load_files()
+        self.masterCamera = masterCamera
+        self.collect_inlier_dataset()
+        # self.load_files()
         self.camera_color = {}
         self.set_Cam_color()
-
-        self.draw_cameras()
+        self.angleVsview()
+        # self.draw_cameras()
         # self.analyze_valid()
         # self.compare_twoDts()
         pass
@@ -424,7 +427,7 @@ class Complete_Viz():
     def set_Cam_color(self):
         # colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'lime', 'pink', 'teal', 'darkcyan', 'violet', 'brown', 'indigo']
         colors = px.colors.sequential.Aggrnyl
-        for idx, cam in enumerate(self.workspace.names.camera):
+        for idx, cam in enumerate(self.calibrated_workspace.names.camera):
             self.camera_color[cam] = colors[idx]
 
 
@@ -437,176 +440,128 @@ class Complete_Viz():
         area = (x_max-x_min)*(y_max-y_min)
         return area
 
-    def draw_cameras(self):
-        df = {}
-        folder = self.base_path[-3:]
-        excel_path = os.path.join(self.base_path, folder + '-M' + '-all' + '-finalInlier.xlsx')
-        writer = pd.ExcelWriter(excel_path, engine="xlsxwriter")
-        visualizer = CameraPoseVisualizer([-2000, 2000], [-2000, 2000], [-2000, 2000])
-        for_boxPlot = {}
-        for cam in self.camera_extrinsics.keys():
-            self.error_dict[cam] = {}
-            for_boxPlot[cam] = {}
-            for_boxPlot[cam]['poses'] = {}
-            for_boxPlot[cam]['all_error'] = {}
-            final_layout = go.Figure()
-            folder = self.base_path[-3:]
-            final_layout.add_annotation(dict(font=dict(color='black', size=20),
-                                             x=0,
-                                             y=0.12,
-                                             showarrow=False,
-                                             text=folder + '-' + cam,
-                                             textangle=0,
-                                             xanchor='left',
-                                             xref="paper",
-                                             yref="paper"))
-            for camS in self.camera_extrinsics[cam].keys():
-                pose = np.linalg.inv(self.camera_extrinsics[cam][camS])
-                d = visualizer.extrinsic2pyramid(pose, color=self.camera_color[camS], focal_len_scaled=0.15, aspect_ratio=0.3,
-                                                 hover_template="mean", name=camS, text=camS)
-                final_layout.add_trace(d)
-                # final_layout.update_traces(text=camS)
-
+    def angleVsview(self):
             ## Draw boards
-            self.error_dict[cam]['num_inliers_point'] = {}
-            self.error_dict[cam]['num_good_inliers_point'] = {}
-            self.error_dict[cam]['num_inlier_poses'] = {}
-            self.error_dict[cam]['num_good_inlier_poses'] = {}
-            self.error_dict[cam]['inlier_point_error'] = {}
-            self.error_dict[cam]['inlier_points'] = {}
-            self.error_dict[cam]['inlier_corners'] = {}
-            self.error_dict[cam]['inlier_point_x'] = {}
-            self.error_dict[cam]['inlier_point_y'] = {}
-            self.error_dict[cam]['inlier_pose_error'] = {}
-            self.error_dict[cam]['inlier_poses'] = {}
-            self.error_dict[cam]['inlier_rvecs'] = {}
-            self.error_dict[cam]['inlier_tvecs'] = {}
-            self.error_dict[cam]['adjusted_points'] = {}
-            self.error_dict[cam]['good_inlier_poses'] = {}
-            self.error_dict[cam]['inlier_poses_std'] = {}
-            self.error_dict[cam]['inlier_poses_mean'] = {}
-            self.error_dict[cam]['inlier_poses_variation'] = {}
-            self.error_dict[cam]['inlier_area'] = {}
-            # if good_pose:
-            self.error_dict[cam]['good_inlier_poses_std'] = {}
-            self.error_dict[cam]['good_inlier_poses_mean'] = {}
-            self.error_dict[cam]['good_inlier_poses_variation'] = {}
-            self.error_dict[cam]['all_poses'] = {}
-            all_error = []
-            for cam_id, camS in enumerate(self.workspace.names.camera):
-                # self.error_dict[cam][camS] = {}
-                point_error = []
-                point_x = []
-                point_y = []
-                points = []
-                corners = []
-                rvecs = []
-                tvecs = []
-                pose_error = []
-                poses = []
-                good_inlier = 0
-                good_pose = 0
-                good_poses = []
-                adjusted_points = []
-                test_pose = []
-                total_area = 0
-                all_poses = []
+        self.error_dict[self.masterCamera] = {}
+        self.error_dict[self.masterCamera]['num_inliers_point'] = {}
+        self.error_dict[self.masterCamera]['num_good_inliers_point'] = {}
+        self.error_dict[self.masterCamera]['num_inlier_poses'] = {}
+        self.error_dict[self.masterCamera]['num_good_inlier_poses'] = {}
+        self.error_dict[self.masterCamera]['inlier_point_error'] = {}
+        self.error_dict[self.masterCamera]['inlier_points'] = {}
+        self.error_dict[self.masterCamera]['inlier_corners'] = {}
+        self.error_dict[self.masterCamera]['inlier_point_x'] = {}
+        self.error_dict[self.masterCamera]['inlier_point_y'] = {}
+        self.error_dict[self.masterCamera]['inlier_pose_error'] = {}
+        self.error_dict[self.masterCamera]['inlier_poses'] = {}
+        self.error_dict[self.masterCamera]['inlier_rvecs'] = {}
+        self.error_dict[self.masterCamera]['inlier_tvecs'] = {}
+        self.error_dict[self.masterCamera]['adjusted_points'] = {}
+        self.error_dict[self.masterCamera]['good_inlier_poses'] = {}
+        self.error_dict[self.masterCamera]['inlier_poses_std'] = {}
+        self.error_dict[self.masterCamera]['inlier_poses_mean'] = {}
+        self.error_dict[self.masterCamera]['inlier_poses_variation'] = {}
+        self.error_dict[self.masterCamera]['inlier_area'] = {}
+        # if good_pose:
+        self.error_dict[self.masterCamera]['good_inlier_poses_std'] = {}
+        self.error_dict[self.masterCamera]['good_inlier_poses_mean'] = {}
+        self.error_dict[self.masterCamera]['good_inlier_poses_variation'] = {}
+        self.error_dict[self.masterCamera]['all_poses'] = {}
+        all_error = []
+        for cam_id, camS in enumerate(self.calibrated_workspace.names.camera):
+            # self.error_dict[cam][camS] = {}
+            point_error = []
+            point_x = []
+            point_y = []
+            points = []
+            corners = []
+            rvecs = []
+            tvecs = []
+            pose_error = []
+            poses = []
+            good_inlier = 0
+            good_pose = 0
+            good_poses = []
+            adjusted_points = []
+            test_pose = []
+            total_area = 0
+            all_poses = []
 
-                for img_id, img in enumerate(self.workspace.names.image):
-                    for board_id, board in enumerate(self.workspace.names.board):
-                        if self.workspace.pose_table.valid[cam_id][img_id][board_id]:
-                            rvec, tvec = rtvec.split(rtvec.from_matrix(self.workspace.pose_table.poses[cam_id][img_id][board_id]))
-                            p = np.linalg.norm([rvec[0], rvec[1]])
-                            all_poses.append(p)
-                        inlier_mask = self.inlier_mask[cam]
-                        ids = []
-                        if img in self.bundle_image_name[cam]:
-                            ids = np.flatnonzero(inlier_mask[cam_id][img_id][board_id])
-                        if len(ids) and self.workspace.pose_table.valid[cam_id][img_id][board_id]:
-                            ## for inliers only
-                            # inlier_mask = self.inlier_mask[cam]
-                            area = self.calculate_area(board_id, ids)
-                            total_area += area
-                            real_points = self.workspace.point_table.points[cam_id][img_id][board_id]
-                            reprojected_points = self.reprojected_points[cam].points[cam_id][img_id][board_id]
-                            adj_pts = self.workspace.boards[board_id].adjusted_points[ids]
-                            adjusted_points.append(adj_pts)
-                            # ids = np.flatnonzero(inlier_mask[cam_id][img_id][board_id])
-                            err0 = real_points - reprojected_points
-                            point_err1 = [np.linalg.norm(err0[i]) for i in ids]
-                            pose_err = np.sqrt(np.square(point_err1).mean())
-                            all_error.append(pose_err)
-                            rvec, tvec = rtvec.split(rtvec.from_matrix(self.workspace.pose_table.poses[cam_id][img_id][board_id]))
-                            rvecs.append(rvec)
-                            tvecs.append(tvec)
-                            pose0 = np.linalg.norm([rvec[0], rvec[1]]) * 180.0 / math.pi
-                            points.extend(real_points[ids])
-                            corners.append(real_points[ids])
-                            point_error.extend(point_err1)
-                            pose_error.append(pose_err)
-                            x = [real_points[i][0] for i in ids]
-                            y = [real_points[i][1] for i in ids]
-                            point_x.extend(x)
-                            point_y.extend(y)
-                            poses.append(pose0)
-                            # if self.workspace.pose_table.valid[cam_id][img_id][board_id]:
-                            if len(ids)>10 and pose_err<1.0:
-                                ## for good inliers
-                                good_inlier += len(ids)
-                                good_pose += 1
-                                board_pose = (self.workspace.pose_table.poses[cam_id][img_id][board_id])
-                                camS_to_camM = (self.camera_extrinsics[cam][camS])
-                                pose = (camS_to_camM @ board_pose)
-                                d = visualizer.extrinsic2Board(pose, color=self.camera_color[camS], focal_len_scaled=0.15,
-                                                                 aspect_ratio=0.3,
-                                                                 hover_template="mean", name=camS)
-                                final_layout.add_trace(d)
-                                good_poses.append(pose0)
-                                test_pose.append(np.linalg.norm([pose[0], pose[1]]) * 180.0 / math.pi)
-                            # else:
-                            #     board_pose = (self.workspace.pose_table.poses[cam_id][img_id][board_id])
-                            #     camS_to_camM = (self.camera_extrinsics[cam][camS])
-                            #     pose = (camS_to_camM @ board_pose)
-                            #     t = np.linalg.norm([pose[0], pose[1]]) * 180.0 / math.pi
-                            #     if t not in test_pose:
-                            #         d = visualizer.extrinsic2Board(pose, color='red',
-                            #                                        focal_len_scaled=0.15,
-                            #                                        aspect_ratio=0.3,
-                            #                                        hover_template="mean", name=camS)
-                            #         final_layout.add_trace(d)
+            for img_id, img in enumerate(self.calibrated_workspace.names.image):
+                for board_id, board in enumerate(self.calibrated_workspace.names.board):
+                    if self.calibrated_workspace.pose_table.valid[cam_id][img_id][board_id]:
+                        rvec, tvec = rtvec.split(rtvec.from_matrix(self.calibrated_workspace.pose_table.poses[cam_id][img_id][board_id]))
+                        p = np.linalg.norm([rvec[0], rvec[1]])
+                        all_poses.append(p)
+                    inlier_mask = self.inlier_mask
+                    ids = []
+                    if img in self.bundle_image_name:
+                        ids = np.flatnonzero(inlier_mask[cam_id][img_id][board_id])
+                    if len(ids) and self.calibrated_workspace.pose_table.valid[cam_id][img_id][board_id]:
+                        ## for inliers only
+                        # inlier_mask = self.inlier_mask[cam]
+                        # area = self.calculate_area(board_id, ids)
+                        # total_area += area
+                        real_points = self.calibrated_workspace.point_table.points[cam_id][img_id][board_id]
+                        reprojected_points = self.reprojected_points.points[cam_id][img_id][board_id]
+                        adj_pts = self.calibrated_workspace.boards[board_id].adjusted_points[ids]
+                        adjusted_points.append(adj_pts)
+                        # ids = np.flatnonzero(inlier_mask[cam_id][img_id][board_id])
+                        err0 = real_points - reprojected_points
+                        point_err1 = [np.linalg.norm(err0[i]) for i in ids]
+                        pose_err = np.sqrt(np.square(point_err1).mean())
+                        all_error.append(pose_err)
+                        rvec, tvec = rtvec.split(rtvec.from_matrix(self.calibrated_workspace.pose_table.poses[cam_id][img_id][board_id]))
+                        rvecs.append(rvec)
+                        tvecs.append(tvec)
+                        pose0 = np.linalg.norm([rvec[0], rvec[1]]) * 180.0 / math.pi
+                        points.extend(real_points[ids])
+                        corners.append(real_points[ids])
+                        point_error.extend(point_err1)
+                        pose_error.append(pose_err)
+                        x = [real_points[i][0] for i in ids]
+                        y = [real_points[i][1] for i in ids]
+                        point_x.extend(x)
+                        point_y.extend(y)
+                        poses.append(pose0)
+                        # if self.workspace.pose_table.valid[cam_id][img_id][board_id]:
+                        if len(ids)>10 and pose_err<1.0:
+                            ## for good inliers
+                            good_inlier += len(ids)
+                            good_pose += 1
+                            good_poses.append(pose0)
 
-                for_boxPlot[cam]['poses'][camS] = all_poses
-                for_boxPlot[cam]['all_error'][camS] = all_error
-                self.error_dict[cam]['num_inliers_point'][camS] = len(point_error)
-                self.error_dict[cam]['num_good_inliers_point'][camS] = good_inlier
-                self.error_dict[cam]['num_inlier_poses'][camS] = len(poses)
-                self.error_dict[cam]['num_good_inlier_poses'][camS] = good_pose
-                self.error_dict[cam]['inlier_point_error'][camS] = point_error
-                self.error_dict[cam]['inlier_points'][camS] = points
-                self.error_dict[cam]['inlier_corners'][camS] = corners
-                self.error_dict[cam]['inlier_point_x'][camS] = point_x
-                self.error_dict[cam]['inlier_point_y'][camS] = point_y
-                self.error_dict[cam]['inlier_pose_error'][camS] = pose_error
-                self.error_dict[cam]['inlier_poses'][camS] = poses
-                self.error_dict[cam]['all_poses'][camS] = all_poses
-                self.error_dict[cam]['adjusted_points'][camS] = adjusted_points
-                self.error_dict[cam]['inlier_rvecs'][camS] = rvecs
-                self.error_dict[cam]['inlier_tvecs'][camS] = tvecs
-                self.error_dict[cam]['good_inlier_poses'][camS] = good_poses
-                self.error_dict[cam]['inlier_poses_std'][camS] = np.std(poses)
-                self.error_dict[cam]['inlier_poses_mean'][camS] = np.mean(poses)
-                if len(poses):
-                    self.error_dict[cam]['inlier_area'][camS] = total_area
-                    self.error_dict[cam]['inlier_poses_variation'][camS] = max(poses) - min(poses)
-                if good_pose:
-                    self.error_dict[cam]['good_inlier_poses_std'][camS] = np.std(good_poses)
-                    self.error_dict[cam]['good_inlier_poses_mean'][camS] = np.mean(good_poses)
-                    self.error_dict[cam]['good_inlier_poses_variation'][camS] = max(good_poses) - min(good_poses)
+            self.error_dict[self.masterCamera]['num_inliers_point'][camS] = len(point_error)
+            self.error_dict[self.masterCamera]['num_good_inliers_point'][camS] = good_inlier
+            self.error_dict[self.masterCamera]['num_inlier_poses'][camS] = len(poses)
+            self.error_dict[self.masterCamera]['num_good_inlier_poses'][camS] = good_pose
+            self.error_dict[self.masterCamera]['inlier_point_error'][camS] = point_error
+            self.error_dict[self.masterCamera]['inlier_points'][camS] = points
+            self.error_dict[self.masterCamera]['inlier_corners'][camS] = corners
+            self.error_dict[self.masterCamera]['inlier_point_x'][camS] = point_x
+            self.error_dict[self.masterCamera]['inlier_point_y'][camS] = point_y
+            self.error_dict[self.masterCamera]['inlier_pose_error'][camS] = pose_error
+            self.error_dict[self.masterCamera]['inlier_poses'][camS] = poses
+            self.error_dict[self.masterCamera]['all_poses'][camS] = all_poses
+            self.error_dict[self.masterCamera]['adjusted_points'][camS] = adjusted_points
+            self.error_dict[self.masterCamera]['inlier_rvecs'][camS] = rvecs
+            self.error_dict[self.masterCamera]['inlier_tvecs'][camS] = tvecs
+            self.error_dict[self.masterCamera]['good_inlier_poses'][camS] = good_poses
+            self.error_dict[self.masterCamera]['inlier_poses_std'][camS] = np.std(poses)
+            self.error_dict[self.masterCamera]['inlier_poses_mean'][camS] = np.mean(poses)
+            if len(poses):
+                self.error_dict[self.masterCamera]['inlier_area'][camS] = total_area
+                self.error_dict[self.masterCamera]['inlier_poses_variation'][camS] = max(poses) - min(poses)
+            if good_pose:
+                self.error_dict[self.masterCamera]['good_inlier_poses_std'][camS] = np.std(good_poses)
+                self.error_dict[self.masterCamera]['good_inlier_poses_mean'][camS] = np.mean(good_poses)
+                self.error_dict[self.masterCamera]['good_inlier_poses_variation'][camS] = max(good_poses) - min(good_poses)
 
-            # final_layout.show()
-            mcam = '08320220'
-            if cam == mcam:
-                self.graph_analysis(cam)
+        # final_layout.show()
+        # mcam = '08320221'
+        # if cam == mcam:
+        self.graph_analysis1(self.masterCamera)
+        self.graph_analysis2(self.masterCamera)
         #     df[cam] = pd.DataFrame(self.error_dict[cam])
         #     df[cam].to_excel(writer, sheet_name=cam)
         # writer.close()
@@ -805,25 +760,10 @@ class Complete_Viz():
         bin_err[id-1] = 0
         return bins, counts, list(bin_err.values())
 
-    def graph_analysis(self, masterCam):
-        # plt.figure(figsize=(10, 10))
-        # fig, axs = plt.subplots(2, math.ceil(self.workspace.sizes.camera / 2), figsize=(10, 10))
-        # fig1, axs1 = plt.subplots(2, math.ceil(self.workspace.sizes.camera / 2), figsize=(10, 10))
-        # fig2, axs2 = plt.subplots(2, math.ceil(self.workspace.sizes.camera / 2), figsize=(10, 10))
-        # fig3, axs3 = plt.subplots(2, math.ceil(self.workspace.sizes.camera / 2), figsize=(10, 10))
-        # fig4, axs4 = plt.subplots(2, math.ceil(self.workspace.sizes.camera / 2), figsize=(60, 30))
-        # fig5, axs5 = plt.subplots(2, math.ceil(self.workspace.sizes.camera / 2), figsize=(60, 30))
-        # fig6, axs6 = plt.subplots(2, math.ceil(self.workspace.sizes.camera / 2), figsize=(60, 30))
-        # plt.tick_params(axis='both', which='major', labelsize=50)
-        data = []
-        this_figure = sp.make_subplots(rows=2, cols=3, subplot_titles=('08320217' , '08320218', '08320220', '08320221', '08320222', '36220113'))
-        mCam = '08320221'
-        for idx, camS in enumerate(self.workspace.names.camera):
-            all_poses = self.error_dict[masterCam]['all_poses'][camS]
-            point_error = self.error_dict[masterCam]['inlier_point_error'][camS]
-            inlier_points = self.error_dict[masterCam]['inlier_points'][camS]
-            inlier_corners = self.error_dict[masterCam]['inlier_corners'][camS]
-            adjusted_points = self.error_dict[masterCam]['adjusted_points'][camS]
+    def graph_analysis1(self, masterCam):
+        cam_names = tuple(self.calibrated_workspace.names.camera)
+        this_figure = sp.make_subplots(rows=2, cols=3, subplot_titles=cam_names)
+        for idx, camS in enumerate(self.calibrated_workspace.names.camera):
             poses = self.error_dict[masterCam]['inlier_poses'][camS]
             pose_error = self.error_dict[masterCam]['inlier_pose_error'][camS]
 
@@ -841,149 +781,62 @@ class Complete_Viz():
             f_traces = []
             for trace in range(len(f["data"])):
                 f_traces.append(f["data"][trace])
-            if idx < math.ceil(self.workspace.sizes.camera / 2):
+            if idx < math.ceil(self.calibrated_workspace.sizes.camera / 2):
                 for traces in f_traces:
                     this_figure.append_trace(traces, row=1, col=idx+1)
                     this_figure.update_xaxes(title_text="View Angle (Degrees)", row=1, col=idx+1)
                     this_figure.update_yaxes(title_text="Number of Views", row=1, col=idx + 1)
             else:
                 for traces in f_traces:
-                    i = idx - math.ceil(self.workspace.sizes.camera / 2)
+                    i = idx - math.ceil(self.calibrated_workspace.sizes.camera / 2)
                     this_figure.append_trace(traces, row=2, col=i+1)
                     this_figure.update_xaxes(title_text="View Angle (Degrees)", row=2, col=i+1)
                     this_figure.update_yaxes(title_text="Number of Views", row=2, col=i+1)
-            # sp.append_trace(f_traces, row=1, col=2)
-            # fig.update_traces(width=4)
-            # fig.show()
-            # inlier_rvecs = self.error_dict[masterCam]['inlier_rvecs'][camS]
-            # inlier_tvecs = self.error_dict[masterCam]['inlier_tvecs'][camS]
-            # density = self.rvec_heatmap(inlier_rvecs)
-            # # final_img = self.draw_axis(camS, inlier_corners, adjusted_points, inlier_rvecs, inlier_tvecs)
-            # c = ['green'] * len(point_error)
-            # for idx1, e in enumerate(point_error):
-            #     if e >= 1.0:
-            #         c[idx1] = 'red'
-            # point_x = self.error_dict[masterCam]['inlier_point_x'][camS]
-            # point_y = self.error_dict[masterCam]['inlier_point_y'][camS]
-            # # img_map = self.draw_heatmap(inlier_points, point_error)
-            # new_points, new_density = self.adjust_rvec_heatmap(inlier_corners, density)
-            # img_map = self.draw_heatmap(new_points, new_density)
-            # pose_error = self.error_dict[masterCam]['inlier_pose_error'][camS]
-            #
-            # good_poses = self.error_dict[masterCam]['good_inlier_poses'][camS]
-            # bin = np.arange(0, 2, .1)
-            # bin2 = np.arange(0, 120, 5)
-            # data.append(all_poses)
-            # if idx < math.ceil(self.workspace.sizes.camera / 2):
-            #     for traces in f_traces:
-            #         this_figure.append_trace(traces, row=1, col=idx+1)
 
-            #     # axs[0, idx].hist(point_error, bin, edgecolor='black')
-            #     # axs[0, idx].set_title('Cam-' + camS)
-            #     # axs1[0, idx].hist(pose_error, bin, edgecolor='black')
-            #     # axs1[0, idx].set_title('Cam-' + camS)
-            #     # axs2[0, idx].scatter(poses, pose_error)
-            #     # axs2[0, idx].set_title('Cam-' + camS)
-            #     # axs4[0, idx].hist2d(point_x, point_y, bins=50)
-            #     im = axs4[0, idx].imshow(img_map, cmap=mpl.colormaps['viridis'])
-            #     cbar = axs4[0, idx].figure.colorbar(im, ax=axs4[0, idx])
-            #     # cbar.ax.set_ylabel("Re-projection error", rotation=-90, va="bottom", fontsize=60)
-            #     cbar.ax.set_ylabel("Rotation vector variation", rotation=-90, va="bottom", fontsize=60)
-            #     ticklabs = cbar.ax.get_yticklabels()
-            #     cbar.ax.set_yticklabels(ticklabs, fontsize=40)
-            #     # axs4[0, idx].scatter(point_x, point_y, color=c)
-            #     axs4[0, idx].set_title('Cam-' + camS, fontsize=70)
-            #     # axs5[0, idx].imshow(final_img)
-            #     # axs5[0, idx].set_title('Cam-' + camS, fontsize=70)
-            #
-            #     # if len(good_poses):
-            #     #     axs3[0, idx].hist(good_poses, bin2, edgecolor='black')
-            #     #     axs3[0, idx].set_title('Cam-' + camS)
-            # else:
-            #     for traces in f_traces:
-            #         i = idx - math.ceil(self.workspace.sizes.camera / 2)
-            #         this_figure.append_trace(traces, row=2, col=i+1)
-            #     i = idx - math.ceil(self.workspace.sizes.camera / 2)
-            #     # axs[1, i].hist(point_error, bin, edgecolor='black')
-            #     # axs[1, i].set_title('Cam-' + camS)
-            #     # axs1[1, i].hist(pose_error, bin, edgecolor='black')
-            #     # axs1[1, i].set_title('Cam-' + camS)
-            #     # axs2[1, i].scatter(poses, pose_error)
-            #     # axs2[1, i].set_title('Cam-' + camS)
-            #     # hist, xbins, ybins, im = axs4[1, i].hist2d(point_x, point_y, bins=100)
-            #     # axs4[1, i].scatter(point_x, point_y, color=c)
-            #     im = axs4[1, i].imshow(img_map, cmap=mpl.colormaps['viridis'])
-            #     cbar = axs4[1, i].figure.colorbar(im, ax=axs4[1, i])
-            #     # cbar.ax.set_ylabel("Re-projection error", rotation=-90, va="bottom", fontsize=60)
-            #     cbar.ax.set_ylabel("Rotation vector variation", rotation=-90, va="bottom", fontsize=60)
-            #     ticklabs = cbar.ax.get_yticklabels()
-            #     cbar.ax.set_yticklabels(ticklabs, fontsize=40)
-            #     axs4[1, i].set_title('Cam-' + camS, fontsize=70)
-            #     # if len(good_poses):
-            #     #     axs3[1, i].hist(good_poses, bin2, edgecolor='black')
-            #     #     axs3[1, i].set_title('Cam-' + camS)
-            #     # axs5[1, i].imshow(final_img)
-            #     # axs5[1, i].set_title('Cam-' + camS, fontsize=70)
-            # for ax in axs4.flat:
-            #     ax.set_xlabel('Image width', fontsize=70)
-            #     ax.set_ylabel('Image height', fontsize=70)
-            #
-            # # for ax, ax1, ax2, ax3 in zip(axs.flat, axs1.flat, axs2.flat, axs3.flat):
-            # #     ax.set_xlabel('Re-projection error \n Per point', fontsize=15)
-            # #     ax.set_ylabel('Number of Points', fontsize=15)
-            # #     # ax.set(xlabel='Re-projection error \n Per point', ylabel='Number of Points')
-            # #     ax1.set_xlabel('Re-projection error \n Per view', fontsize=15)
-            # #     ax1.set_ylabel('Number of Views', fontsize=15)
-            # #     # ax1.set(xlabel='Re-projection error \n Per view', ylabel='Number of Views')
-            # #     ax2.set(xlabel='Views', ylabel='Re-projection Error')
-            # #     ax3.set(xlabel='View angle (Degrees)', ylabel='Number of Views')
-            # #
-            # for ax in axs4.flat:
-            #     ax.label_outer()
-            # # for ax, ax1, ax2, ax3 in zip(axs.flat, axs1.flat, axs2.flat, axs3.flat):
-            # #     ax.label_outer()
-            # #     ax1.label_outer()
-            # #     ax2.label_outer()
-            # #     ax3.label_outer()
-            # # for ax in axs4.flat:
-            # #     ax.colorbar()
-
-        # fig.update_traces(width=4)
-        # fig.show()
-
-        # dcc.Graph(figure=this_figure)
         this_figure.update_traces(width=4)
-        # this_figure.update_layout(yaxis = dict(
-        #             tickfont = dict(size=20),titlefont = dict(size = 25)),
-        #                           xaxis=dict(
-        #                               tickfont=dict(size=20), titlefont=dict(size=25)),
-        #                           font=dict(size=35, )
-        #                           )
         this_figure.update_layout(font=dict(size=18, ))
         this_figure.update_annotations(font_size=18)
+        # this_figure.show()
+        img_path = os.path.join(self.base_path, 'angleVsview.png')
+        this_figure.write_image(img_path, scale=.8, width=1080, height=800)
 
 
-        this_figure.show()
+    def graph_analysis2(self, masterCam):
+        fig4, axs4 = plt.subplots(2, math.ceil(self.calibrated_workspace.sizes.camera / 2), figsize=(60, 30))
 
-        # fig = plt.figure(figsize=(20, 20))
-        # ax = fig.add_axes([0, 0, 1, 1])
-        # bp = ax.boxplot(data)
+        for idx, camS in enumerate(self.calibrated_workspace.names.camera):
+            point_error = self.error_dict[masterCam]['inlier_point_error'][camS]
+            inlier_points = self.error_dict[masterCam]['inlier_points'][camS]
 
+            img_map = self.draw_heatmap(inlier_points, point_error)
+            if idx < math.ceil(self.calibrated_workspace.sizes.camera / 2):
+                im = axs4[0, idx].imshow(img_map, cmap=mpl.colormaps['viridis'])
+                cbar = axs4[0, idx].figure.colorbar(im, ax=axs4[0, idx])
+                cbar.ax.set_ylabel("Re-projection error", rotation=-90, va="bottom", fontsize=60)
+                ticklabs = cbar.ax.get_yticklabels()
+                cbar.ax.set_yticklabels(ticklabs, fontsize=40)
+                axs4[0, idx].set_title('Cam-' + camS, fontsize=70)
 
+            else:
+                i = idx - math.ceil(self.calibrated_workspace.sizes.camera / 2)
+                im = axs4[1, i].imshow(img_map, cmap=mpl.colormaps['viridis'])
+                cbar = axs4[1, i].figure.colorbar(im, ax=axs4[1, i])
+                cbar.ax.set_ylabel("Re-projection error", rotation=-90, va="bottom", fontsize=60)
+                ticklabs = cbar.ax.get_yticklabels()
+                cbar.ax.set_yticklabels(ticklabs, fontsize=40)
+                axs4[1, i].set_title('Cam-' + camS, fontsize=70)
 
-        # folder = self.base_path[-3:]
-        # path = os.path.join(self.base_path, folder + '-finalPointError.png')
-        #
-        # # plt.savefig(path)
-        # # plt.figure(figsize=(10, 10))
-        # # plt.tick_params(axis='both', which='major', labelsize=50)
-        # ax.set_ylim(0, 120)
-        # plt.show()
+            for ax in axs4.flat:
+                ax.set_xlabel('Image width', fontsize=70)
+                ax.set_ylabel('Image height', fontsize=70)
 
-        # df = pd.DataFrame(self.error_dict[masterCam])
-        # excel_path = os.path.join(self.base_path, folder + '-M' + masterCam+'-finalInlier.xlsx')
-        # df.to_excel(excel_path, sheet_name=masterCam)
-        pass
+            for ax in axs4.flat:
+                ax.label_outer()
+
+        # fig4.show()
+        path = os.path.join(self.base_path, 'pixelError.png')
+        fig4.savefig(path, dpi=15)
+
 
     def layout(self, show_legend=False, w=1000, h=1000):
         axis = dict(showbackground=True, showline=False, zeroline=False, showgrid=True, showticklabels=False, title='')
@@ -1000,17 +853,27 @@ class Complete_Viz():
 
 
     def collect_inlier_dataset(self):
-        for cam in self.cameras:
-            file = os.path.join(self.base_path, 'calibration_'+ cam + '.pkl')
-            if os.path.exists(file):
-                data = pickle.load(open(file, "rb"))
-                self.inlier_mask[cam] = data.calibrations['calibration'].inlier_mask
-                self.reprojected_points[cam] = data.calibrations['calibration'].reprojected
-                self.bundle_image_name[cam] = data.names.image
-        pass
+        ## This part is using test dataset (result after bundle adjustment)
+        file = os.path.join(self.base_path, 'calibration_'+ self.masterCamera + '.pkl')
+        if os.path.exists(file):
+            self.calibrated_workspace = pickle.load(open(file, "rb"))
+            self.inlier_mask = self.calibrated_workspace.calibrations['calibration'].inlier_mask
+            self.reprojected_points = self.calibrated_workspace.calibrations['calibration'].reprojected
+            self.bundle_image_name = self.calibrated_workspace.names.image
+        # for path, subdirs, files in os.walk((self.base_path)):
+        #     if path == self.base_path:
+        #         pass
+        # for cam in self.cameras:
+        #     file = os.path.join(self.base_path, 'calibration_'+ cam + '.pkl')
+        #     if os.path.exists(file):
+        #         data = pickle.load(open(file, "rb"))
+        #         self.inlier_mask[cam] = data.calibrations['calibration'].inlier_mask
+        #         self.reprojected_points[cam] = data.calibrations['calibration'].reprojected
+        #         self.bundle_image_name[cam] = data.names.image
+        # pass
 
     def collect_validation_dataset(self, cam):
-
+        ## This part is using results from validation dataset
         file = os.path.join(self.base_path, cam + '.pkl')
         if os.path.exists(file):
             data = pickle.load(open(file, "rb"))
