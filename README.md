@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Images/cover1.png" width="700"/>
+  <img src="Images/cover1.png" width="900"/>
  </p>
 
 # All About Camera Calibration #
