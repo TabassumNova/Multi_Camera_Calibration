@@ -204,7 +204,7 @@ Steps:
 - For Manual operation:
     - Prepare dataset folders as following:
       ```
-      - root
+      - dataset
         - cam1
         - cam2
         .
@@ -221,6 +221,33 @@ Steps:
        - meanCameras.json : Information of all extrinsic parameters keeping each camera as master camera (needed for visualization GUI)
        - workspace.pkl : workspace information before Bundle Adjustment
        ```
+    - Prepare test dataset folder taking a subset of 20 poses for each camera. The folder should look like as following:
+      ```
+      - dataset_test
+        - cam1
+        - cam2
+        .
+        .
+        .
+        - boards.yaml
+        - initial_calibration_cam1.json
+      ```
+      Here, cam1 is master camera
+    - Run [main_calibrate.py](https://github.com/TabassumNova/Multi_Camera_Calibration/blob/main/tx60l_moveit_config/image_acquisition_automation/main_calibrate.py). It will generate results and some other files for visualization:
+      ```
+      - calibration_cam1.txt : Calibration result
+      - calibration_08320217.json : Final intrinsic and Extrinsic Parameters
+      - calibration_08320217.pkl : Final calibrated workspace (needed for visualization GUI)
+      ```
+
+# PyQt User Interface
+This GUI automates the whole calibration process also shows results of the calibration
+<p align="center">
+  <img src="Images/gui1.png" width="700"/>
+  <img src="Images/ex_viz1.gif" width="350"/>
+  <img src="Images/ex_viz2.gif" width="350"/>
+ </p>
+
 ## Multical++
 For this work, I edited some parts of the original implemetation of [Multical](https://github.com/oliver-batchelor/multical)
 - Edited [package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/multical)
@@ -234,20 +261,8 @@ For this work, I edited some parts of the original implemetation of [Multical](h
 - [Package](https://github.com/TabassumNova/Multi_Camera_Calibration/blob/main/tx60l_moveit_config/image_acquisition_automation/src/multical_scripts/handEye_final.py)
 
 
-
-
 # Bugs
 - GUI "Show Final Camera Poses" visualization issue
-
-
-# Visualization
-## PyQt User Interface
-This GUI automates the whole calibration process also shows results of the calibration
-<p align="center">
-  <img src="Images/gui1.png" width="700"/>
-  <img src="Images/ex_viz1.gif" width="350"/>
-  <img src="Images/ex_viz2.gif" width="350"/>
- </p>
  
 ## Paraview guide
 - https://www.youtube.com/watch?v=FTUBpqkC3Ss
