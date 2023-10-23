@@ -212,7 +212,15 @@ Steps:
         .
         - boards.yaml
       ```
-     - Run handEye_final.py
+     - Run [main_handEye.py](https://github.com/TabassumNova/Multi_Camera_Calibration/blob/main/tx60l_moveit_config/image_acquisition_automation/main_handEye.py). It will create following files:
+       ```
+       - intrinsic_dataset.json : Views that are used for intrinsic calibration (needed for visualization GUI)
+       - handEyeCamera.json : Information of all HandEye-pair groups (needed for visualization GUI)
+       - initial_calibration_cam1.json : Initial calibration result, keeping cam1 as master camera
+       - initial_calibration_cam2.json : Initial calibration result, keeping cam2 as master camera
+       - meanCameras.json : Information of all extrinsic parameters keeping each camera as master camera (needed for visualization GUI)
+       - workspace.pkl : workspace information before Bundle Adjustment
+       ```
 ## Multical++
 For this work, I edited some parts of the original implemetation of [Multical](https://github.com/oliver-batchelor/multical)
 - Edited [package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/multical)
