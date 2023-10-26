@@ -242,12 +242,13 @@ Steps:
 
 # User Interface
 It has two parts:
-1. [Automated camera calibration process and result visualization](#auto)
+1. [Automated camera calibration](#auto)
 2. [Vision guided robot movement](#robot)
 
 <a name="auto"></a>
-## Automated camera calibration
-This GUI automates the whole calibration process also shows results of the calibration
+## Automated Camera Calibration
+This GUI automates the whole calibration process also shows results of the calibration. One can also investigate the dataset quality using this.
+The whole process of operating this is explained here.
 <p align="center">
   <img src="Images/gui1.png" width="700"/>
   <img src="Images/ex_viz1.gif" width="350"/>
@@ -255,7 +256,8 @@ This GUI automates the whole calibration process also shows results of the calib
  </p>
  
 <a name="robot"></a>
-## Vision Guided Robot Motion
+## Vision Guided Robot Movement
+This feature allows the user to move the viewed feature with respect to the camera.
 <p align="center">
   <img src="Images/rbMotion.png" width="700"/>
  </p>
