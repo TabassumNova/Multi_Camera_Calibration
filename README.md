@@ -240,15 +240,22 @@ Steps:
       - calibration_08320217.pkl : Final calibrated workspace (needed for visualization GUI)
       ```
 
-# PyQt User Interface
+# User Interface
+It has two parts:
+1. [Automated camera calibration process and result visualization](#auto)
+2. [Vision guided robot movement](#robot)
+
+<a name="auto"></a>
+## Automated camera calibration
 This GUI automates the whole calibration process also shows results of the calibration
 <p align="center">
   <img src="Images/gui1.png" width="700"/>
   <img src="Images/ex_viz1.gif" width="350"/>
   <img src="Images/ex_viz2.gif" width="350"/>
  </p>
-
-# Vision Guided Robot Motion
+ 
+<a name="robot"></a>
+## Vision Guided Robot Motion
 <p align="center">
   <img src="Images/rbMotion.png" width="700"/>
  </p>
