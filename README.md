@@ -2,7 +2,7 @@
   <img src="Images/cover1.png" width="900"/>
  </p>
 
-# test All About Camera Calibration #
+# All About Camera Calibration #
 This repository is based on the implementation of the multi-camera calibration framework [Multical](https://github.com/oliver-batchelor/multical) with modification in the parameter initialization part to inhance the system's robustness, particularly in situations where camera views do not overlap. It also presents a complete guide for robot motion designed to facilitate automated image capture.
 
 <p align="center">
