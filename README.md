@@ -248,6 +248,11 @@ This GUI automates the whole calibration process also shows results of the calib
   <img src="Images/ex_viz2.gif" width="350"/>
  </p>
 
+# Vision Guided Robot Motion
+<p align="center">
+  <img src="Images/rbMotion.png" width="700"/>
+ </p>
+ 
 ## Multical++
 For this work, I edited some parts of the original implemetation of [Multical](https://github.com/oliver-batchelor/multical)
 - Edited [package](https://gitlab.lrz.de/autotron-group/camera_calib_nova/-/tree/main/tx60l_moveit_config/image_acquisition_automation/src/multical)
