@@ -248,7 +248,7 @@ It has two parts:
 <a name="auto"></a>
 ## Automated Camera Calibration
 This GUI automates the whole calibration process also shows results of the calibration. One can also investigate the dataset quality using this.
-The whole process of operating this is explained here.
+The whole process of operating this is explained [here](https://github.com/TabassumNova/Automated_Camera_Calibration/tree/main).
 <p align="center">
   <img src="Images/gui1.png" width="700"/>
   <img src="Images/ex_viz1.gif" width="350"/>
