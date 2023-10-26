@@ -257,7 +257,7 @@ The whole process of operating this is explained [here](https://github.com/Tabas
  
 <a name="robot"></a>
 ## Vision Guided Robot Movement
-This feature allows the user to move the viewed feature with respect to the camera.
+This feature allows the user to move the viewed feature with respect to the camera. Explanation is [here](https://github.com/TabassumNova/Vision_Guided_Robot_Movement/tree/main)
 <p align="center">
   <img src="Images/rbMotion.png" width="700"/>
  </p>
