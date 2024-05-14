@@ -6,7 +6,7 @@ from src.multical.io.export_calib import export_poses
 from src.multical.optimization.parameters import IndexMapper, Parameters
 from cached_property import cached_property
 from src.multical.motion.motion_model import MotionModel
-from multical.optimization.pose_set import PoseSet
+from src.multical.optimization.pose_set import PoseSet
 from src.multical.transform import rtvec as rtvec
 from structs.numpy import Table, shape
 from structs.struct import struct, subset

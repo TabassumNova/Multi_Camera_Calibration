@@ -15,7 +15,7 @@ from .transform import rtvec, matrix
 
 from structs.struct import struct
 from .optimization.parameters import Parameters
-from multical.optimization.calibration import select_threshold
+# from src.multical.optimization.calibration import select_threshold
 
 from multiprocessing.pool import ThreadPool
 from src.multical.threading import cpu_count

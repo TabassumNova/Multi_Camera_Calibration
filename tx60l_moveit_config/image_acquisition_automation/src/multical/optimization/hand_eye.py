@@ -1,4 +1,4 @@
-from multical.io.report import report_pose_errors
+from src.multical.io.report import report_pose_errors
 from cached_property import cached_property
 import numpy as np
 from structs.numpy import table
@@ -7,7 +7,7 @@ from .calibration import Calibration
 from src.multical.transform.hand_eye import hand_eye_robot_world
 
 from src.multical.motion import HandEye
-from multical.transform import matrix
+from src.multical.transform import matrix
 from src.multical import tables
 
 class HandEyeCalibration:

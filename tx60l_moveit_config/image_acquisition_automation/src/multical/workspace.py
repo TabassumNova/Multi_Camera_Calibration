@@ -10,7 +10,7 @@ from multiprocessing import cpu_count
 
 from src.multical.optimization.parameters import ParamList
 from src.multical.optimization.pose_set import PoseSet
-from multical import config
+from src.multical import config
 
 from os import path
 from src.multical.io import export_json, try_load_detections, write_detections

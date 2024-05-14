@@ -1,4 +1,4 @@
-from multical.board.board import Board
+from src.multical.board.board import Board
 from pprint import pformat
 from cached_property import cached_property
 import cv2

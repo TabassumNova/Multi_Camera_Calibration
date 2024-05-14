@@ -1,4 +1,4 @@
-from multical import tables
+from src.multical import tables
 from structs.struct import struct, subset
 from src.multical.optimization.parameters import Parameters
 from cached_property import cached_property

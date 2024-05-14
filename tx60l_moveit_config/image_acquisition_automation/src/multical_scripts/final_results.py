@@ -10,7 +10,7 @@ import operator
 import matplotlib as mpl
 import cv2
 import random
-from dash import Dash, dcc, html, Input, Output,callback
+
 import plotly.io as pio
 import io
 # from base64 import b64encode
@@ -23,7 +23,6 @@ from matplotlib import pyplot as plt
 import pickle
 from src.multical.transform import common, rtvec
 from scipy import stats
-from mayavi import mlab
 import pandas as pd
 import plotly.express as px
 import plotly.subplots as sp
