@@ -490,7 +490,7 @@ class Complete_Viz():
                 for board_id, board in enumerate(self.calibrated_workspace.names.board):
                     if self.calibrated_workspace.pose_table.valid[cam_id][img_id][board_id]:
                         rvec, tvec = rtvec.split(rtvec.from_matrix(self.calibrated_workspace.pose_table.poses[cam_id][img_id][board_id]))
-                        p = np.linalg.norm([rvec[0], rvec[1]])
+                        p = np.linalg.norm([rvec[0], rvec[1], rvec[2]])
                         all_poses.append(p)
                     inlier_mask = self.inlier_mask
                     ids = []
@@ -559,7 +559,7 @@ class Complete_Viz():
         # final_layout.show()
         # mcam = '08320221'
         # if cam == mcam:
-        self.graph_analysis1(self.masterCamera)
+        # self.graph_analysis1(self.masterCamera)
         self.graph_analysis2(self.masterCamera)
         #     df[cam] = pd.DataFrame(self.error_dict[cam])
         #     df[cam].to_excel(writer, sheet_name=cam)
@@ -801,7 +801,7 @@ class Complete_Viz():
 
 
     def graph_analysis2(self, masterCam):
-        fig4, axs4 = plt.subplots(2, math.ceil(self.calibrated_workspace.sizes.camera / 2), figsize=(60, 30))
+        # fig4, axs4 = plt.subplots(2, math.ceil(self.calibrated_workspace.sizes.camera / 2), figsize=(60, 30))
 
         for idx, camS in enumerate(self.calibrated_workspace.names.camera):
             point_error = self.error_dict[masterCam]['inlier_point_error'][camS]
@@ -809,32 +809,71 @@ class Complete_Viz():
 
             img_map = self.draw_heatmap(inlier_points, point_error)
             if idx < math.ceil(self.calibrated_workspace.sizes.camera / 2):
-                im = axs4[0, idx].imshow(img_map, cmap=mpl.colormaps['viridis'])
-                cbar = axs4[0, idx].figure.colorbar(im, ax=axs4[0, idx])
-                cbar.ax.set_ylabel("Re-projection error", rotation=-90, va="bottom", fontsize=60)
-                ticklabs = cbar.ax.get_yticklabels()
-                cbar.ax.set_yticklabels(ticklabs, fontsize=40)
-                axs4[0, idx].set_title('Cam-' + camS, fontsize=70)
+                norm = mpl.colors.Normalize(vmin=0, vmax=3)
+                # im = axs4[0, idx].imshow(img_map, norm=norm, cmap=mpl.colormaps['viridis'])
+                plt.imshow(img_map, norm=norm, cmap=mpl.colormaps['viridis'])
+                '''
+                ## This part is for adding colorbar at one side
+                
+                # cbar = axs4[0, idx].figure.colorbar(im, ax=axs4[0, idx])
+                # cbar.ax.set_ylabel("Re-projection error", rotation=-90, va="bottom", fontsize=60)
+                # ticklabs = cbar.ax.get_yticklabels()
+                # cbar.ax.set_yticklabels(ticklabs, fontsize=40)
+                # axs4[0, idx].set_title('Cam-' + camS, fontsize=70)
+                '''
+                h,w = 3000, 5000
+                # axs4[0, idx].set_xticks([0,int(w/2), w])
+                # axs4[0, idx].set_yticks([0, int(h/2), h])
+                # axs4[0, idx].tick_params(axis='both', which='major', labelsize=40)
+                # plt.xticks([0, int(w / 2), w])
+                # plt.yticks([0, int(h / 2), h])
+                # plt.tick_params(axis='both', which='major', labelsize=10)
+                s = camS[-3:]
+                path = os.path.join(self.base_path, 'V35_pixelError' + camS[-3:] + '.png')
+                plt.axis('off')
+                plt.savefig(path, bbox_inches='tight')
 
             else:
                 i = idx - math.ceil(self.calibrated_workspace.sizes.camera / 2)
-                im = axs4[1, i].imshow(img_map, cmap=mpl.colormaps['viridis'])
-                cbar = axs4[1, i].figure.colorbar(im, ax=axs4[1, i])
-                cbar.ax.set_ylabel("Re-projection error", rotation=-90, va="bottom", fontsize=60)
-                ticklabs = cbar.ax.get_yticklabels()
-                cbar.ax.set_yticklabels(ticklabs, fontsize=40)
-                axs4[1, i].set_title('Cam-' + camS, fontsize=70)
+                norm = mpl.colors.Normalize(vmin=0, vmax=3)
+                # im = axs4[1, i].imshow(img_map, norm=norm, cmap=mpl.colormaps['viridis'])
+                plt.imshow(img_map, norm=norm, cmap=mpl.colormaps['viridis'])
+                '''
+                ## This part is for adding colorbar at one side
+                
+                # cbar = axs4[1, i].figure.colorbar(im, ax=axs4[1, i])
+                # cbar.ax.set_ylabel("Re-projection error", rotation=-90, va="bottom", fontsize=60)
+                # ticklabs = cbar.ax.get_yticklabels()
+                # cbar.ax.set_yticklabels(ticklabs, fontsize=40)
+                # axs4[1, i].set_title('Cam-' + camS, fontsize=70)
+                '''
+                # axs4[1, i].set_xticks([0, int(w / 2), w])
+                # axs4[1, i].set_yticks([0, int(h / 2), h])
+                # axs4[1, i].tick_params(axis='both', which='major', labelsize=40)
+                # plt.xticks([0, int(w / 2), w])
+                # plt.yticks([0, int(h / 2), h])
+                # plt.tick_params(axis='both', which='major', labelsize=10)
+                plt.axis('off')
+                path = os.path.join(self.base_path, 'V35_pixelError' + camS[-3:]+ '.png')
+                plt.savefig(path, bbox_inches='tight')
 
+            '''
+            ## For adding X/Y labels
+            
             for ax in axs4.flat:
                 ax.set_xlabel('Image width', fontsize=70)
                 ax.set_ylabel('Image height', fontsize=70)
+            '''
 
+            '''
             for ax in axs4.flat:
                 ax.label_outer()
+            '''
+
 
         # fig4.show()
-        path = os.path.join(self.base_path, 'pixelError.png')
-        fig4.savefig(path, dpi=15)
+        # path = os.path.join(self.base_path, 'pixelError.png')
+        # fig4.savefig(path, dpi=15)
 
 
     def layout(self, show_legend=False, w=1000, h=1000):

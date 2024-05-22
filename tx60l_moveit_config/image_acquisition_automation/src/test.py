@@ -1,8 +1,11 @@
-import os
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 
-base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35_test"
-for path, subdirs, files in os.walk(base_path):
-    for name in files:
-        if "calibration" in name:
-            name1 = name.split('calibration')
-            pass
+fig = plt.figure()
+ax = fig.add_axes([0.05, 0.80, 0.9, 0.1])
+
+colormap = plt.cm.get_cmap('viridis') # 'plasma' or 'viridis'
+cb = mpl.colorbar.ColorbarBase(ax, orientation='horizontal', cmap=colormap)
+
+# plt.imshow()
+plt.savefig('just_colorbar', bbox_inches='tight')
