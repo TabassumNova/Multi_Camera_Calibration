@@ -1,7 +1,6 @@
 import math
 
 import numpy as np
-from numba import cuda, jit
 from src.extrinsic2pyramid.camera_pose_visualizer import CameraPoseVisualizer
 import src.multical.app.calibrate as calibrate
 import src.multical.config.arguments as args

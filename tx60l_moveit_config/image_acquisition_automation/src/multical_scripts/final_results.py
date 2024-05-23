@@ -10,6 +10,7 @@ import operator
 import matplotlib as mpl
 import cv2
 import random
+from matplotlib.ticker import MaxNLocator
 
 import plotly.io as pio
 import io
@@ -31,7 +32,7 @@ import plotly.subplots as sp
 for camera extrinsic visualization
 '''
 class Complete_Viz():
-    def __init__(self, base_path, masterCamera):
+    def __init__(self, base_path="", masterCamera=""):
         self.base_path = base_path
         self.workspace = None
         self.calibrated_workspace = None
@@ -58,17 +59,81 @@ class Complete_Viz():
         self.angleVsview()
         # self.draw_cameras()
         # self.analyze_valid()
+        # self.cube_vs_ico()
         # self.compare_twoDts()
         pass
+
+    def cube_vs_ico(self):
+        '''
+        if __name__ == '__main__':
+            base_path = "/home/nova/Desktop/Nova/Calibration_paper/datasets"
+            v = Complete_Viz(base_path)
+        '''
+        dts1 = 'V30'
+        ## best: 222, 217, 220
+        masterCam1 = '08320217'
+        dts2 = 'V35'
+        # masterCam2 = '08320217'
+
+        data1 = pickle.load(open(os.path.join(self.base_path,dts1, 'calibration_'+ masterCam1 + '.pkl'), "rb"))
+        data2 = pickle.load(open(os.path.join(self.base_path, dts2, 'calibration_'+ masterCam1 + '.pkl'), "rb"))
+        calib1 = data1.calibrations['calibration']
+        calib2 = data2.calibrations['calibration']
+
+
+        # reprojection error
+        error1 = np.linalg.norm((calib1.reprojected.points - calib1.point_table.points), axis=4)
+        err_mask1 = error1 * calib1.inlier_mask
+        board_err1 = np.sum(err_mask1, axis=3)/np.sum(calib1.inlier_mask, axis=3)
+        board_err1[np.isnan(board_err1)] = 0
+        view_err1 = np.sum(board_err1, axis=2)/np.count_nonzero(board_err1, axis=2)
+        view_err1[np.isnan(view_err1)] = 0
+        # x = max(view_err1)
+        # view_err1[view_err1 == 0] = view_err1.max()/1.5
+
+        error2 = np.linalg.norm((calib2.reprojected.points - calib2.point_table.points), axis=4)
+        err_mask2 = error2 * calib2.inlier_mask
+        board_err2 = np.sum(err_mask2, axis=3) / np.sum(calib2.inlier_mask, axis=3)
+        board_err2[np.isnan(board_err2)] = 0
+        view_err2 = np.sum(board_err2, axis=2) / np.count_nonzero(board_err2, axis=2)
+        view_err2[np.isnan(view_err2)] = 0
+        # view_err2[view_err2 == 0] = view_err2.max()/1.5
+
+        for idx, cam in enumerate(data1.names.camera):
+            x = np.arange(1,21,1)
+            barWidth = 0.3
+            br1 = np.arange(len(x))
+            br2 = [i + barWidth for i in br1]
+            y1 = view_err1[idx]
+            y2 = view_err2[idx]
+            plt.bar(br1, y1, label="Cube", width = barWidth)
+            plt.bar(br2, y2, label="Icosahedron", width = barWidth)
+            plt.legend(fontsize=10)
+            plt.xlabel('Image Index', fontsize=15)
+            plt.ylabel('Re-projection error', fontsize=15)
+            plt.xticks([r + barWidth/2 for r in range(len(x))], [ str(r) for r in x], fontsize=10)
+            plt.yticks(fontsize=10)
+            plt.ylim(0,2)
+            plt.axhline(y=1, linewidth=1, color='k', linestyle='dashed')
+            plt.title("Cam-"+str(idx+1), fontsize=15)
+            # plt.show()
+            # plt.figure().gca().xaxis.set_major_locator(MaxNLocator(integer=True))
+
+            path = os.path.join(self.base_path,dts1, 'view_Err' + cam[-3:] + '.png')
+            # plt.axis('off')
+            plt.savefig(path, bbox_inches='tight')
+            plt.close()
+        pass
+
 
     def compare_twoDts(self):
         dataset = {}
         dts1 = 'V30'
-        masterCam1 = '08320221'
+        masterCam1 = '08320222'
         dts2 = 'V35'
         dataset[dts1] = {}
         dataset[dts2] = {}
-        masterCam2 = '08320220'
+        masterCam2 = '08320222'
         inlier_pose1, inlier_pose2 = self.load_dts(dts1, masterCam1, dts2, masterCam2)
         x_pose1 = []
         y_pose1 = []
@@ -239,12 +304,13 @@ class Complete_Viz():
         return inlier_pose1, inlier_pose2
 
     def analyze_valid(self):
-        # '08320217' , '08320218', '08320220', '08320221', '08320222', '36220113'
+        cameras = ['08320217' , '08320218', '08320220', '08320221', '08320222', '36220113']
         camera = '08320221'
+        cam_idx = cameras.index(camera)
         self.collect_validation_dataset(cam = camera)
-        inlier_mask = self.inlier_mask[camera]
-        valid_inlier_mask = self.valid_inlier_mask[camera]
-        valid_image_name = self.valid_image_name[camera]
+        inlier_mask = self.inlier_mask[cam_idx]
+        valid_inlier_mask = self.valid_inlier_mask[cam_idx]
+        valid_image_name = self.valid_image_name[cam_idx]
         validation_boxPlot = {}
         validation_boxPlot['inlier_poses'] = {}
         validation_boxPlot['bundle_error'] = {}
@@ -290,7 +356,7 @@ class Complete_Viz():
             validation_boxPlot['inlier_poses'][camS] = inlier_poses
             validation_boxPlot['bundle_error'][camS] = bundle_error
             validation_boxPlot['valid_error'][camS] = valid_error
-        file_pickle = os.path.join(self.base_path, "validation.pkl")
+        file_pickle = os.path.join(self.base_path, "validation_test.pkl")
         with open(file_pickle, "wb") as file:
             pickle.dump(validation_boxPlot, file)
         self.validation_plotbox(validation_boxPlot, camera)
@@ -809,9 +875,9 @@ class Complete_Viz():
 
             img_map = self.draw_heatmap(inlier_points, point_error)
             if idx < math.ceil(self.calibrated_workspace.sizes.camera / 2):
-                norm = mpl.colors.Normalize(vmin=0, vmax=3)
+                norm = mpl.colors.Normalize(vmin=0, vmax=2)
                 # im = axs4[0, idx].imshow(img_map, norm=norm, cmap=mpl.colormaps['viridis'])
-                plt.imshow(img_map, norm=norm, cmap=mpl.colormaps['viridis'])
+                plt.imshow(img_map, norm=norm, cmap='viridis')
                 '''
                 ## This part is for adding colorbar at one side
                 
@@ -829,18 +895,18 @@ class Complete_Viz():
                 # plt.yticks([0, int(h / 2), h])
                 # plt.tick_params(axis='both', which='major', labelsize=10)
                 s = camS[-3:]
-                path = os.path.join(self.base_path, 'V35_pixelError' + camS[-3:] + '.png')
+                path = os.path.join(self.base_path, 'V30_pixelError' + camS[-3:] + '.png')
                 plt.axis('off')
                 plt.savefig(path, bbox_inches='tight')
 
             else:
                 i = idx - math.ceil(self.calibrated_workspace.sizes.camera / 2)
-                norm = mpl.colors.Normalize(vmin=0, vmax=3)
+                norm = mpl.colors.Normalize(vmin=0, vmax=2)
                 # im = axs4[1, i].imshow(img_map, norm=norm, cmap=mpl.colormaps['viridis'])
-                plt.imshow(img_map, norm=norm, cmap=mpl.colormaps['viridis'])
+                plt.imshow(img_map, norm=norm, cmap='viridis')
                 '''
                 ## This part is for adding colorbar at one side
-                
+
                 # cbar = axs4[1, i].figure.colorbar(im, ax=axs4[1, i])
                 # cbar.ax.set_ylabel("Re-projection error", rotation=-90, va="bottom", fontsize=60)
                 # ticklabs = cbar.ax.get_yticklabels()
@@ -854,7 +920,7 @@ class Complete_Viz():
                 # plt.yticks([0, int(h / 2), h])
                 # plt.tick_params(axis='both', which='major', labelsize=10)
                 plt.axis('off')
-                path = os.path.join(self.base_path, 'V35_pixelError' + camS[-3:]+ '.png')
+                path = os.path.join(self.base_path, 'V30_pixelError' + camS[-3:]+ '.png')
                 plt.savefig(path, bbox_inches='tight')
 
             '''
@@ -955,6 +1021,6 @@ class Complete_Viz():
 
 
 if __name__ == '__main__':
-    base_path = "D:\MY_DRIVE_N\Masters_thesis\Dataset\V35"
+    base_path = "/home/nova/Desktop/Nova/Calibration_paper/datasets"
     v = Complete_Viz(base_path)
 
