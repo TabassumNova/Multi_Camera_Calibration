@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from src.extrinsic2pyramid.camera_pose_visualizer import CameraPoseVisualizer
 import plotly.graph_objects as go
 import json
@@ -35,7 +36,7 @@ class Interactive_Extrinsic():
         # self.num_group = len(self.handEye)
         self.groups = {}
         self.select_group()
-        # self.draw_heat_map()
+        self.draw_heat_map()
         self.draw_groups()
         pass
 
@@ -62,6 +63,9 @@ class Interactive_Extrinsic():
                                              xanchor='left',
                                              xref="paper",
                                              yref="paper"))
+            fig = plt.figure()
+            ax = fig.add_subplot(projection='3d')
+
             for key, group in cam_value.items():
                 if len(group) > 2:
                     x = []
@@ -101,6 +105,7 @@ class Interactive_Extrinsic():
                                 color=density
                             )
                         )])
+                        ax.scatter(x, y, z, marker='o', s=20, c=density)
 
                         for idx, k in enumerate(self.groups[cam_name][key].keys()):
                             self.groups[cam_name][key][k]['density'] = density[idx]
@@ -115,9 +120,44 @@ class Interactive_Extrinsic():
                     color='yellow'
                 )
             )])
+            data_list.extend([go.Scatter3d(x=[None],
+                                        y=[None], z=[None],
+                                        mode='markers',
+                                        marker=dict(
+                                            # colorscale=red_blue,
+                                            showscale=True,
+                                            cmin=0,
+                                            cmax=1,
+                                            colorbar=dict(thickness=10, tickvals=[0, 1],
+                                                          outlinewidth=0)
+                                        ),
+                                        hoverinfo='none'
+                                        )])
+
+            ax.scatter([0], [0], [0], marker='o', s=20, c='yellow')
+            # plt.show()
             fig1 = go.Figure(data=data_list)
-            fig1.update_layout()
+            fig1.update_layout(
+                scene=dict(
+                    xaxis=dict(tickfont = dict(size=15), nticks=5,),
+                    yaxis=dict(tickfont = dict(size=15), nticks=5, ),
+                    zaxis=dict(tickfont = dict(size=15), nticks=5,),
+                    xaxis_title="<b>X</b>",
+                    yaxis_title="<b>Y</b>",
+                    zaxis_title="<b>Z</b>",
+                ),
+
+                font=dict(
+                    # family="Courier New, monospace",
+                    size=20,
+                    # color="RebeccaPurple"
+                )
+                # width=700,
+                # margin=dict(r=20, l=10, b=10, t=10)
+            )
+            # fig1.update_layout(yaxis = dict(tickfont = dict(size=100)), xaxis = dict(tickfont = dict(size=100)))
             fig1.show()
+
             pass
         pass
 
@@ -153,7 +193,7 @@ class Interactive_Extrinsic():
 
                     data = visualizer.extrinsic2pyramid(master_extrinsic, color=self.camera_color[master_cam],
                                                         focal_len_scaled=0.1, aspect_ratio=0.3, show_legend=False, hover_template=master_cam)
-                    data1 = visualizer.extrinsic2pyramid(slave_extrinsic, color=self.camera_color[slave_cam],
+                    data1 = visualizer.extrinsic2pyramid(slave_extrinsic, color=self.camera_color[slave_cam], show_legend=False,
                                                          focal_len_scaled=0.1, aspect_ratio=0.3,
                                                          hover_template=slave_cam+ "_" + str(tvec), name=name)
                     # data2 = visualizer.extrinsic2pyramid(slave_extrinsic, color=self.groups[cam_name][key][key2]['density'],

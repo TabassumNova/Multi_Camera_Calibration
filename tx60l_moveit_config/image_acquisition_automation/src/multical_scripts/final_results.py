@@ -52,14 +52,14 @@ class Complete_Viz():
         self.campose2 = None
         self.mean_cameras = None
         self.masterCamera = masterCamera
-        self.collect_inlier_dataset()
+        # self.collect_inlier_dataset()
         # self.load_files()
         self.camera_color = {}
-        self.set_Cam_color()
-        self.angleVsview()
+        # self.set_Cam_color()
+        # self.angleVsview()
         # self.draw_cameras()
         # self.analyze_valid()
-        # self.cube_vs_ico()
+        self.cube_vs_ico()
         # self.compare_twoDts()
         pass
 
