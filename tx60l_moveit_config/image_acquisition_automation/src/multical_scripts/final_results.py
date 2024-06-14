@@ -171,7 +171,7 @@ class Complete_Viz():
                             roll1.append(b[0])
                             pitch1.append(b[1])
                             yaw1.append(b[2])
-                            a = math.sqrt((b[0]**2 + b[1]**2 + b[2]**2))
+                            a = math.sqrt((b[0]**2 + b[1]**2))
                             view_angle1.append(a)
 
 
@@ -212,7 +212,7 @@ class Complete_Viz():
                         # x2.append('Roll')
                         # y2.append(p2[0])
                         color2.extend(['Icosahedron','Icosahedron','Icosahedron'])
-                        a = math.sqrt((p2[0] ** 2 + p2[1] ** 2 + p2[2]**2))
+                        a = math.sqrt((p2[0] ** 2 + p2[1] ** 2))
                         view_angle2.append(a)
                         # roll2.append(p2[0])
                     # if (p2[1] != 0):
@@ -226,83 +226,118 @@ class Complete_Viz():
                     #     color2.append('Icosahedron')
                     #     # yaw2.append(p2[2])
 
-            fig, axs = plt.subplots(1, 3, sharey=True, tight_layout=True)
-            # axs[0].hist(roll1, bins=10)
-            axs[1].hist(pitch1, bins=10)
-            axs[2].hist(yaw1, bins=10)
-            counts1, edges1, plot1 = axs[0].hist(roll1, bins=10)
-            plt.show()
-
-            fig, axs = plt.subplots(1, 3, sharey=True, tight_layout=True)
-            # axs[0].hist(roll2, bins=10)
-            axs[1].hist(pitch2, bins=10)
-            axs[2].hist(yaw2, bins=10)
-            counts2, edges2, plot2 = axs[0].hist(roll2, bins=10)
-            plt.show()
-
-            fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
-            axs[0].hist(view_angle1, bins=10)
-            axs[1].hist(view_angle2, bins=10)
-            counts3, edges3, plot3 = axs[0].hist(view_angle1, bins=10)
-            counts4, edges4, plot4 = axs[1].hist(view_angle2, bins=10)
-            plt.show()
-            # for ploting roll/pitch/yaw separately
-            fig, axs = plt.subplots(1, 3, sharey=True, tight_layout=True)
-            r1, bins = np.histogram(roll1, bins=10)
-            r2, bins = np.histogram(roll2, bins=10)
-            pi1, bins = np.histogram(pitch1, bins=10)
-            pi2, bins = np.histogram(pitch2, bins=10)
-            ya1, bins = np.histogram(yaw1, bins=10)
-            ya2, bins = np.histogram(yaw2, bins=10)
-            # r1,_,_ = axs[0].hist(roll1, bins=10)
-            # r2, _, _ = axs[0].hist(roll2, bins=10)
-
-            x = np.arange(1, 11, 1)
+            ### for ploting sqrt(roll**2 + pitch**2)
+            fig1, ax1 = plt.subplots(sharex=True)
+            b1 = np.arange(0, 80, 5)
+            ang1, bins_r1 = np.histogram(view_angle1, bins=b1)
+            ang2, bins_r2 = np.histogram(view_angle2, bins=b1)
+            x = np.arange(1, len(b1), 1)
+            text = []
+            for k in range(len(x)):
+                t = '[' + str(b1[k]) + ',' + str(b1[k + 1]) + ']'
+                text.append(t)
             barWidth = 0.3
+            # br1 = range(math.floor(0), math.ceil(len(x)))
             br1 = np.arange(len(x))
-            br2 = [i + barWidth for i in br1]
-            # y1 = view_err1[idx]
-            # y2 = view_err2[idx]
-            axs[0].bar(br1, r1, label="Cube", width=barWidth)
-            axs[0].bar(br2, r2, label="Icosahedron", width=barWidth)
-            axs[0].legend(fontsize=10)
-            axs[0].set_xlabel('Roll', fontsize=15)
-            axs[0].set_ylabel('Num Views', fontsize=15)
-            axs[0].set_xticks([r + barWidth / 2 for r in range(len(x))], [str(r) for r in x], fontsize=10)
-            # axs[0].set_yticks(fontsize=10)
-            # axs[0].ylim(0, 2)
-            # axs[0].axhline(y=1, linewidth=1, color='k', linestyle='dashed')
-            # axs[0].title("Cam-" + str(idx + 1), fontsize=15)
-            plt.show()
+            br2 = [j + barWidth for j in br1]
+            if(idx!=5):
+                ax1.bar(br1, ang1, label="Cube", width=barWidth, color='lightsteelblue')
+            ax1.bar(br2, ang2, label="Icosahedron", width=barWidth, color='cornflowerblue')
+            ax1.legend(fontsize=10)
+            ax1.set_xlabel('View Angles (Degrees)', fontsize=15)
+            ax1.set_ylabel('Number of Views', fontsize=15)
+            ax1.set_xticks([r + barWidth / 2 for r in range(len(x))], text, rotation=90, fontsize=10)
+            ax1.yaxis.set_major_locator(MaxNLocator(integer=True))
+            fig1.suptitle("Cam-" + str(idx + 1), fontsize=15)
+            ax1.xaxis.set_label_coords(.5, -.3)
+            ax1.set_ylim([0, 12])
+            # plt.show()
+            path = os.path.join(self.base_path, dts1, 'viewAngle_rp_' + cam[-3:] + '.png')
+            # plt.axis('off')
+            plt.savefig(path, bbox_inches='tight')
+
+
+            ### for ploting roll/pitch/yaw separately
+            fig, axs = plt.subplots(1, 3, sharey=True, tight_layout=True, figsize=(15, 5))
+            b1 = np.arange(-70, 70, 10)
+            b2 = np.arange(-180, 180, 25)
+            r1, bins_r1 = np.histogram(roll1, bins=b1)
+            r2, bins_r2 = np.histogram(roll2, bins=b1)
+            pi1, bins_pi1 = np.histogram(pitch1, bins=b1)
+            pi2, bins_pi2 = np.histogram(pitch2, bins=b1)
+            ya1, bins_ya1 = np.histogram(yaw1, bins=b2)
+            ya2, bins_ya2 = np.histogram(yaw2, bins=b2)
+
+
+
+            angles = [['Roll (Degrees)', r1, r2], ['Pitch (Degrees)', pi1, pi2], ['Yaw (Degrees)', ya1, ya2]]
+            for i in range(0,3):
+                if (i==2):
+                    x = np.arange(1, len(b2), 1)
+                    # text
+                    text = []
+                    for k in range(len(x)):
+                        t = '[' + str(b2[k]) + ',' + str(b2[k + 1]) + ']'
+                        text.append(t)
+                else:
+                    x = np.arange(1, len(b1), 1)
+                    # text
+                    text = []
+                    for k in range(len(x)):
+                        t = '[' + str(b1[k]) + ',' + str(b1[k + 1]) + ']'
+                        text.append(t)
+
+                # x = b
+                barWidth = 0.3
+                # br1 = range(math.floor(0), math.ceil(len(x)))
+                br1 = np.arange(len(x))
+                br2 = [j + barWidth for j in br1]
+
+                if (idx != 5):
+                    axs[i].bar(br1, angles[i][1], label="Cube", width=barWidth, color='lightsteelblue')
+
+                axs[i].bar(br2, angles[i][2], label="Icosahedron", width=barWidth, color='cornflowerblue')
+                axs[i].legend(fontsize=10)
+                axs[i].set_xlabel(angles[i][0], fontsize=15)
+                axs[i].set_ylabel('Number of Views', fontsize=15)
+                axs[i].set_xticks([r + barWidth / 2 for r in range(len(x))], text, rotation=90, fontsize=10)
+                axs[i].yaxis.set_major_locator(MaxNLocator(integer=True))
+                axs[i].xaxis.set_label_coords(.5, -.3)
+                # axs[0].set_yticks(fontsize=10)
+                # axs[0].ylim(0, 2)
+                # axs[0].axhline(y=1, linewidth=1, color='k', linestyle='dashed')
+                # axs[i].title("Cam-" + str(idx + 1), fontsize=15)
+            fig.suptitle("Cam-" + str(idx + 1), fontsize=15)
+            # plt.show()
             # plt.figure().gca().xaxis.set_major_locator(MaxNLocator(integer=True))
 
-            path = os.path.join(self.base_path, dts1, 'view_Err' + cam[-3:] + '.png')
+            path = os.path.join(self.base_path, dts1, 'viewAngle_rpy_' + cam[-3:] + '.png')
             # plt.axis('off')
             # plt.savefig(path, bbox_inches='tight')
             # plt.close()
 
-            x += x1+x2
-            y += y1+y2
-            color = color1+color2
-
-            poses = pd.DataFrame({'angles': x, 'values': y, 'object': color})
-            # fig, ax = plt.subplots(1)
-            plt.clf()
-            # sns.set_theme(rc={'figure.figsize': (10, 7)})
-            sns.set_style("white")
-            boxes = (sns.boxplot(x=poses['angles'],
-                        y=poses['values'],
-                        hue = poses['object'],
-                        width=.7,
-                        gap=.3,
-                        linewidth=1))
-            boxes.set_title("Cam-"+str(idx), fontdict = { 'fontsize': 20})
-            boxes.set_xlabel("Rotation angles", fontsize=15)
-            boxes.set_ylabel("Values (Degrees)", fontsize=15)
-            boxes.tick_params(labelsize=10)
-            # boxes.axvline(2.5, color=".3", dashes=(2, 2), linewidth=5)
-            boxes_fig = boxes.get_figure()
-            boxes_fig.savefig('boxplot_Cam'+cam[-3:]+'.png',  bbox_inches='tight')
+            # x += x1+x2
+            # y += y1+y2
+            # color = color1+color2
+            #
+            # poses = pd.DataFrame({'angles': x, 'values': y, 'object': color})
+            # # fig, ax = plt.subplots(1)
+            # plt.clf()
+            # # sns.set_theme(rc={'figure.figsize': (10, 7)})
+            # sns.set_style("white")
+            # boxes = (sns.boxplot(x=poses['angles'],
+            #             y=poses['values'],
+            #             hue = poses['object'],
+            #             width=.7,
+            #             gap=.3,
+            #             linewidth=1))
+            # boxes.set_title("Cam-"+str(idx), fontdict = { 'fontsize': 20})
+            # boxes.set_xlabel("Rotation angles", fontsize=15)
+            # boxes.set_ylabel("Values (Degrees)", fontsize=15)
+            # boxes.tick_params(labelsize=10)
+            # # boxes.axvline(2.5, color=".3", dashes=(2, 2), linewidth=5)
+            # boxes_fig = boxes.get_figure()
+            # boxes_fig.savefig('boxplot_Cam'+cam[-3:]+'.png',  bbox_inches='tight')
     # pass
 
 
