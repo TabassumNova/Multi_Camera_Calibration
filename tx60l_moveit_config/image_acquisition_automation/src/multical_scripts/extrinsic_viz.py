@@ -9,6 +9,7 @@ import plotly.io as pio
 import io
 from base64 import b64encode
 from src.multical.transform.rtvec import *
+import networkx as nx
 # from jupyter_dash import JupyterDash
 # from dash import dcc
 # from dash import html
@@ -30,7 +31,10 @@ class Interactive_Extrinsic():
         self.handEye = None
         self.campose2 = None
         self.mean_cameras = None
+        self.board_names = []
+
         self.load_files()
+        self.set_board_names()
         self.camera_color = {}
         self.set_Cam_color()
         # self.num_group = len(self.handEye)
@@ -40,6 +44,10 @@ class Interactive_Extrinsic():
         self.draw_groups()
         pass
 
+    def set_board_names(self):
+        for i in range(len(self.workspace.names.board)):
+            t = 'Board-'+str(i+1)
+            self.board_names.append(t)
     def set_Cam_color(self):
         # colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'lime', 'pink', 'teal', 'darkcyan', 'violet', 'brown', 'indigo']
         # colors = ['blue', 'darkblue', 'green', 'darkgreen', 'olive', 'navy']
@@ -48,9 +56,39 @@ class Interactive_Extrinsic():
         for idx, cam in enumerate(self.workspace.names.camera):
             self.camera_color[cam] = colors[idx]
 
-    def draw_heat_map(self):
+    def draw_board_network(self):
+        G = nx.Graph()
+        G.add_edge(1, 2)
+        G.add_edge(1, 3)
+        G.add_edge(1, 5)
+        G.add_edge(2, 3)
+        G.add_edge(3, 4)
+        G.add_edge(4, 5)
 
+        # explicitly set positions
+        pos = {1: (0, 0), 2: (-1, 0.3), 3: (2, 0.17), 4: (4, 0.255), 5: (5, 0.03)}
+
+        options = {
+            "font_size": 36,
+            "node_size": 3000,
+            "node_color": "white",
+            "edgecolors": "black",
+            "linewidths": 5,
+            "width": 5,
+        }
+        nx.draw_networkx(G, pos, with_labels=False,  **options)
+
+        # Set margins for the axes so that nodes aren't clipped
+        ax = plt.gca()
+        ax.margins(0.20)
+        plt.axis("off")
+        # plt.show()
+        plt.savefig('net.png', bbox_inches='tight')
+
+    def draw_heat_map(self):
+        num_boards = len(self.workspace.names.board)
         for cam_name, cam_value in self.groups.items():
+            board_map = np.zeros((num_boards, num_boards))
             data_list = []
             final_layout = go.Figure()
             folder = self.base_path[-3:]
@@ -68,6 +106,7 @@ class Interactive_Extrinsic():
 
             for key, group in cam_value.items():
                 if len(group) > 2:
+                    i = 1
                     x = []
                     y = []
                     z = []
@@ -82,18 +121,68 @@ class Interactive_Extrinsic():
                             y.append(tvec[1])
                             z.append(tvec[2])
                             group_name.append(key2)
+                            mb = self.workspace.names.board.index(value['master_board'])
+                            sb = self.workspace.names.board.index(value['slave_board'])
+                            board_map[mb, sb] = int(i)
+                            i+=1
+
                         xyz = np.vstack([x, y, z])
                         kde = stats.gaussian_kde(xyz)
                         density = kde(xyz)
                         max_idx = np.argmax(density)
+                        density = density/density.max()
+                        for p in range(num_boards):
+                            for q in range(num_boards):
+                                if board_map[p][q]!=0:
+                                    # x = board_map[p][q]-1
+                                    # d = density[0]
+                                    board_map[p][q] = density[int(board_map[p][q]-1)]
+
+                        # save board_map
+                        outfile = self.base_path + '/BoardMap_'+key
+                        np.save(outfile, board_map)
+                        self.draw_board_network()
+                        # confusion matrix
+                        fig = px.imshow(board_map, color_continuous_scale='Greens',
+                                        labels=dict(x="Slave Boards", y="Master Boards"),
+                                        x=self.board_names,
+                                        y=self.board_names
+                                        )
+
+                        for i in range(num_boards):
+                            fig.add_shape(type="line", x0=0.5 + i, y0=-0.5, x1=0.5 + i, y1=num_boards - 0.5,
+                                          line=dict(color="white", width=2))
+
+                        for i in range(num_boards):
+                            fig.add_shape(type="line", x0=-0.5, y0=0.5 + i, x1=num_boards - 0.5, y1=0.5 + i,
+                                          line=dict(color="white", width=2))
+                        # fig.update_xaxes(side="top")
+                        fig.add_shape(
+                            type='rect',
+                            x0=-0.5, x1=18 - 0.5, y0=-0.5, y1=18 - 0.5,
+                            xref='x', yref='y',
+                            line_color='black'
+                        )
+                        fig.update_xaxes(
+                            tickangle=90,
+                            title_font={"size": 20},
+                            title_standoff=25)
+
+                        fig.update_yaxes(
+                            title_font={"size": 20},
+                            title_standoff=25)
+                        # fig.update_coloraxes(showscale=False)
+                        fig.show()
+
                         max_group = group_name[max_idx]
                         print(key, ' : ', max_group)
                         data = {'x': x, 'y': y, 'z': z, 'density': density}
                         df = pd.DataFrame(data)
                         fig = px.scatter_3d(df, x='x', y='y', z='z',
-                                            color='density', title=key)
+                                            color='density', color_continuous_scale='Blugrn', title=key)
                         # fig.show()
                         name = "Master : " + master_cam + "\n" + "Slave: " + slave_cam + "\n" + "Group: "
+
                         data_list.extend([go.Scatter3d(
                             x=x,
                             y=y,
@@ -102,13 +191,25 @@ class Interactive_Extrinsic():
                             name= name,
                             marker=dict(
                                 size=7,
-                                color=density
+                                color=density,
+                                colorscale='Blugrn'
                             )
                         )])
                         ax.scatter(x, y, z, marker='o', s=20, c=density)
 
                         for idx, k in enumerate(self.groups[cam_name][key].keys()):
                             self.groups[cam_name][key][k]['density'] = density[idx]
+
+                        fig2 = go.Figure(data=[go.Scatter3d(x=x, y=y, z=list(density))],
+                                         layout_yaxis_range=[-2,2],
+                                         layout_xaxis_range=[-2,2],
+                                         # layout_zaxis_range=[-2,2]
+                                         )
+                        fig2.update_layout(title='PDF', autosize=False,
+                                          # width=1000, height=1000,
+                                          # margin=dict(l=65, r=50, b=65, t=90)
+                                          )
+                        fig2.show()
             data_list.extend([go.Scatter3d(
                 x=[0],
                 y=[0],
@@ -117,7 +218,8 @@ class Interactive_Extrinsic():
                 mode='markers',
                 marker=dict(
                     size=8,
-                    color='yellow'
+                    color= 'Green',
+                    # colorscale='Blugrn'
                 )
             )])
             data_list.extend([go.Scatter3d(x=[None],
@@ -129,7 +231,8 @@ class Interactive_Extrinsic():
                                             cmin=0,
                                             cmax=1,
                                             colorbar=dict(thickness=10, tickvals=[0, 1],
-                                                          outlinewidth=0)
+                                                          outlinewidth=0),
+                                            colorscale='Blugrn',
                                         ),
                                         hoverinfo='none'
                                         )])
@@ -146,7 +249,8 @@ class Interactive_Extrinsic():
                     yaxis_title="<b>Y</b>",
                     zaxis_title="<b>Z</b>",
                 ),
-
+                # plot_bgcolor='white',
+                template='plotly_white',
                 font=dict(
                     # family="Courier New, monospace",
                     size=20,
@@ -154,6 +258,23 @@ class Interactive_Extrinsic():
                 )
                 # width=700,
                 # margin=dict(r=20, l=10, b=10, t=10)
+            )
+
+            fig1.update_xaxes(
+                mirror=True,
+                ticks='outside',
+                showline=True,
+                gridwidth=5,
+                linecolor='black',
+                gridcolor='black'
+            )
+            fig1.update_yaxes(
+                mirror=True,
+                gridwidth=5,
+                ticks='outside',
+                showline=True,
+                linecolor='black',
+                gridcolor='black'
             )
             # fig1.update_layout(yaxis = dict(tickfont = dict(size=100)), xaxis = dict(tickfont = dict(size=100)))
             fig1.show()

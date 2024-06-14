@@ -10,6 +10,7 @@ import operator
 import matplotlib as mpl
 import cv2
 import random
+import seaborn as sns
 from matplotlib.ticker import MaxNLocator
 
 import plotly.io as pio
@@ -99,6 +100,9 @@ class Complete_Viz():
         view_err2[np.isnan(view_err2)] = 0
         # view_err2[view_err2 == 0] = view_err2.max()/1.5
 
+        # Uncomment the lower portion t generate image of
+        # image_index vs reprojection error
+        '''
         for idx, cam in enumerate(data1.names.camera):
             x = np.arange(1,21,1)
             barWidth = 0.3
@@ -121,9 +125,185 @@ class Complete_Viz():
 
             path = os.path.join(self.base_path,dts1, 'view_Err' + cam[-3:] + '.png')
             # plt.axis('off')
-            plt.savefig(path, bbox_inches='tight')
-            plt.close()
-        pass
+            # plt.savefig(path, bbox_inches='tight')
+            # plt.close()
+        '''
+
+
+        # Pose angle analysis
+
+        for idx, cam in enumerate(data1.names.camera):
+            x1 = []
+            y1 = []
+            color1 = []
+            x2 = []
+            y2 = []
+            color2 = []
+            x = []
+            y = []
+            roll1=[]
+            roll2=[]
+            pitch1=[]
+            pitch2=[]
+            yaw1=[]
+            yaw2=[]
+            view_angle1=[]
+            view_angle2=[]
+            for imx, im in enumerate(data1.pose_table.view_angles[idx]):
+                for bx, b in enumerate(data1.pose_table.view_angles[idx][imx]):
+                    # for posex, pose in enumerate(data1.pose_table.view_angles[idx][imx][bx]):
+                    # if (b[0]!=0):
+                    if (np.all(b)):
+                        if(idx==5):
+                            x1.extend(['Roll', 'Pitch', 'Yaw'])
+                            y1.extend([0,0,0])
+                            # x1.append('Roll')
+                            # y1.append(0)
+                            roll1.append(0)
+                            pitch1.append(0)
+                            yaw1.append(0)
+                            view_angle1.append(0)
+                        else:
+                            x1.extend(['Roll', 'Pitch', 'Yaw'])
+                            y1.extend([b[0], b[1], b[2]])
+                            # x1.append('Roll')
+                            # y1.append(0)
+                            roll1.append(b[0])
+                            pitch1.append(b[1])
+                            yaw1.append(b[2])
+                            a = math.sqrt((b[0]**2 + b[1]**2 + b[2]**2))
+                            view_angle1.append(a)
+
+
+                            # x1.append('Roll')
+                            # y1.append(b[0])
+                            # roll1.append(b[0])
+                        # color1.append('Cube')
+                        color1.extend(['Cube', 'Cube', 'Cube'])
+                        # roll1.append(b[0])
+                    # if (b[1]!=0):
+                    #     if (idx == 5):
+                    #         x1.append('Pitch')
+                    #         y1.append(0)
+                    #     else:
+                    #         x1.append('Pitch')
+                    #         y1.append(b[1])
+                    #     color1.append('Cube')
+                    #     # pitch1.append(b[1])
+                    # if (b[2]!=0):
+                    #     if (idx == 5):
+                    #         x1.append('Yaw')
+                    #         y1.append(0)
+                    #     else:
+                    #         x1.append('Yaw')
+                    #         y1.append(b[2])
+                    #     color1.append('Cube')
+                    #     # yaw1.append(b[2])
+                    p2 = data2.pose_table.view_angles[idx][imx][bx]
+                    if (np.all(p2)):
+                        x2.extend(['Roll', 'Pitch', 'Yaw'])
+                        y2.extend([0, 0, 0])
+                        # x1.append('Roll')
+                        # y1.append(0)
+                        roll2.append(p2[0])
+                        pitch2.append(p2[1])
+                        yaw2.append(p2[2])
+
+                        # x2.append('Roll')
+                        # y2.append(p2[0])
+                        color2.extend(['Icosahedron','Icosahedron','Icosahedron'])
+                        a = math.sqrt((p2[0] ** 2 + p2[1] ** 2 + p2[2]**2))
+                        view_angle2.append(a)
+                        # roll2.append(p2[0])
+                    # if (p2[1] != 0):
+                    #     x2.append('Pitch')
+                    #     y2.append(p2[1])
+                    #     color2.append('Icosahedron')
+                    #     # pitch2.append(p2[1])
+                    # if (p2[2] != 0):
+                    #     x2.append('Yaw')
+                    #     y2.append(p2[2])
+                    #     color2.append('Icosahedron')
+                    #     # yaw2.append(p2[2])
+
+            fig, axs = plt.subplots(1, 3, sharey=True, tight_layout=True)
+            # axs[0].hist(roll1, bins=10)
+            axs[1].hist(pitch1, bins=10)
+            axs[2].hist(yaw1, bins=10)
+            counts1, edges1, plot1 = axs[0].hist(roll1, bins=10)
+            plt.show()
+
+            fig, axs = plt.subplots(1, 3, sharey=True, tight_layout=True)
+            # axs[0].hist(roll2, bins=10)
+            axs[1].hist(pitch2, bins=10)
+            axs[2].hist(yaw2, bins=10)
+            counts2, edges2, plot2 = axs[0].hist(roll2, bins=10)
+            plt.show()
+
+            fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
+            axs[0].hist(view_angle1, bins=10)
+            axs[1].hist(view_angle2, bins=10)
+            counts3, edges3, plot3 = axs[0].hist(view_angle1, bins=10)
+            counts4, edges4, plot4 = axs[1].hist(view_angle2, bins=10)
+            plt.show()
+            # for ploting roll/pitch/yaw separately
+            fig, axs = plt.subplots(1, 3, sharey=True, tight_layout=True)
+            r1, bins = np.histogram(roll1, bins=10)
+            r2, bins = np.histogram(roll2, bins=10)
+            pi1, bins = np.histogram(pitch1, bins=10)
+            pi2, bins = np.histogram(pitch2, bins=10)
+            ya1, bins = np.histogram(yaw1, bins=10)
+            ya2, bins = np.histogram(yaw2, bins=10)
+            # r1,_,_ = axs[0].hist(roll1, bins=10)
+            # r2, _, _ = axs[0].hist(roll2, bins=10)
+
+            x = np.arange(1, 11, 1)
+            barWidth = 0.3
+            br1 = np.arange(len(x))
+            br2 = [i + barWidth for i in br1]
+            # y1 = view_err1[idx]
+            # y2 = view_err2[idx]
+            axs[0].bar(br1, r1, label="Cube", width=barWidth)
+            axs[0].bar(br2, r2, label="Icosahedron", width=barWidth)
+            axs[0].legend(fontsize=10)
+            axs[0].set_xlabel('Roll', fontsize=15)
+            axs[0].set_ylabel('Num Views', fontsize=15)
+            axs[0].set_xticks([r + barWidth / 2 for r in range(len(x))], [str(r) for r in x], fontsize=10)
+            # axs[0].set_yticks(fontsize=10)
+            # axs[0].ylim(0, 2)
+            # axs[0].axhline(y=1, linewidth=1, color='k', linestyle='dashed')
+            # axs[0].title("Cam-" + str(idx + 1), fontsize=15)
+            plt.show()
+            # plt.figure().gca().xaxis.set_major_locator(MaxNLocator(integer=True))
+
+            path = os.path.join(self.base_path, dts1, 'view_Err' + cam[-3:] + '.png')
+            # plt.axis('off')
+            # plt.savefig(path, bbox_inches='tight')
+            # plt.close()
+
+            x += x1+x2
+            y += y1+y2
+            color = color1+color2
+
+            poses = pd.DataFrame({'angles': x, 'values': y, 'object': color})
+            # fig, ax = plt.subplots(1)
+            plt.clf()
+            # sns.set_theme(rc={'figure.figsize': (10, 7)})
+            sns.set_style("white")
+            boxes = (sns.boxplot(x=poses['angles'],
+                        y=poses['values'],
+                        hue = poses['object'],
+                        width=.7,
+                        gap=.3,
+                        linewidth=1))
+            boxes.set_title("Cam-"+str(idx), fontdict = { 'fontsize': 20})
+            boxes.set_xlabel("Rotation angles", fontsize=15)
+            boxes.set_ylabel("Values (Degrees)", fontsize=15)
+            boxes.tick_params(labelsize=10)
+            # boxes.axvline(2.5, color=".3", dashes=(2, 2), linewidth=5)
+            boxes_fig = boxes.get_figure()
+            boxes_fig.savefig('boxplot_Cam'+cam[-3:]+'.png',  bbox_inches='tight')
+    # pass
 
 
     def compare_twoDts(self):
