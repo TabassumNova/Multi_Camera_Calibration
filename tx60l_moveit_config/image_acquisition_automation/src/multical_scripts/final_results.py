@@ -18,6 +18,7 @@ import io
 # from base64 import b64encode
 from src.multical.transform.rtvec import *
 from matplotlib import pyplot as plt
+# plt.rcParams["font.family"] = "Times New Roman"
 # from jupyter_dash import JupyterDash
 # from dash import dcc
 # from dash import html
@@ -34,6 +35,9 @@ for camera extrinsic visualization
 '''
 class Complete_Viz():
     def __init__(self, base_path="", masterCamera=""):
+
+        plt.rcParams["font.family"] = 'serif'
+
         self.base_path = base_path
         self.workspace = None
         self.calibrated_workspace = None
@@ -102,7 +106,7 @@ class Complete_Viz():
 
         # Uncomment the lower portion t generate image of
         # image_index vs reprojection error
-        '''
+
         for idx, cam in enumerate(data1.names.camera):
             x = np.arange(1,21,1)
             barWidth = 0.3
@@ -110,24 +114,29 @@ class Complete_Viz():
             br2 = [i + barWidth for i in br1]
             y1 = view_err1[idx]
             y2 = view_err2[idx]
-            plt.bar(br1, y1, label="Cube", width = barWidth)
+
+
+            plt.figure(figsize=(8,6))
             plt.bar(br2, y2, label="Icosahedron", width = barWidth)
-            plt.legend(fontsize=10)
-            plt.xlabel('Image Index', fontsize=15)
-            plt.ylabel('Re-projection error', fontsize=15)
-            plt.xticks([r + barWidth/2 for r in range(len(x))], [ str(r) for r in x], fontsize=10)
-            plt.yticks(fontsize=10)
+            plt.bar(br1, y1, label="Cube", width=barWidth)
+            plt.legend(fontsize=18)
+            plt.xlabel('Image Index', fontsize=25)
+            plt.ylabel('Re-projection error', fontsize=25)
+            plt.xticks([r + barWidth/2 for r in range(len(x))], [ str(r) for r in x], rotation=90, fontsize=18)
+            plt.yticks(fontsize=18)
             plt.ylim(0,2)
             plt.axhline(y=1, linewidth=1, color='k', linestyle='dashed')
-            plt.title("Cam-"+str(idx+1), fontsize=15)
+            plt.gca().xaxis.set_label_coords(.5, -.15)
+            plt.gca().yaxis.set_label_coords(-.15, .5)
+            plt.title("Cam-"+str(idx+1), fontsize=25)
             # plt.show()
             # plt.figure().gca().xaxis.set_major_locator(MaxNLocator(integer=True))
 
             path = os.path.join(self.base_path,dts1, 'view_Err' + cam[-3:] + '.png')
             # plt.axis('off')
-            # plt.savefig(path, bbox_inches='tight')
-            # plt.close()
-        '''
+            plt.savefig(path, bbox_inches='tight')
+            plt.close()
+
 
 
         # Pose angle analysis
@@ -227,7 +236,8 @@ class Complete_Viz():
                     #     # yaw2.append(p2[2])
 
             ### for ploting sqrt(roll**2 + pitch**2)
-            fig1, ax1 = plt.subplots(sharex=True)
+            # plt.rcParams["font.family"] = 'serif'
+            fig1, ax1 = plt.subplots(sharex=True, figsize=(8,6))
             b1 = np.arange(0, 80, 5)
             ang1, bins_r1 = np.histogram(view_angle1, bins=b1)
             ang2, bins_r2 = np.histogram(view_angle2, bins=b1)
@@ -240,15 +250,17 @@ class Complete_Viz():
             # br1 = range(math.floor(0), math.ceil(len(x)))
             br1 = np.arange(len(x))
             br2 = [j + barWidth for j in br1]
+            ax1.bar(br2, ang2, label="Icosahedron", width=barWidth)
             if(idx!=5):
-                ax1.bar(br1, ang1, label="Cube", width=barWidth, color='lightsteelblue')
-            ax1.bar(br2, ang2, label="Icosahedron", width=barWidth, color='cornflowerblue')
-            ax1.legend(fontsize=10)
-            ax1.set_xlabel('View Angles (Degrees)', fontsize=15)
-            ax1.set_ylabel('Number of Views', fontsize=15)
-            ax1.set_xticks([r + barWidth / 2 for r in range(len(x))], text, rotation=90, fontsize=10)
+                ax1.bar(br1, ang1, label="Cube", width=barWidth)
+
+            ax1.legend(fontsize=18)
+            ax1.set_xlabel('View Angles (Degrees)', fontsize=25)
+            ax1.set_ylabel('Number of Views', fontsize=25)
+            ax1.set_xticks([r + barWidth / 2 for r in range(len(x))], text, rotation=90, fontsize=18)
+            ax1.tick_params(axis='both', labelsize=18)
             ax1.yaxis.set_major_locator(MaxNLocator(integer=True))
-            fig1.suptitle("Cam-" + str(idx + 1), fontsize=15)
+            fig1.suptitle("Cam-" + str(idx + 1), fontsize=25)
             ax1.xaxis.set_label_coords(.5, -.3)
             ax1.set_ylim([0, 12])
             # plt.show()
@@ -257,87 +269,7 @@ class Complete_Viz():
             plt.savefig(path, bbox_inches='tight')
 
 
-            ### for ploting roll/pitch/yaw separately
-            fig, axs = plt.subplots(1, 3, sharey=True, tight_layout=True, figsize=(15, 5))
-            b1 = np.arange(-70, 70, 10)
-            b2 = np.arange(-180, 180, 25)
-            r1, bins_r1 = np.histogram(roll1, bins=b1)
-            r2, bins_r2 = np.histogram(roll2, bins=b1)
-            pi1, bins_pi1 = np.histogram(pitch1, bins=b1)
-            pi2, bins_pi2 = np.histogram(pitch2, bins=b1)
-            ya1, bins_ya1 = np.histogram(yaw1, bins=b2)
-            ya2, bins_ya2 = np.histogram(yaw2, bins=b2)
 
-
-
-            angles = [['Roll (Degrees)', r1, r2], ['Pitch (Degrees)', pi1, pi2], ['Yaw (Degrees)', ya1, ya2]]
-            for i in range(0,3):
-                if (i==2):
-                    x = np.arange(1, len(b2), 1)
-                    # text
-                    text = []
-                    for k in range(len(x)):
-                        t = '[' + str(b2[k]) + ',' + str(b2[k + 1]) + ']'
-                        text.append(t)
-                else:
-                    x = np.arange(1, len(b1), 1)
-                    # text
-                    text = []
-                    for k in range(len(x)):
-                        t = '[' + str(b1[k]) + ',' + str(b1[k + 1]) + ']'
-                        text.append(t)
-
-                # x = b
-                barWidth = 0.3
-                # br1 = range(math.floor(0), math.ceil(len(x)))
-                br1 = np.arange(len(x))
-                br2 = [j + barWidth for j in br1]
-
-                if (idx != 5):
-                    axs[i].bar(br1, angles[i][1], label="Cube", width=barWidth, color='lightsteelblue')
-
-                axs[i].bar(br2, angles[i][2], label="Icosahedron", width=barWidth, color='cornflowerblue')
-                axs[i].legend(fontsize=10)
-                axs[i].set_xlabel(angles[i][0], fontsize=15)
-                axs[i].set_ylabel('Number of Views', fontsize=15)
-                axs[i].set_xticks([r + barWidth / 2 for r in range(len(x))], text, rotation=90, fontsize=10)
-                axs[i].yaxis.set_major_locator(MaxNLocator(integer=True))
-                axs[i].xaxis.set_label_coords(.5, -.3)
-                # axs[0].set_yticks(fontsize=10)
-                # axs[0].ylim(0, 2)
-                # axs[0].axhline(y=1, linewidth=1, color='k', linestyle='dashed')
-                # axs[i].title("Cam-" + str(idx + 1), fontsize=15)
-            fig.suptitle("Cam-" + str(idx + 1), fontsize=15)
-            # plt.show()
-            # plt.figure().gca().xaxis.set_major_locator(MaxNLocator(integer=True))
-
-            path = os.path.join(self.base_path, dts1, 'viewAngle_rpy_' + cam[-3:] + '.png')
-            # plt.axis('off')
-            # plt.savefig(path, bbox_inches='tight')
-            # plt.close()
-
-            # x += x1+x2
-            # y += y1+y2
-            # color = color1+color2
-            #
-            # poses = pd.DataFrame({'angles': x, 'values': y, 'object': color})
-            # # fig, ax = plt.subplots(1)
-            # plt.clf()
-            # # sns.set_theme(rc={'figure.figsize': (10, 7)})
-            # sns.set_style("white")
-            # boxes = (sns.boxplot(x=poses['angles'],
-            #             y=poses['values'],
-            #             hue = poses['object'],
-            #             width=.7,
-            #             gap=.3,
-            #             linewidth=1))
-            # boxes.set_title("Cam-"+str(idx), fontdict = { 'fontsize': 20})
-            # boxes.set_xlabel("Rotation angles", fontsize=15)
-            # boxes.set_ylabel("Values (Degrees)", fontsize=15)
-            # boxes.tick_params(labelsize=10)
-            # # boxes.axvline(2.5, color=".3", dashes=(2, 2), linewidth=5)
-            # boxes_fig = boxes.get_figure()
-            # boxes_fig.savefig('boxplot_Cam'+cam[-3:]+'.png',  bbox_inches='tight')
     # pass
 
 
