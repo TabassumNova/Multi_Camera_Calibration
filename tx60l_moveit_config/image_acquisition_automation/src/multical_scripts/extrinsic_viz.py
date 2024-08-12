@@ -9,7 +9,7 @@ import plotly.io as pio
 import io
 from base64 import b64encode
 from src.multical.transform.rtvec import *
-import networkx as nx
+# import networkx as nx
 # from jupyter_dash import JupyterDash
 # from dash import dcc
 # from dash import html
@@ -141,7 +141,7 @@ class Interactive_Extrinsic():
                         # save board_map
                         outfile = self.base_path + '/BoardMap_'+key
                         np.save(outfile, board_map)
-                        self.draw_board_network()
+                        # self.draw_board_network()
                         # confusion matrix
                         fig = px.imshow(board_map, color_continuous_scale='Greens',
                                         labels=dict(x="Slave Boards", y="Master Boards"),

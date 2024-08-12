@@ -101,7 +101,8 @@ class handEye():
         Multical
         '''
         pathO = args.PathOpts(image_path=self.datasetPath)
-        cam = args.CameraOpts(calibration=self.intrinsicPath, intrinsic_error_limit=0.5)
+        # cam = args.CameraOpts(calibration=self.intrinsicPath, intrinsic_error_limit=0.5)
+        cam = args.CameraOpts( intrinsic_error_limit=0.5)
         pose_estimation_method = "solvePnPGeneric"
         runt = args.RuntimeOpts(pose_estimation=pose_estimation_method, show_all_poses=show_all_poses)
         opt = args.OptimizerOpts(outlier_threshold=1.2, fix_intrinsic=True, adjust_outliers=False)
